@@ -1045,7 +1045,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               <div className="lg:col-span-5 flex flex-col items-center text-center">
                 <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-3xl bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 shadow-2xl mb-4 animate-float overflow-hidden">
                   <Image
-                    src={mentor.image || '/images/sami-logo.jpg'}
+                    src={mentor.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'}
                     alt={mentor.name || 'Mentor Muhammad Sami'}
                     width={224}
                     height={224}

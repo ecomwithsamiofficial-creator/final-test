@@ -651,9 +651,7 @@ export default function LmsClassroomPage() {
   const isDirectLessonVideo = Boolean(
     activeLesson?.videoUrl && (
       activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-      activeLesson.videoUrl.includes('supabase.co/storage') ||
-      activeLesson.videoUrl.startsWith('/uploads/') ||
-      activeLesson.videoUrl.startsWith('/api/videos/')
+      activeLesson.videoUrl.includes('supabase.co/storage')
     )
   );
 
@@ -899,9 +897,7 @@ export default function LmsClassroomPage() {
                                     const isDirect = Boolean(
                                       lesson.videoUrl && (
                                         lesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-                                        lesson.videoUrl.includes('supabase.co/storage') ||
-                                        lesson.videoUrl.startsWith('/uploads/') ||
-                                        lesson.videoUrl.startsWith('/api/videos/')
+                                        lesson.videoUrl.includes('supabase.co/storage')
                                       )
                                     );
                                     if (isAdmin || isDone || !isDirect || lessonWatch >= 90) {
@@ -1091,9 +1087,7 @@ export default function LmsClassroomPage() {
                   >
                     {activeLesson?.videoUrl && (
                       activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-                      activeLesson.videoUrl.includes('supabase.co/storage') ||
-                      activeLesson.videoUrl.startsWith('/uploads/') ||
-                      activeLesson.videoUrl.startsWith('/api/videos/')
+                      activeLesson.videoUrl.includes('supabase.co/storage')
                     ) ? (
                       <div className="relative w-full h-full flex items-center justify-center bg-black">
                         <video
@@ -1151,9 +1145,6 @@ export default function LmsClassroomPage() {
                           className="w-full h-full object-contain bg-black"
                         >
                           <source src={activeLesson.videoUrl} />
-                          {activeLesson.videoUrl.startsWith('/api/videos/') && (
-                            <source src={activeLesson.videoUrl.replace('/api/videos/', '/uploads/videos/')} />
-                          )}
                           Your browser does not support HTML5 video streaming.
                         </video>
 

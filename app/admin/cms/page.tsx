@@ -3001,89 +3001,62 @@ export default function AdminCmsPage() {
                   )}
                 </div>
 
-                {/* Direct Upload Box from Laptop / Device */}
-                <div className="p-4 rounded-xl bg-[#111827] border border-white/10 space-y-3">
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                {/* External Video Stream & Embed Configuration */}
+                <div className="p-4 sm:p-5 rounded-xl bg-[#111827] border border-white/10 space-y-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-3">
                     <div>
                       <div className="text-xs sm:text-sm font-bold text-white flex items-center gap-1.5">
-                        <UploadCloud size={16} className="text-[#00A0DF]" />
-                        <span>Upload Video File directly from Laptop</span>
+                        <Video size={16} className="text-[#00A0DF]" />
+                        <span>External Video Stream & Embed Link</span>
                       </div>
                       <p className="text-[11px] text-slate-400 mt-0.5">
-                        Upload your MP4, WebM or MOV video. It will be permanently stored and streamed directly on the homepage.
+                        Provide a YouTube (Unlisted), Bunny.net, Vimeo, or direct cloud CDN MP4 URL. Zero local bandwidth consumed!
                       </p>
                     </div>
 
-                    <div className="flex items-center gap-2 flex-shrink-0">
-                      <input
-                        ref={heroFileInputRef}
-                        type="file"
-                        accept="video/mp4,video/webm,video/quicktime,video/x-matroska,.mp4,.webm,.mov"
-                        className="hidden"
-                        onChange={handleHeroVideoSelect}
-                      />
-                      <button
-                        type="button"
-                        onClick={() => heroFileInputRef.current?.click()}
-                        disabled={heroUploading}
-                        className="px-4 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] disabled:opacity-50 text-white text-xs font-black transition-all flex items-center gap-1.5 shadow-md cursor-pointer active:scale-95"
-                      >
-                        {heroUploading ? (
-                          <>
-                            <Loader2 size={13} className="animate-spin" />
-                            <span>Uploading...</span>
-                          </>
-                        ) : (
-                          <>
-                            <UploadCloud size={14} />
-                            <span>Select Video File</span>
-                          </>
-                        )}
-                      </button>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-red-500/10 text-red-400 border border-red-500/20 font-bold flex items-center gap-1">
+                        <span>▶</span> YouTube (Recommended)
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-orange-500/10 text-orange-400 border border-orange-500/20 font-bold flex items-center gap-1">
+                        <span>🐰</span> Bunny.net
+                      </span>
+                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-400 border border-blue-500/20 font-bold flex items-center gap-1">
+                        <span>⚡</span> Cloud CDN / Vimeo
+                      </span>
                     </div>
                   </div>
 
-                  {/* Upload Progress Bar */}
-                  {heroUploading && (
-                    <div className="space-y-1.5 pt-2 border-t border-white/5">
-                      <div className="flex justify-between text-xs text-slate-300 font-mono">
-                        <span className="truncate pr-2">{heroUploadStatus}</span>
-                        <span className="font-bold text-[#00A0DF]">{heroUploadProgress}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-[#00A0DF] transition-all duration-200"
-                          style={{ width: `${heroUploadProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {heroUploadSuccess && (
-                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
-                      <CheckCircle2 size={15} />
-                      <span>{heroUploadStatus || 'Video file uploaded successfully and set for homepage!'}</span>
-                    </div>
-                  )}
-
-                  {heroUploadError && (
-                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">
-                      ⚠️ {heroUploadError}
-                    </div>
-                  )}
+                  <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold flex items-start sm:items-center gap-2">
+                    <CheckCircle2 size={16} className="flex-shrink-0 mt-0.5 sm:mt-0" />
+                    <span>
+                      <strong>High-Speed Streaming Protection:</strong> External links (like YouTube Unlisted) provide 100% free, unlimited playback for all students with zero server bandwidth depletion!
+                    </span>
+                  </div>
                 </div>
 
                 {/* Video URL & Overlay Title Inputs */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-bold text-slate-400 mb-1">
-                      Video Stream URL (Auto-filled on upload or paste link)
+                      Video Stream / Embed URL (YouTube, Bunny, or CDN MP4)
                     </label>
                     <input
                       type="text"
                       value={cmsData.hero?.video_url ?? ''}
-                      onChange={(e) => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_url: e.target.value } })}
-                      placeholder="e.g. /api/videos/hero_... or https://www.youtube.com/embed/..."
+                      onChange={(e) => {
+                        let val = e.target.value.trim();
+                        // Auto-convert standard YouTube watch URLs to embed URLs for instant preview
+                        if (val.includes('youtube.com/watch?v=')) {
+                          const vId = val.split('v=')[1]?.split('&')[0];
+                          if (vId) val = `https://www.youtube.com/embed/${vId}`;
+                        } else if (val.includes('youtu.be/')) {
+                          const vId = val.split('youtu.be/')[1]?.split('?')[0];
+                          if (vId) val = `https://www.youtube.com/embed/${vId}`;
+                        }
+                        setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_url: val } });
+                      }}
+                      placeholder="e.g. https://www.youtube.com/embed/... or https://youtu.be/..."
                       className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
                     />
                   </div>
@@ -3238,76 +3211,30 @@ export default function AdminCmsPage() {
                   </p>
                 </div>
 
-                {/* Upload & Image URL Controls */}
+                {/* External Image URL Controls */}
                 <div className="w-full space-y-3 pt-3 border-t border-white/10 text-left">
-                  <label className="block text-xs font-bold text-white">
-                    Upload New Mentor Picture
-                  </label>
-                  
-                  {/* File Upload Button */}
-                  <div className="flex items-center gap-2">
-                    <input
-                      ref={mentorFileInputRef}
-                      type="file"
-                      accept="image/png,image/jpeg,image/jpg,image/webp"
-                      className="hidden"
-                      onChange={handleMentorImageUpload}
-                    />
-                    <button
-                      type="button"
-                      onClick={() => mentorFileInputRef.current?.click()}
-                      disabled={mentorUploading}
-                      className="w-full py-2.5 px-4 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] disabled:opacity-50 text-white text-xs font-black transition-all flex items-center justify-center gap-2 shadow-lg shadow-[#00A0DF]/20 cursor-pointer active:scale-95"
-                    >
-                      {mentorUploading ? (
-                        <>
-                          <Loader2 size={14} className="animate-spin" />
-                          <span>Uploading Picture...</span>
-                        </>
-                      ) : (
-                        <>
-                          <UploadCloud size={15} />
-                          <span>Choose Picture from Device</span>
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Upload Progress */}
-                  {mentorUploading && (
-                    <div className="space-y-1.5">
-                      <div className="flex justify-between text-xs text-slate-300 font-mono">
-                        <span className="truncate pr-2">{mentorUploadStatus}</span>
-                        <span className="font-bold text-[#00A0DF]">{mentorUploadProgress}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-[#00A0DF] to-emerald-400 transition-all duration-200"
-                          style={{ width: `${mentorUploadProgress}%` }}
-                        />
-                      </div>
-                    </div>
-                  )}
-
-                  {mentorUploadError && (
-                    <p className="text-xs text-red-400 font-medium">{mentorUploadError}</p>
-                  )}
-
-                  {/* Manual Image URL Input */}
-                  <div className="pt-2">
-                    <label className="block text-[11px] font-bold text-slate-400 mb-1">
-                      Or Paste Direct Image URL:
+                  <div>
+                    <label className="block text-xs font-bold text-white mb-1">
+                      Mentor Picture URL (Cloud CDN / External Link)
                     </label>
+                    <p className="text-[11px] text-slate-400 mb-2">
+                      Paste direct link from Imgur, Cloudinary, PostImages, AWS S3, Google Drive, or any image CDN.
+                    </p>
                     <input
                       type="text"
-                      placeholder="e.g. https://... or /images/sami-logo.jpg"
+                      placeholder="e.g. https://images.unsplash.com/... or https://i.imgur.com/..."
                       value={cmsData.mentor?.image ?? ''}
                       onChange={(e) => setCmsData({
                         ...cmsData,
                         mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: e.target.value }
                       })}
-                      className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
                     />
+                  </div>
+
+                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-start gap-2">
+                    <Sparkles size={14} className="text-[#00A0DF] flex-shrink-0 mt-0.5" />
+                    <span>External image URLs load instantly via CDN without using any Vercel or host disk space.</span>
                   </div>
 
                   {/* Reset to Default Image */}
@@ -3315,12 +3242,12 @@ export default function AdminCmsPage() {
                     type="button"
                     onClick={() => setCmsData({
                       ...cmsData,
-                      mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: '/images/sami-logo.jpg' }
+                      mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80' }
                     })}
-                    className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                    className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors pt-1"
                   >
                     <RotateCcw size={11} />
-                    <span>Reset to default logo photo</span>
+                    <span>Reset to default verified mentor photo</span>
                   </button>
                 </div>
 
@@ -5300,7 +5227,7 @@ export default function AdminCmsPage() {
                     <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="url"
-                      placeholder="https://.../screenshot.jpg or /uploads/reviews/..."
+                      placeholder="https://.../screenshot.jpg or https://images.unsplash.com/..."
                       value={newHomeProofUrl}
                       onChange={(e) => setNewHomeProofUrl(e.target.value)}
                       onKeyDown={(e) => {

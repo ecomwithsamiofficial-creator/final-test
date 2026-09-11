@@ -444,7 +444,7 @@ export const defaultCmsContent: CmsContentSchema = {
     title_line1: 'Learn Local Dropshipping and Build Your Own Brand ',
     title_highlight: 'And Grow Your Business From Pakistan',
     subtitle: '',
-    video_url: '/api/videos/hero_1788788057970_1783397199_lv020260707085046',
+    video_url: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
     video_title: '',
     program_badge: 'Ecominion Program ',
     video_header: 'Watch this 128 seconds of video to learn how easy it is',
@@ -463,7 +463,7 @@ export const defaultCmsContent: CmsContentSchema = {
   mentor: {
     name: 'Muhammad Sami',
     title: 'Top E-Commerce Mentor & GCC Dropshipping Expert',
-    image: '/images/sami-logo.jpg',
+    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
     tag: 'YOUR MENTOR',
     badge: 'Digital Marketing Expert',
     bio: 'You don’t just need the right mentor — you need the right community too. Both are included in your purchase today.',
@@ -891,7 +891,11 @@ export const defaultCmsContent: CmsContentSchema = {
     badge: 'STUDENT RESULTS',
     title: 'Students Success',
     subtitle: 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.',
-    images: ['/uploads/reviews/whatsapp_review_sample.jpg']
+    images: [
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp'
+    ]
   },
   success_page: {
     badge: 'VERIFIED STUDENT PROOF',

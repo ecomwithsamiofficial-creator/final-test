@@ -29,7 +29,10 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
     badge: 'STUDENT RESULTS',
     title: 'Students Success',
     subtitle: 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.',
-    images: ['/uploads/reviews/whatsapp_review_sample.jpg']
+    images: [
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp'
+    ]
   };
 
   const badge = data?.badge || fallback.badge || 'STUDENT RESULTS';
@@ -41,7 +44,10 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
     ? data!.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
     : (Array.isArray(fallback.images) && fallback.images.length > 0
         ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
-        : ['/uploads/reviews/whatsapp_review_sample.jpg']);
+        : [
+            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
+            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp'
+          ]);
 
   // Split images into two columns for natural vertical parallax
   const col1Images: string[] = [];

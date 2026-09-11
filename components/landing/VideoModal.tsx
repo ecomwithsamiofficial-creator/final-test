@@ -21,8 +21,6 @@ export function VideoModal({
   const url = videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ";
 
   const isDirectVideo = Boolean(
-    url.startsWith('/uploads/') ||
-    url.startsWith('http://localhost:5000/uploads/') ||
     url.startsWith('blob:') ||
     /\.(mp4|webm|mov|mkv|ogg|m4v)($|\?)/i.test(url)
   );
