@@ -184,8 +184,8 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }:
         const img = new Image();
         img.src = event.target?.result as string;
         img.onload = () => {
-          const maxWidth = 1000;
-          const maxHeight = 1000;
+          const maxWidth = 800;
+          const maxHeight = 800;
           let width = img.width;
           let height = img.height;
 
@@ -210,9 +210,9 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }:
             return;
           }
 
-          // Render scaled image to canvas and export with 0.72 JPEG compression
+          // Render scaled image to canvas and export with 0.65 JPEG compression (crisp & compact ~80KB)
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.72);
+          const compressed = canvas.toDataURL('image/jpeg', 0.65);
           resolve(compressed);
         };
         img.onerror = () => resolve(event.target?.result as string || '');

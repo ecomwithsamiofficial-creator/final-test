@@ -236,7 +236,15 @@ export default function AdminDashboardPage() {
       fetchRealtimeAnalytics();
     }, 4000);
 
-    return () => clearInterval(analyticsInterval);
+    // 4. Poll Live Enrollments & Stats every 8 seconds so newly submitted enrollments appear in real-time!
+    const dashboardInterval = setInterval(() => {
+      fetchDashboardData(true);
+    }, 8000);
+
+    return () => {
+      clearInterval(analyticsInterval);
+      clearInterval(dashboardInterval);
+    };
   }, []);
 
   const handleLogout = async () => {
@@ -246,8 +254,9 @@ export default function AdminDashboardPage() {
     router.replace('/admin/login');
   };
 
-  const fetchDashboardData = async () => {
-    setLoading(true);
+  const fetchDashboardData = async (isBackground?: boolean | any) => {
+    const isBg = isBackground === true;
+    if (!isBg) setLoading(true);
     const timestamp = Date.now();
 
     try {
@@ -276,7 +285,7 @@ export default function AdminDashboardPage() {
     } catch (err) {
       console.error('Fetch dashboard overview error:', err);
     } finally {
-      setLoading(false);
+      if (!isBg) setLoading(false);
     }
   };
 
@@ -887,7 +896,7 @@ export default function AdminDashboardPage() {
             </div>
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
-                onClick={fetchDashboardData}
+                onClick={() => fetchDashboardData()}
                 disabled={loading}
                 className="p-2 sm:p-2.5 rounded-xl bg-[#111827] border border-white/10 hover:bg-slate-800 text-slate-300 transition-colors disabled:opacity-60"
                 title="Refresh Live Data"

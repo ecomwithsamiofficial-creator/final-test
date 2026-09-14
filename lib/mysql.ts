@@ -137,82 +137,127 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
     } catch {}
 
     // 6. Enrollments table in Hostinger MySQL
-    await p.query(`
-      CREATE TABLE IF NOT EXISTS \`enrollments\` (
-        \`id\` VARCHAR(191) NOT NULL,
-        \`tracking_code\` VARCHAR(191) NULL,
-        \`student_id\` VARCHAR(191) NULL,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`email\` VARCHAR(191) NOT NULL,
-        \`phone\` VARCHAR(100) NULL,
-        \`city\` VARCHAR(100) NULL,
-        \`payment_method\` VARCHAR(100) NULL,
-        \`transaction_id\` VARCHAR(255) NULL,
-        \`where_heard\` VARCHAR(100) NULL,
-        \`receipt_url\` LONGTEXT NULL,
-        \`amount\` VARCHAR(100) NULL,
-        \`status\` VARCHAR(50) DEFAULT 'pending',
-        \`password\` VARCHAR(255) NULL,
-        \`created_at\` VARCHAR(100) NULL,
-        PRIMARY KEY (\`id\`),
-        KEY \`idx_enrollments_email\` (\`email\`),
-        KEY \`idx_enrollments_tracking\` (\`tracking_code\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `);
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`enrollments\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`tracking_code\` VARCHAR(191) NULL,
+          \`student_id\` VARCHAR(191) NULL,
+          \`name\` VARCHAR(255) NOT NULL,
+          \`email\` VARCHAR(191) NOT NULL,
+          \`phone\` VARCHAR(100) NULL,
+          \`city\` VARCHAR(100) NULL,
+          \`payment_method\` VARCHAR(100) NULL,
+          \`transaction_id\` VARCHAR(255) NULL,
+          \`where_heard\` VARCHAR(100) NULL,
+          \`receipt_url\` LONGTEXT NULL,
+          \`amount\` VARCHAR(100) NULL,
+          \`status\` VARCHAR(50) DEFAULT 'pending',
+          \`password\` VARCHAR(255) NULL,
+          \`created_at\` VARCHAR(100) NULL,
+          PRIMARY KEY (\`id\`),
+          KEY \`idx_enrollments_email\` (\`email\`),
+          KEY \`idx_enrollments_tracking\` (\`tracking_code\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      // Safe column self-healing migrations if table was created in an older revision
+      const enrCols = [
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`tracking_code\` VARCHAR(191) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`student_id\` VARCHAR(191) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`city\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`payment_method\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`transaction_id\` VARCHAR(255) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`where_heard\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`receipt_url\` LONGTEXT NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`amount\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`status\` VARCHAR(50) DEFAULT 'pending'`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`password\` VARCHAR(255) NULL`,
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`created_at\` VARCHAR(100) NULL`
+      ];
+      for (const colQuery of enrCols) {
+        try { await p.query(colQuery); } catch {}
+      }
+    } catch (err) {
+      console.error('ensureAnalyticsTables enrollments table error:', err);
+    }
 
     // 7. Students table in Hostinger MySQL
-    await p.query(`
-      CREATE TABLE IF NOT EXISTS \`students\` (
-        \`id\` VARCHAR(191) NOT NULL,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`email\` VARCHAR(191) NOT NULL,
-        \`phone\` VARCHAR(100) NULL,
-        \`city\` VARCHAR(100) NULL,
-        \`password\` VARCHAR(255) NULL,
-        \`is_active\` TINYINT(1) DEFAULT 0,
-        \`enrolled_at\` VARCHAR(100) NULL,
-        \`completed_lessons_json\` LONGTEXT NULL,
-        \`last_login\` DATETIME NULL,
-        \`strike_count\` INT DEFAULT 0,
-        \`updated_at\` DATETIME NULL,
-        PRIMARY KEY (\`id\`),
-        UNIQUE KEY \`idx_students_email\` (\`email\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `);
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`students\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`name\` VARCHAR(255) NOT NULL,
+          \`email\` VARCHAR(191) NOT NULL,
+          \`phone\` VARCHAR(100) NULL,
+          \`city\` VARCHAR(100) NULL,
+          \`password\` VARCHAR(255) NULL,
+          \`is_active\` TINYINT(1) DEFAULT 0,
+          \`enrolled_at\` VARCHAR(100) NULL,
+          \`completed_lessons_json\` LONGTEXT NULL,
+          \`last_login\` DATETIME NULL,
+          \`strike_count\` INT DEFAULT 0,
+          \`updated_at\` DATETIME NULL,
+          PRIMARY KEY (\`id\`),
+          UNIQUE KEY \`idx_students_email\` (\`email\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      const stdCols = [
+        `ALTER TABLE \`students\` ADD COLUMN IF NOT EXISTS \`strike_count\` INT DEFAULT 0`,
+        `ALTER TABLE \`students\` ADD COLUMN IF NOT EXISTS \`last_login\` DATETIME NULL`,
+        `ALTER TABLE \`students\` ADD COLUMN IF NOT EXISTS \`completed_lessons_json\` LONGTEXT NULL`,
+        `ALTER TABLE \`students\` ADD COLUMN IF NOT EXISTS \`city\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`students\` ADD COLUMN IF NOT EXISTS \`password\` VARCHAR(255) NULL`
+      ];
+      for (const colQuery of stdCols) {
+        try { await p.query(colQuery); } catch {}
+      }
+    } catch (err) {
+      console.error('ensureAnalyticsTables students table error:', err);
+    }
 
     // 8. Wholesale Suppliers table in Hostinger MySQL
-    await p.query(`
-      CREATE TABLE IF NOT EXISTS \`lms_suppliers\` (
-        \`id\` VARCHAR(191) NOT NULL,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`category\` VARCHAR(191) NULL,
-        \`country\` VARCHAR(100) NULL,
-        \`city\` VARCHAR(100) NULL,
-        \`phone\` VARCHAR(100) NULL,
-        \`whatsapp_link\` VARCHAR(255) NULL,
-        \`min_order\` VARCHAR(100) NULL,
-        \`delivery_time\` VARCHAR(100) NULL,
-        \`cod_supported\` TINYINT(1) DEFAULT 1,
-        \`notes\` TEXT NULL,
-        \`updated_at\` DATETIME NULL,
-        PRIMARY KEY (\`id\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `);
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`lms_suppliers\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`name\` VARCHAR(255) NOT NULL,
+          \`category\` VARCHAR(191) NULL,
+          \`country\` VARCHAR(100) NULL,
+          \`city\` VARCHAR(100) NULL,
+          \`phone\` VARCHAR(100) NULL,
+          \`whatsapp_link\` VARCHAR(255) NULL,
+          \`min_order\` VARCHAR(100) NULL,
+          \`delivery_time\` VARCHAR(100) NULL,
+          \`cod_supported\` TINYINT(1) DEFAULT 1,
+          \`notes\` TEXT NULL,
+          \`updated_at\` DATETIME NULL,
+          PRIMARY KEY (\`id\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+    } catch (err) {
+      console.error('ensureAnalyticsTables lms_suppliers error:', err);
+    }
 
     // 9. Support Tickets table in Hostinger MySQL
-    await p.query(`
-      CREATE TABLE IF NOT EXISTS \`support_tickets\` (
-        \`id\` VARCHAR(191) NOT NULL,
-        \`name\` VARCHAR(255) NOT NULL,
-        \`email\` VARCHAR(191) NOT NULL,
-        \`phone\` VARCHAR(100) NULL,
-        \`topic\` VARCHAR(191) NULL,
-        \`message\` TEXT NOT NULL,
-        \`status\` VARCHAR(50) DEFAULT 'open',
-        \`created_at\` VARCHAR(100) NULL,
-        PRIMARY KEY (\`id\`)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
-    `);
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`support_tickets\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`name\` VARCHAR(255) NOT NULL,
+          \`email\` VARCHAR(191) NOT NULL,
+          \`phone\` VARCHAR(100) NULL,
+          \`topic\` VARCHAR(191) NULL,
+          \`message\` TEXT NOT NULL,
+          \`status\` VARCHAR(50) DEFAULT 'open',
+          \`created_at\` VARCHAR(100) NULL,
+          PRIMARY KEY (\`id\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+    } catch (err) {
+      console.error('ensureAnalyticsTables support_tickets error:', err);
+    }
 
     // Auto-seed initial students if empty
     try {
@@ -258,6 +303,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
     tablesInitialized = true;
     return true;
   } catch (error) {
+    console.error('ensureAnalyticsTables outer error:', error);
     return false;
   }
 }
@@ -777,81 +823,141 @@ export async function mysqlBulkDeleteModules(ids: number[]): Promise<boolean> {
 // =============================================================================
 
 export async function mysqlGetEnrollments(): Promise<Enrollment[]> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const [rows]: any = await pool.query(
-        `SELECT id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at 
-         FROM enrollments 
-         ORDER BY created_at DESC`
-      );
-      if (Array.isArray(rows)) {
-        return rows.map((r: any) => ({
-          id: r.id,
-          trackingCode: r.tracking_code || '',
-          studentId: r.student_id || '',
-          name: r.name || '',
-          email: r.email || '',
-          phone: r.phone || '',
-          city: r.city || '',
-          paymentMethod: r.payment_method || '',
-          transactionId: r.transaction_id || '',
-          whereHeard: r.where_heard || '',
-          receiptUrl: r.receipt_url || '',
-          amount: r.amount || '',
-          status: (r.status as 'pending' | 'approved' | 'rejected') || 'pending',
-          password: r.password || '',
-          createdAt: r.created_at || new Date().toISOString()
-        }));
-      }
-    } catch (err) {
-      console.error('mysqlGetEnrollments error:', err);
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const [rows]: any = await p.query(
+      `SELECT id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at 
+       FROM enrollments 
+       ORDER BY created_at DESC`
+    );
+    if (Array.isArray(rows) && rows.length > 0) {
+      return rows.map((r: any) => ({
+        id: r.id,
+        trackingCode: r.tracking_code || '',
+        studentId: r.student_id || '',
+        name: r.name || '',
+        email: r.email || '',
+        phone: r.phone || '',
+        city: r.city || '',
+        paymentMethod: r.payment_method || '',
+        transactionId: r.transaction_id || '',
+        whereHeard: r.where_heard || '',
+        receiptUrl: r.receipt_url || '',
+        amount: r.amount || '',
+        status: (r.status as 'pending' | 'approved' | 'rejected') || 'pending',
+        password: r.password || '',
+        createdAt: r.created_at || new Date().toISOString()
+      }));
     }
+  } catch (err) {
+    console.error('mysqlGetEnrollments error:', err);
   }
   return initialEnrollments;
 }
 
 export async function mysqlAddEnrollment(enr: Enrollment): Promise<Enrollment> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+
+  const enrId = enr.id || `enr_${Date.now()}`;
+  const trackingCode = enr.trackingCode || `SAMI-ENR-${Math.floor(10000 + Math.random() * 90000)}`;
+  const createdAt = enr.createdAt || new Date().toISOString();
+  const password = enr.password || '';
+
+  // Cap receipt URL to ~400KB to ensure it never exceeds MySQL max_allowed_packet
+  let safeReceipt = enr.receiptUrl || '';
+  if (safeReceipt.length > 400000) {
+    safeReceipt = safeReceipt.slice(0, 400000);
+  }
+
+  try {
+    await p.query(
+      `INSERT INTO enrollments (
+        id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ON DUPLICATE KEY UPDATE 
+        name = VALUES(name),
+        phone = VALUES(phone),
+        city = VALUES(city),
+        payment_method = VALUES(payment_method),
+        transaction_id = VALUES(transaction_id),
+        receipt_url = VALUES(receipt_url),
+        status = VALUES(status),
+        password = VALUES(password)`,
+      [
+        enrId,
+        trackingCode,
+        enr.studentId || '',
+        enr.name,
+        enr.email,
+        enr.phone,
+        enr.city || '',
+        enr.paymentMethod || 'Easypaisa',
+        enr.transactionId || 'Pending Verification',
+        enr.whereHeard || 'TikTok',
+        safeReceipt,
+        enr.amount || 'PKR 3,799',
+        enr.status || 'pending',
+        password,
+        createdAt
+      ]
+    );
+
+    return {
+      ...enr,
+      id: enrId,
+      trackingCode,
+      receiptUrl: safeReceipt,
+      createdAt,
+      password
+    };
+  } catch (err) {
+    console.error('mysqlAddEnrollment primary error:', err);
+    // If packet size or receipt was the cause, safely retry insert without receipt_url
     try {
-      await pool.query(
+      await p.query(
         `INSERT INTO enrollments (
-          id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, amount, status, password, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON DUPLICATE KEY UPDATE 
           name = VALUES(name),
           phone = VALUES(phone),
           city = VALUES(city),
           payment_method = VALUES(payment_method),
           transaction_id = VALUES(transaction_id),
-          receipt_url = VALUES(receipt_url),
           status = VALUES(status),
           password = VALUES(password)`,
         [
-          enr.id,
-          enr.trackingCode,
-          enr.studentId,
+          enrId,
+          trackingCode,
+          enr.studentId || '',
           enr.name,
           enr.email,
           enr.phone,
           enr.city || '',
-          enr.paymentMethod,
-          enr.transactionId,
+          enr.paymentMethod || 'Easypaisa',
+          enr.transactionId || 'Pending Verification',
           enr.whereHeard || 'TikTok',
-          enr.receiptUrl || '',
-          enr.amount,
+          enr.amount || 'PKR 3,799',
           enr.status || 'pending',
-          enr.password || '',
-          enr.createdAt || new Date().toISOString()
+          password,
+          createdAt
         ]
       );
-      return enr;
-    } catch (err) {
-      console.error('mysqlAddEnrollment error:', err);
+      return {
+        ...enr,
+        id: enrId,
+        trackingCode,
+        receiptUrl: '',
+        createdAt,
+        password
+      };
+    } catch (retryErr) {
+      console.error('mysqlAddEnrollment retry failed:', retryErr);
+      throw retryErr;
     }
   }
-  return enr;
 }
 
 export async function mysqlUpdateEnrollmentStatus(
@@ -859,79 +965,77 @@ export async function mysqlUpdateEnrollmentStatus(
   status: 'approved' | 'rejected', 
   customPassword?: string
 ): Promise<{ enrollment: Enrollment; password?: string } | null> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const [rows]: any = await pool.query(
-        `SELECT * FROM enrollments WHERE id = ? OR tracking_code = ? LIMIT 1`,
-        [id, id]
-      );
-      if (!Array.isArray(rows) || rows.length === 0) return null;
-      const enr = rows[0];
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const [rows]: any = await p.query(
+      `SELECT * FROM enrollments WHERE id = ? OR tracking_code = ? LIMIT 1`,
+      [id, id]
+    );
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const enr = rows[0];
 
-      let pass = customPassword || enr.password;
-      if (!pass || pass === 'studentpass2026') {
-        pass = Math.floor(10000000 + Math.random() * 90000000).toString();
-      }
-
-      await pool.query(
-        `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
-        [status, pass, enr.id]
-      );
-
-      // If approved, activate or create student in Hostinger MySQL
-      if (status === 'approved' && enr.email) {
-        await pool.query(
-          `INSERT INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
-           VALUES (?, ?, ?, ?, ?, ?, 1, ?, '[]', NOW())
-           ON DUPLICATE KEY UPDATE is_active = 1, password = VALUES(password), updated_at = NOW()`,
-          [
-            enr.student_id || `std_${Date.now()}`,
-            enr.name,
-            enr.email,
-            enr.phone,
-            enr.city || 'Pakistan',
-            pass,
-            new Date().toISOString().split('T')[0]
-          ]
-        );
-      }
-
-      const updatedEnr: Enrollment = {
-        id: enr.id,
-        trackingCode: enr.tracking_code,
-        studentId: enr.student_id,
-        name: enr.name,
-        email: enr.email,
-        phone: enr.phone,
-        city: enr.city,
-        paymentMethod: enr.payment_method,
-        transactionId: enr.transaction_id,
-        whereHeard: enr.where_heard,
-        receiptUrl: enr.receipt_url,
-        amount: enr.amount,
-        status,
-        password: pass,
-        createdAt: enr.created_at
-      };
-
-      return { enrollment: updatedEnr, password: pass };
-    } catch (err) {
-      console.error('mysqlUpdateEnrollmentStatus error:', err);
+    let pass = customPassword || enr.password;
+    if (!pass || pass === 'studentpass2026') {
+      pass = Math.floor(10000000 + Math.random() * 90000000).toString();
     }
+
+    await p.query(
+      `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
+      [status, pass, enr.id]
+    );
+
+    // If approved, activate or create student in Hostinger MySQL
+    if (status === 'approved' && enr.email) {
+      await p.query(
+        `INSERT INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
+         VALUES (?, ?, ?, ?, ?, ?, 1, ?, '[]', NOW())
+         ON DUPLICATE KEY UPDATE is_active = 1, password = VALUES(password), updated_at = NOW()`,
+        [
+          enr.student_id || `std_${Date.now()}`,
+          enr.name,
+          enr.email,
+          enr.phone,
+          enr.city || 'Pakistan',
+          pass,
+          new Date().toISOString().split('T')[0]
+        ]
+      );
+    }
+
+    const updatedEnr: Enrollment = {
+      id: enr.id,
+      trackingCode: enr.tracking_code,
+      studentId: enr.student_id,
+      name: enr.name,
+      email: enr.email,
+      phone: enr.phone,
+      city: enr.city,
+      paymentMethod: enr.payment_method,
+      transactionId: enr.transaction_id,
+      whereHeard: enr.where_heard,
+      receiptUrl: enr.receipt_url,
+      amount: enr.amount,
+      status,
+      password: pass,
+      createdAt: enr.created_at
+    };
+
+    return { enrollment: updatedEnr, password: pass };
+  } catch (err) {
+    console.error('mysqlUpdateEnrollmentStatus error:', err);
   }
   return null;
 }
 
 export async function mysqlDeleteEnrollment(id: string): Promise<boolean> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      await pool.query(`DELETE FROM enrollments WHERE id = ? OR tracking_code = ?`, [id, id]);
-      return true;
-    } catch (err) {
-      console.error('mysqlDeleteEnrollment error:', err);
-    }
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    await p.query(`DELETE FROM enrollments WHERE id = ? OR tracking_code = ?`, [id, id]);
+    return true;
+  } catch (err) {
+    console.error('mysqlDeleteEnrollment error:', err);
   }
   return false;
 }

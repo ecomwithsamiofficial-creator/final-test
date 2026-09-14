@@ -510,10 +510,13 @@ export async function dbGetEnrollments(providedStudents?: Student[], forceFresh 
 export async function dbAddEnrollment(enr: Enrollment): Promise<Enrollment> {
   clearDatabaseCache();
   try {
-    return await mysqlAddEnrollment(enr);
+    const saved = await mysqlAddEnrollment(enr);
+    clearDatabaseCache();
+    return saved;
   } catch (e) {
     console.error('Hostinger MySQL add enrollment error:', e);
-    return enr;
+    clearDatabaseCache();
+    throw e;
   }
 }
 

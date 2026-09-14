@@ -76,6 +76,12 @@ export async function POST(request: NextRequest) {
     );
     const whatsappUrl = `https://wa.me/${adminPhone}?text=${whatsappNotifyText}`;
 
+    try {
+      const { revalidatePath } = await import('next/cache');
+      revalidatePath('/admin');
+      revalidatePath('/admin/enrollments');
+    } catch {}
+
     return NextResponse.json({
       success: true,
       message: 'Enrollment application received! Admin will verify your payment slip and send your LMS password on WhatsApp.',
@@ -87,8 +93,14 @@ export async function POST(request: NextRequest) {
         ...enrollment,
         whatsappUrl
       }
+    }, {
+      headers: {
+        'Cache-Control': 'no-store, no-cache, must-revalidate, max-age=0',
+        'Pragma': 'no-cache'
+      }
     });
   } catch (error: any) {
+    console.error('Enrollment submit error:', error);
     return NextResponse.json(
       { success: false, message: error.message || 'Failed to submit enrollment' },
       { status: 500 }
