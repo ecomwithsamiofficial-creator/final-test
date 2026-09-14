@@ -1,27 +1,5 @@
-import { createClient } from '@supabase/supabase-js';
-
-const _k1 = 'sb_secret_sub1S1bJky';
-const _k2 = 'N3UQYmzSv8rw_iAGcrCUN';
-
-export const supabaseUrl = 
-  process.env.NEXT_PUBLIC_SUPABASE_URL || 
-  process.env.SUPABASE_URL || 
-  'https://iocdrkighhslpmekvnhe.supabase.co';
-
-export const supabaseKey = 
-  process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || 
-  process.env.SUPABASE_SERVICE_ROLE_KEY || 
-  process.env.SUPABASE_ANON_KEY || 
-  process.env.SUPABASE_KEY || 
-  `${_k1}${_k2}`;
-
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
-
-export const supabase = isSupabaseConfigured
-  ? createClient(supabaseUrl, supabaseKey, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false
-      }
-    })
-  : null;
+// Supabase is completely disabled in favor of 100% Hostinger MySQL.
+export const supabaseUrl = '';
+export const supabaseKey = '';
+export const isSupabaseConfigured = false;
+export const supabase = null;

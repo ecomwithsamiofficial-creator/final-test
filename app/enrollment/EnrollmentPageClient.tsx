@@ -26,7 +26,6 @@ import {
 } from 'lucide-react';
 import { useContactConfig } from '@/utils/contactConfig';
 import { defaultCmsContent, CmsContentSchema } from '@/utils/cmsStore';
-import { supabase } from '@/lib/supabase';
 
 interface EnrollmentPageClientProps {
   initialContent?: CmsContentSchema | null;

@@ -1,6 +1,17 @@
 import mysql from 'mysql2/promise';
 import { defaultCmsContent } from '@/utils/cmsStore';
-import { Module, Lesson, initialModules } from '@/utils/db';
+import { 
+  Module, 
+  Lesson, 
+  initialModules,
+  Enrollment, 
+  Student, 
+  Supplier, 
+  SupportTicket, 
+  initialStudents, 
+  initialEnrollments, 
+  initialSuppliers 
+} from '@/utils/db';
 
 let pool: mysql.Pool | null = null;
 let tablesInitialized = false;
@@ -123,10 +134,127 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
         }
         await p.query(`INSERT INTO cms_settings (\`key\`, \`value_json\`) VALUES ('lms_seeded', 'true')`);
       }
-    } catch {
-      // Ignore seed error
-    }
+    } catch {}
 
+    // 6. Enrollments table in Hostinger MySQL
+    await p.query(`
+      CREATE TABLE IF NOT EXISTS \`enrollments\` (
+        \`id\` VARCHAR(191) NOT NULL,
+        \`tracking_code\` VARCHAR(191) NULL,
+        \`student_id\` VARCHAR(191) NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(191) NOT NULL,
+        \`phone\` VARCHAR(100) NULL,
+        \`city\` VARCHAR(100) NULL,
+        \`payment_method\` VARCHAR(100) NULL,
+        \`transaction_id\` VARCHAR(255) NULL,
+        \`where_heard\` VARCHAR(100) NULL,
+        \`receipt_url\` LONGTEXT NULL,
+        \`amount\` VARCHAR(100) NULL,
+        \`status\` VARCHAR(50) DEFAULT 'pending',
+        \`password\` VARCHAR(255) NULL,
+        \`created_at\` VARCHAR(100) NULL,
+        PRIMARY KEY (\`id\`),
+        KEY \`idx_enrollments_email\` (\`email\`),
+        KEY \`idx_enrollments_tracking\` (\`tracking_code\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 7. Students table in Hostinger MySQL
+    await p.query(`
+      CREATE TABLE IF NOT EXISTS \`students\` (
+        \`id\` VARCHAR(191) NOT NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(191) NOT NULL,
+        \`phone\` VARCHAR(100) NULL,
+        \`city\` VARCHAR(100) NULL,
+        \`password\` VARCHAR(255) NULL,
+        \`is_active\` TINYINT(1) DEFAULT 0,
+        \`enrolled_at\` VARCHAR(100) NULL,
+        \`completed_lessons_json\` LONGTEXT NULL,
+        \`last_login\` DATETIME NULL,
+        \`strike_count\` INT DEFAULT 0,
+        \`updated_at\` DATETIME NULL,
+        PRIMARY KEY (\`id\`),
+        UNIQUE KEY \`idx_students_email\` (\`email\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 8. Wholesale Suppliers table in Hostinger MySQL
+    await p.query(`
+      CREATE TABLE IF NOT EXISTS \`lms_suppliers\` (
+        \`id\` VARCHAR(191) NOT NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`category\` VARCHAR(191) NULL,
+        \`country\` VARCHAR(100) NULL,
+        \`city\` VARCHAR(100) NULL,
+        \`phone\` VARCHAR(100) NULL,
+        \`whatsapp_link\` VARCHAR(255) NULL,
+        \`min_order\` VARCHAR(100) NULL,
+        \`delivery_time\` VARCHAR(100) NULL,
+        \`cod_supported\` TINYINT(1) DEFAULT 1,
+        \`notes\` TEXT NULL,
+        \`updated_at\` DATETIME NULL,
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // 9. Support Tickets table in Hostinger MySQL
+    await p.query(`
+      CREATE TABLE IF NOT EXISTS \`support_tickets\` (
+        \`id\` VARCHAR(191) NOT NULL,
+        \`name\` VARCHAR(255) NOT NULL,
+        \`email\` VARCHAR(191) NOT NULL,
+        \`phone\` VARCHAR(100) NULL,
+        \`topic\` VARCHAR(191) NULL,
+        \`message\` TEXT NOT NULL,
+        \`status\` VARCHAR(50) DEFAULT 'open',
+        \`created_at\` VARCHAR(100) NULL,
+        PRIMARY KEY (\`id\`)
+      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+    `);
+
+    // Auto-seed initial students if empty
+    try {
+      const [stdRows]: any = await p.query(`SELECT COUNT(*) as count FROM students`);
+      if (Number(stdRows?.[0]?.count || 0) === 0) {
+        for (const s of initialStudents) {
+          await p.query(
+            `INSERT IGNORE INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [s.id, s.name, s.email, s.phone, s.city, s.password, s.isActive ? 1 : 0, s.enrolledAt, JSON.stringify(s.completedLessons || [])]
+          );
+        }
+      }
+    } catch {}
+
+    // Auto-seed initial enrollments if empty
+    try {
+      const [enrRows]: any = await p.query(`SELECT COUNT(*) as count FROM enrollments`);
+      if (Number(enrRows?.[0]?.count || 0) === 0) {
+        for (const e of initialEnrollments) {
+          await p.query(
+            `INSERT IGNORE INTO enrollments (id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [e.id, e.trackingCode, e.studentId, e.name, e.email, e.phone, e.city, e.paymentMethod, e.transactionId, e.whereHeard || '', e.receiptUrl || '', e.amount, e.status, e.createdAt]
+          );
+        }
+      }
+    } catch {}
+
+    // Auto-seed initial suppliers if empty
+    try {
+      const [supRows]: any = await p.query(`SELECT COUNT(*) as count FROM lms_suppliers`);
+      if (Number(supRows?.[0]?.count || 0) === 0) {
+        for (const sup of initialSuppliers) {
+          await p.query(
+            `INSERT IGNORE INTO lms_suppliers (id, name, category, country, city, phone, whatsapp_link, min_order, delivery_time, cod_supported, notes, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
+            [sup.id, sup.name, sup.category, sup.country, sup.city, sup.phone, sup.whatsappLink, sup.minOrder, sup.deliveryTime, sup.codSupported ? 1 : 0, sup.notes]
+          );
+        }
+      }
+    } catch {}
     tablesInitialized = true;
     return true;
   } catch (error) {
@@ -640,6 +768,549 @@ export async function mysqlBulkDeleteModules(ids: number[]): Promise<boolean> {
       console.error('mysqlBulkDeleteModules error:', err);
     }
 
+  }
+  return false;
+}
+
+// =============================================================================
+// ENROLLMENTS (100% NATIVE HOSTINGER MYSQL)
+// =============================================================================
+
+export async function mysqlGetEnrollments(): Promise<Enrollment[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at 
+         FROM enrollments 
+         ORDER BY created_at DESC`
+      );
+      if (Array.isArray(rows)) {
+        return rows.map((r: any) => ({
+          id: r.id,
+          trackingCode: r.tracking_code || '',
+          studentId: r.student_id || '',
+          name: r.name || '',
+          email: r.email || '',
+          phone: r.phone || '',
+          city: r.city || '',
+          paymentMethod: r.payment_method || '',
+          transactionId: r.transaction_id || '',
+          whereHeard: r.where_heard || '',
+          receiptUrl: r.receipt_url || '',
+          amount: r.amount || '',
+          status: (r.status as 'pending' | 'approved' | 'rejected') || 'pending',
+          password: r.password || '',
+          createdAt: r.created_at || new Date().toISOString()
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetEnrollments error:', err);
+    }
+  }
+  return initialEnrollments;
+}
+
+export async function mysqlAddEnrollment(enr: Enrollment): Promise<Enrollment> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO enrollments (
+          id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, password, created_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON DUPLICATE KEY UPDATE 
+          name = VALUES(name),
+          phone = VALUES(phone),
+          city = VALUES(city),
+          payment_method = VALUES(payment_method),
+          transaction_id = VALUES(transaction_id),
+          receipt_url = VALUES(receipt_url),
+          status = VALUES(status),
+          password = VALUES(password)`,
+        [
+          enr.id,
+          enr.trackingCode,
+          enr.studentId,
+          enr.name,
+          enr.email,
+          enr.phone,
+          enr.city || '',
+          enr.paymentMethod,
+          enr.transactionId,
+          enr.whereHeard || 'TikTok',
+          enr.receiptUrl || '',
+          enr.amount,
+          enr.status || 'pending',
+          enr.password || '',
+          enr.createdAt || new Date().toISOString()
+        ]
+      );
+      return enr;
+    } catch (err) {
+      console.error('mysqlAddEnrollment error:', err);
+    }
+  }
+  return enr;
+}
+
+export async function mysqlUpdateEnrollmentStatus(
+  id: string, 
+  status: 'approved' | 'rejected', 
+  customPassword?: string
+): Promise<{ enrollment: Enrollment; password?: string } | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT * FROM enrollments WHERE id = ? OR tracking_code = ? LIMIT 1`,
+        [id, id]
+      );
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      const enr = rows[0];
+
+      let pass = customPassword || enr.password;
+      if (!pass || pass === 'studentpass2026') {
+        pass = Math.floor(10000000 + Math.random() * 90000000).toString();
+      }
+
+      await pool.query(
+        `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
+        [status, pass, enr.id]
+      );
+
+      // If approved, activate or create student in Hostinger MySQL
+      if (status === 'approved' && enr.email) {
+        await pool.query(
+          `INSERT INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 1, ?, '[]', NOW())
+           ON DUPLICATE KEY UPDATE is_active = 1, password = VALUES(password), updated_at = NOW()`,
+          [
+            enr.student_id || `std_${Date.now()}`,
+            enr.name,
+            enr.email,
+            enr.phone,
+            enr.city || 'Pakistan',
+            pass,
+            new Date().toISOString().split('T')[0]
+          ]
+        );
+      }
+
+      const updatedEnr: Enrollment = {
+        id: enr.id,
+        trackingCode: enr.tracking_code,
+        studentId: enr.student_id,
+        name: enr.name,
+        email: enr.email,
+        phone: enr.phone,
+        city: enr.city,
+        paymentMethod: enr.payment_method,
+        transactionId: enr.transaction_id,
+        whereHeard: enr.where_heard,
+        receiptUrl: enr.receipt_url,
+        amount: enr.amount,
+        status,
+        password: pass,
+        createdAt: enr.created_at
+      };
+
+      return { enrollment: updatedEnr, password: pass };
+    } catch (err) {
+      console.error('mysqlUpdateEnrollmentStatus error:', err);
+    }
+  }
+  return null;
+}
+
+export async function mysqlDeleteEnrollment(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM enrollments WHERE id = ? OR tracking_code = ?`, [id, id]);
+      return true;
+    } catch (err) {
+      console.error('mysqlDeleteEnrollment error:', err);
+    }
+  }
+  return false;
+}
+
+// =============================================================================
+// STUDENTS (100% NATIVE HOSTINGER MYSQL)
+// =============================================================================
+
+export async function mysqlGetStudents(): Promise<Student[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
+         FROM students 
+         ORDER BY enrolled_at DESC`
+      );
+      if (Array.isArray(rows)) {
+        return rows.map((r: any) => ({
+          id: r.id,
+          name: r.name || '',
+          email: r.email || '',
+          phone: r.phone || '',
+          city: r.city || '',
+          password: r.password || '',
+          isActive: Boolean(r.is_active),
+          enrolledAt: r.enrolled_at || '',
+          completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
+          lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
+          strikeCount: Number(r.strike_count || 0)
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetStudents error:', err);
+    }
+  }
+  return initialStudents;
+}
+
+export async function mysqlGetStudentByEmail(email: string): Promise<Student | null> {
+  if (!email) return null;
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
+         FROM students 
+         WHERE LOWER(email) = LOWER(?) 
+         LIMIT 1`,
+        [email.trim()]
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        const r = rows[0];
+        return {
+          id: r.id,
+          name: r.name || '',
+          email: r.email || '',
+          phone: r.phone || '',
+          city: r.city || '',
+          password: r.password || '',
+          isActive: Boolean(r.is_active),
+          enrolledAt: r.enrolled_at || '',
+          completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
+          lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
+          strikeCount: Number(r.strike_count || 0)
+        };
+      }
+    } catch (err) {
+      console.error('mysqlGetStudentByEmail error:', err);
+    }
+  }
+  return null;
+}
+
+export async function mysqlAddStudent(student: Student): Promise<Student> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO students (
+          id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE 
+          name = VALUES(name),
+          phone = VALUES(phone),
+          city = VALUES(city),
+          password = VALUES(password),
+          is_active = VALUES(is_active),
+          completed_lessons_json = VALUES(completed_lessons_json),
+          updated_at = NOW()`,
+        [
+          student.id,
+          student.name,
+          student.email,
+          student.phone,
+          student.city || '',
+          student.password,
+          student.isActive ? 1 : 0,
+          student.enrolledAt || new Date().toISOString().split('T')[0],
+          JSON.stringify(student.completedLessons || [])
+        ]
+      );
+      return student;
+    } catch (err) {
+      console.error('mysqlAddStudent error:', err);
+    }
+  }
+  return student;
+}
+
+export async function mysqlUpdateStudent(id: string, patch: Partial<Student>): Promise<Student | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`, [id, id]);
+      if (!Array.isArray(rows) || rows.length === 0) return null;
+      const current = rows[0];
+
+      const name = patch.name !== undefined ? patch.name : current.name;
+      const email = patch.email !== undefined ? patch.email : current.email;
+      const phone = patch.phone !== undefined ? patch.phone : current.phone;
+      const city = patch.city !== undefined ? patch.city : current.city;
+      const password = patch.password !== undefined ? patch.password : current.password;
+      const isActive = patch.isActive !== undefined ? (patch.isActive ? 1 : 0) : current.is_active;
+      const completedLessons = patch.completedLessons !== undefined ? JSON.stringify(patch.completedLessons) : current.completed_lessons_json;
+      const lastLogin = patch.lastLogin !== undefined ? patch.lastLogin : current.last_login;
+      const strikeCount = patch.strikeCount !== undefined ? patch.strikeCount : current.strike_count;
+
+      await pool.query(
+        `UPDATE students SET 
+          name = ?, email = ?, phone = ?, city = ?, password = ?, is_active = ?, completed_lessons_json = ?, last_login = ?, strike_count = ?, updated_at = NOW()
+         WHERE id = ?`,
+        [name, email, phone, city, password, isActive, completedLessons, lastLogin, strikeCount, current.id]
+      );
+
+      return {
+        id: current.id,
+        name,
+        email,
+        phone,
+        city,
+        password,
+        isActive: Boolean(isActive),
+        enrolledAt: current.enrolled_at,
+        completedLessons: typeof completedLessons === 'string' ? JSON.parse(completedLessons) : completedLessons,
+        lastLogin: lastLogin ? new Date(lastLogin).toISOString() : undefined,
+        strikeCount
+      };
+    } catch (err) {
+      console.error('mysqlUpdateStudent error:', err);
+    }
+  }
+  return null;
+}
+
+export async function mysqlDeleteStudent(idOrEmail: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM students WHERE id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
+      await pool.query(`DELETE FROM enrollments WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
+      return true;
+    } catch (err) {
+      console.error('mysqlDeleteStudent error:', err);
+    }
+  }
+  return false;
+}
+
+export async function mysqlResetStudentPassword(identifier: string, newPassword?: string): Promise<{ email: string; newPassword: string } | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const pass = newPassword || Math.floor(10000000 + Math.random() * 90000000).toString();
+      const [rows]: any = await pool.query(
+        `SELECT id, email FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+        [identifier, identifier]
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        const std = rows[0];
+        await pool.query(`UPDATE students SET password = ?, updated_at = NOW() WHERE id = ?`, [pass, std.id]);
+        await pool.query(`UPDATE enrollments SET password = ? WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [pass, std.id, std.email]);
+        return { email: std.email, newPassword: pass };
+      }
+
+      // Check enrollment if student row not yet created
+      const [enrRows]: any = await pool.query(
+        `SELECT id, email FROM enrollments WHERE id = ? OR tracking_code = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+        [identifier, identifier, identifier]
+      );
+      if (Array.isArray(enrRows) && enrRows.length > 0) {
+        const enr = enrRows[0];
+        await pool.query(`UPDATE enrollments SET password = ? WHERE id = ?`, [pass, enr.id]);
+        return { email: enr.email, newPassword: pass };
+      }
+    } catch (err) {
+      console.error('mysqlResetStudentPassword error:', err);
+    }
+  }
+  return null;
+}
+
+// =============================================================================
+// WHOLESALE SUPPLIERS (100% NATIVE HOSTINGER MYSQL)
+// =============================================================================
+
+export async function mysqlGetSuppliers(): Promise<Supplier[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM lms_suppliers ORDER BY updated_at DESC`);
+      if (Array.isArray(rows)) {
+        return rows.map((r: any) => ({
+          id: r.id,
+          name: r.name,
+          category: r.category || '',
+          country: r.country || 'UAE',
+          city: r.city || '',
+          phone: r.phone || '',
+          whatsappLink: r.whatsapp_link || '',
+          minOrder: r.min_order || '',
+          deliveryTime: r.delivery_time || '',
+          codSupported: Boolean(r.cod_supported),
+          notes: r.notes || ''
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetSuppliers error:', err);
+    }
+  }
+  return initialSuppliers;
+}
+
+export async function mysqlAddSupplier(supplier: Supplier): Promise<Supplier> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO lms_suppliers (
+          id, name, category, country, city, phone, whatsapp_link, min_order, delivery_time, cod_supported, notes, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ON DUPLICATE KEY UPDATE 
+          name = VALUES(name),
+          category = VALUES(category),
+          country = VALUES(country),
+          city = VALUES(city),
+          phone = VALUES(phone),
+          whatsapp_link = VALUES(whatsapp_link),
+          min_order = VALUES(min_order),
+          delivery_time = VALUES(delivery_time),
+          cod_supported = VALUES(cod_supported),
+          notes = VALUES(notes),
+          updated_at = NOW()`,
+        [
+          supplier.id,
+          supplier.name,
+          supplier.category,
+          supplier.country,
+          supplier.city,
+          supplier.phone,
+          supplier.whatsappLink,
+          supplier.minOrder,
+          supplier.deliveryTime,
+          supplier.codSupported ? 1 : 0,
+          supplier.notes
+        ]
+      );
+      return supplier;
+    } catch (err) {
+      console.error('mysqlAddSupplier error:', err);
+    }
+  }
+  return supplier;
+}
+
+export async function mysqlDeleteSupplier(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM lms_suppliers WHERE id = ?`, [id]);
+      return true;
+    } catch (err) {
+      console.error('mysqlDeleteSupplier error:', err);
+    }
+  }
+  return false;
+}
+
+// =============================================================================
+// SUPPORT TICKETS (100% NATIVE HOSTINGER MYSQL)
+// =============================================================================
+
+export async function mysqlGetTickets(): Promise<SupportTicket[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM support_tickets ORDER BY created_at DESC`);
+      if (Array.isArray(rows)) {
+        return rows.map((r: any) => ({
+          id: r.id,
+          name: r.name || '',
+          email: r.email || '',
+          phone: r.phone || '',
+          topic: r.topic || '',
+          message: r.message || '',
+          status: (r.status as 'open' | 'in_progress' | 'resolved') || 'open',
+          createdAt: r.created_at || new Date().toISOString()
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetTickets error:', err);
+    }
+  }
+  return [];
+}
+
+export async function mysqlAddTicket(ticket: SupportTicket): Promise<SupportTicket> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO support_tickets (id, name, email, phone, topic, message, status, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          ticket.id,
+          ticket.name,
+          ticket.email,
+          ticket.phone || '',
+          ticket.topic || '',
+          ticket.message,
+          ticket.status || 'open',
+          ticket.createdAt || new Date().toISOString()
+        ]
+      );
+      return ticket;
+    } catch (err) {
+      console.error('mysqlAddTicket error:', err);
+    }
+  }
+  return ticket;
+}
+
+export async function mysqlUpdateTicketStatus(id: string, status: 'open' | 'in_progress' | 'resolved'): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`UPDATE support_tickets SET status = ? WHERE id = ?`, [status, id]);
+      return true;
+    } catch (err) {
+      console.error('mysqlUpdateTicketStatus error:', err);
+    }
+  }
+  return false;
+}
+
+export async function mysqlDeleteTicket(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM support_tickets WHERE id = ?`, [id]);
+      return true;
+    } catch (err) {
+      console.error('mysqlDeleteTicket error:', err);
+    }
+  }
+  return false;
+}
+
+export async function mysqlBulkDeleteTickets(ids: string[]): Promise<boolean> {
+  if (!ids || ids.length === 0) return true;
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const placeholders = ids.map(() => '?').join(',');
+      await pool.query(`DELETE FROM support_tickets WHERE id IN (${placeholders})`, ids);
+      return true;
+    } catch (err) {
+      console.error('mysqlBulkDeleteTickets error:', err);
+    }
   }
   return false;
 }
