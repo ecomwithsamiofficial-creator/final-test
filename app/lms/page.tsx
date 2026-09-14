@@ -414,7 +414,7 @@ export default function LmsClassroomPage() {
         handleImmediateForceLogout('Network connection error verifying credentials.');
       });
 
-    // 4. Fail-Safe Heartbeat (Runs every 10 seconds in the background)
+    // 4. Real-Time Security Heartbeat (Runs every 2.5 seconds across all devices)
     heartbeatInterval = setInterval(() => {
       fetch(`/api/auth/me?t=${Date.now()}`, {
         cache: 'no-store',
@@ -426,11 +426,11 @@ export default function LmsClassroomPage() {
         .then(r => r.json())
         .then(authRes => {
           if (!authRes.authenticated || !authRes.user) {
-            handleImmediateForceLogout(authRes.message || 'Your session has expired or access was revoked.');
+            handleImmediateForceLogout(authRes.message || 'Your enrollment access has been revoked or rejected by Administrator Sardar Samiullah.');
           }
         })
         .catch(() => {});
-    }, 10000);
+    }, 2500);
 
     // Fetch modules directly from DB
     fetch(`/api/lms/modules?t=${timestamp}`, {

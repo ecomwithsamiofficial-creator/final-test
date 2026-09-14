@@ -344,7 +344,7 @@ export default function AdminDashboardPage() {
   };
 
   const handleReject = async (enrollment: Enrollment) => {
-    if (!confirm(`Are you sure you want to REJECT enrollment for ${enrollment.name}?`)) return;
+    if (!confirm(`Are you sure you want to REJECT enrollment for ${enrollment.name}?\n\nThis will immediately disconnect them and revoke their LMS access across all devices.`)) return;
     setActionLoadingId(`reject-${enrollment.id}`);
     try {
       const res = await fetch('/api/admin/enrollments', {
@@ -358,15 +358,57 @@ export default function AdminDashboardPage() {
       const data = await res.json();
       if (data.success) {
         setEnrollments(prev => prev.map(e => (e.id === enrollment.id || e.trackingCode === enrollment.id) ? { ...e, status: 'rejected' } : e));
-        setToastMessage(`❌ Enrollment for ${enrollment.name} marked as Rejected.`);
+        setStudents(prev => prev.map(s => (s.email.toLowerCase() === enrollment.email.toLowerCase() || s.id === enrollment.studentId) ? { ...s, isActive: false } : s));
+        setToastMessage(`❌ ${enrollment.name} Rejected! LMS Access Blocked immediately.`);
         setTimeout(() => setToastMessage(null), 5000);
-        fetchDashboardData();
+        fetchDashboardData(true);
       } else {
         alert(data.message || 'Failed to reject enrollment');
       }
     } catch (e: any) {
       console.error(e);
       alert('Network error while rejecting');
+    } finally {
+      setActionLoadingId(null);
+    }
+  };
+
+  const handleToggleStudentActive = async (student: Student) => {
+    const newStatus = !student.isActive;
+    const actionLabel = newStatus ? 'ACTIVATE' : 'SUSPEND / REJECT';
+    if (!confirm(`Are you sure you want to ${actionLabel} student "${student.name}" (${student.email})?`)) return;
+
+    setActionLoadingId(`toggle-active-${student.id}`);
+    try {
+      const matchingEnrollment = enrollments.find(e => e.email.toLowerCase() === student.email.toLowerCase() || e.studentId === student.id);
+      const targetId = matchingEnrollment?.id || student.id;
+
+      const res = await fetch('/api/admin/enrollments', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          id: targetId,
+          status: newStatus ? 'approved' : 'rejected'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setStudents(prev => prev.map(s => s.id === student.id ? { ...s, isActive: newStatus } : s));
+        if (matchingEnrollment) {
+          setEnrollments(prev => prev.map(e => e.id === matchingEnrollment.id ? { ...e, status: newStatus ? 'approved' : 'rejected' } : e));
+        }
+        setToastMessage(newStatus 
+          ? `✅ ${student.name} is now ACTIVE (LMS Access Granted)` 
+          : `❌ ${student.name} is now SUSPENDED (LMS Access Blocked immediately)`
+        );
+        setTimeout(() => setToastMessage(null), 5000);
+        fetchDashboardData(true);
+      } else {
+        alert(data.message || 'Failed to update student status');
+      }
+    } catch (err) {
+      console.error(err);
+      alert('Network error while toggling student status');
     } finally {
       setActionLoadingId(null);
     }
@@ -1610,13 +1652,25 @@ export default function AdminDashboardPage() {
                         <td className="py-3">{s.phone}</td>
                         <td className="py-3">{s.city}</td>
                         <td className="py-3">
-                          <span
-                            className={`px-2 py-0.5 rounded-full text-[10px] font-bold ${
-                              s.isActive ? 'bg-emerald-500/10 text-emerald-400' : 'bg-red-500/10 text-red-400'
+                          <button
+                            onClick={() => handleToggleStudentActive(s)}
+                            disabled={actionLoadingId === `toggle-active-${s.id}`}
+                            className={`px-2.5 py-1 rounded-lg text-[10px] font-bold border transition-all active:scale-95 flex items-center gap-1.5 shadow-sm ${
+                              s.isActive 
+                                ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30 hover:bg-red-500/20 hover:text-red-300 hover:border-red-500/40' 
+                                : 'bg-red-500/15 text-red-400 border-red-500/30 hover:bg-emerald-500/20 hover:text-emerald-300 hover:border-emerald-500/40'
                             }`}
+                            title={s.isActive ? 'Click to Suspend Student (Kicks from LMS)' : 'Click to Activate Student (Restores LMS Access)'}
                           >
-                            {s.isActive ? 'Active' : 'Suspended'}
-                          </span>
+                            {actionLoadingId === `toggle-active-${s.id}` ? (
+                              <Loader2 size={10} className="animate-spin" />
+                            ) : s.isActive ? (
+                              <CheckCircle2 size={11} className="text-emerald-400" />
+                            ) : (
+                              <X size={11} className="text-red-400" />
+                            )}
+                            <span>{s.isActive ? 'Active (Click to Block)' : 'Blocked (Click to Activate)'}</span>
+                          </button>
                         </td>
                         <td className="py-3">
                           <div className="flex items-center gap-1.5">

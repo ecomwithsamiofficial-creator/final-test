@@ -968,60 +968,101 @@ export async function mysqlUpdateEnrollmentStatus(
   await ensureAnalyticsTables();
   const p = getMysqlPool();
   try {
+    const cleanId = (id || '').trim();
     const [rows]: any = await p.query(
-      `SELECT * FROM enrollments WHERE id = ? OR tracking_code = ? LIMIT 1`,
-      [id, id]
-    );
-    if (!Array.isArray(rows) || rows.length === 0) return null;
-    const enr = rows[0];
-
-    let pass = customPassword || enr.password;
-    if (!pass || pass === 'studentpass2026') {
-      pass = Math.floor(10000000 + Math.random() * 90000000).toString();
-    }
-
-    await p.query(
-      `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
-      [status, pass, enr.id]
+      `SELECT * FROM enrollments WHERE id = ? OR tracking_code = ? OR student_id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+      [cleanId, cleanId, cleanId, cleanId]
     );
 
-    // If approved, activate or create student in Hostinger MySQL
-    if (status === 'approved' && enr.email) {
+    if (Array.isArray(rows) && rows.length > 0) {
+      const enr = rows[0];
+
+      let pass = customPassword || enr.password;
+      if (!pass || pass === 'studentpass2026') {
+        pass = Math.floor(10000000 + Math.random() * 90000000).toString();
+      }
+
       await p.query(
-        `INSERT INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
-         VALUES (?, ?, ?, ?, ?, ?, 1, ?, '[]', NOW())
-         ON DUPLICATE KEY UPDATE is_active = 1, password = VALUES(password), updated_at = NOW()`,
-        [
-          enr.student_id || `std_${Date.now()}`,
-          enr.name,
-          enr.email,
-          enr.phone,
-          enr.city || 'Pakistan',
-          pass,
-          new Date().toISOString().split('T')[0]
-        ]
+        `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
+        [status, pass, enr.id]
       );
+
+      // If approved, activate or create student in Hostinger MySQL
+      if (status === 'approved' && enr.email) {
+        await p.query(
+          `INSERT INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
+           VALUES (?, ?, ?, ?, ?, ?, 1, ?, '[]', NOW())
+           ON DUPLICATE KEY UPDATE is_active = 1, password = VALUES(password), updated_at = NOW()`,
+          [
+            enr.student_id || `std_${Date.now()}`,
+            enr.name,
+            enr.email,
+            enr.phone,
+            enr.city || 'Pakistan',
+            pass,
+            new Date().toISOString().split('T')[0]
+          ]
+        );
+      }
+
+      // If rejected, immediately deactivate student in Hostinger MySQL so LMS kicks them out in real time
+      if (status === 'rejected' && enr.email) {
+        await p.query(
+          `UPDATE students SET is_active = 0, updated_at = NOW() WHERE LOWER(email) = LOWER(?) OR id = ?`,
+          [enr.email.trim(), enr.student_id || enr.id]
+        );
+      }
+
+      const updatedEnr: Enrollment = {
+        id: enr.id,
+        trackingCode: enr.tracking_code,
+        studentId: enr.student_id,
+        name: enr.name,
+        email: enr.email,
+        phone: enr.phone,
+        city: enr.city,
+        paymentMethod: enr.payment_method,
+        transactionId: enr.transaction_id,
+        whereHeard: enr.where_heard,
+        receiptUrl: enr.receipt_url,
+        amount: enr.amount,
+        status,
+        password: pass,
+        createdAt: enr.created_at
+      };
+
+      return { enrollment: updatedEnr, password: pass };
     }
 
-    const updatedEnr: Enrollment = {
-      id: enr.id,
-      trackingCode: enr.tracking_code,
-      studentId: enr.student_id,
-      name: enr.name,
-      email: enr.email,
-      phone: enr.phone,
-      city: enr.city,
-      paymentMethod: enr.payment_method,
-      transactionId: enr.transaction_id,
-      whereHeard: enr.where_heard,
-      receiptUrl: enr.receipt_url,
-      amount: enr.amount,
-      status,
-      password: pass,
-      createdAt: enr.created_at
-    };
-
-    return { enrollment: updatedEnr, password: pass };
+    // Direct fallback for student ID / Email if enrollment row not found
+    const [stdRows]: any = await p.query(
+      `SELECT * FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+      [cleanId, cleanId]
+    );
+    if (Array.isArray(stdRows) && stdRows.length > 0) {
+      const std = stdRows[0];
+      const newActive = status === 'approved' ? 1 : 0;
+      await p.query(
+        `UPDATE students SET is_active = ?, updated_at = NOW() WHERE id = ?`,
+        [newActive, std.id]
+      );
+      const mockEnr: Enrollment = {
+        id: `enr_${std.id}`,
+        trackingCode: `SAMI-ENR-${std.id.slice(-5)}`,
+        studentId: std.id,
+        name: std.name,
+        email: std.email,
+        phone: std.phone || '',
+        city: std.city || '',
+        paymentMethod: 'Direct',
+        transactionId: 'VERIFIED',
+        amount: 'PKR 3,799',
+        status,
+        password: std.password || 'studentpass2026',
+        createdAt: new Date().toISOString()
+      };
+      return { enrollment: mockEnr, password: std.password };
+    }
   } catch (err) {
     console.error('mysqlUpdateEnrollmentStatus error:', err);
   }
@@ -1045,195 +1086,189 @@ export async function mysqlDeleteEnrollment(id: string): Promise<boolean> {
 // =============================================================================
 
 export async function mysqlGetStudents(): Promise<Student[]> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const [rows]: any = await pool.query(
-        `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
-         FROM students 
-         ORDER BY enrolled_at DESC`
-      );
-      if (Array.isArray(rows)) {
-        return rows.map((r: any) => ({
-          id: r.id,
-          name: r.name || '',
-          email: r.email || '',
-          phone: r.phone || '',
-          city: r.city || '',
-          password: r.password || '',
-          isActive: Boolean(r.is_active),
-          enrolledAt: r.enrolled_at || '',
-          completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
-          lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
-          strikeCount: Number(r.strike_count || 0)
-        }));
-      }
-    } catch (err) {
-      console.error('mysqlGetStudents error:', err);
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const [rows]: any = await p.query(
+      `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
+       FROM students 
+       ORDER BY enrolled_at DESC`
+    );
+    if (Array.isArray(rows) && rows.length > 0) {
+      return rows.map((r: any) => ({
+        id: r.id,
+        name: r.name || '',
+        email: r.email || '',
+        phone: r.phone || '',
+        city: r.city || '',
+        password: r.password || '',
+        isActive: Boolean(r.is_active),
+        enrolledAt: r.enrolled_at || '',
+        completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
+        lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
+        strikeCount: Number(r.strike_count || 0)
+      }));
     }
+  } catch (err) {
+    console.error('mysqlGetStudents error:', err);
   }
   return initialStudents;
 }
 
 export async function mysqlGetStudentByEmail(email: string): Promise<Student | null> {
   if (!email) return null;
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const [rows]: any = await pool.query(
-        `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
-         FROM students 
-         WHERE LOWER(email) = LOWER(?) 
-         LIMIT 1`,
-        [email.trim()]
-      );
-      if (Array.isArray(rows) && rows.length > 0) {
-        const r = rows[0];
-        return {
-          id: r.id,
-          name: r.name || '',
-          email: r.email || '',
-          phone: r.phone || '',
-          city: r.city || '',
-          password: r.password || '',
-          isActive: Boolean(r.is_active),
-          enrolledAt: r.enrolled_at || '',
-          completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
-          lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
-          strikeCount: Number(r.strike_count || 0)
-        };
-      }
-    } catch (err) {
-      console.error('mysqlGetStudentByEmail error:', err);
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const [rows]: any = await p.query(
+      `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
+       FROM students 
+       WHERE LOWER(email) = LOWER(?) 
+       LIMIT 1`,
+      [email.trim()]
+    );
+    if (Array.isArray(rows) && rows.length > 0) {
+      const r = rows[0];
+      return {
+        id: r.id,
+        name: r.name || '',
+        email: r.email || '',
+        phone: r.phone || '',
+        city: r.city || '',
+        password: r.password || '',
+        isActive: Boolean(r.is_active),
+        enrolledAt: r.enrolled_at || '',
+        completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
+        lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
+        strikeCount: Number(r.strike_count || 0)
+      };
     }
+  } catch (err) {
+    console.error('mysqlGetStudentByEmail error:', err);
   }
   return null;
 }
 
 export async function mysqlAddStudent(student: Student): Promise<Student> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      await pool.query(
-        `INSERT INTO students (
-          id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        ON DUPLICATE KEY UPDATE 
-          name = VALUES(name),
-          phone = VALUES(phone),
-          city = VALUES(city),
-          password = VALUES(password),
-          is_active = VALUES(is_active),
-          completed_lessons_json = VALUES(completed_lessons_json),
-          updated_at = NOW()`,
-        [
-          student.id,
-          student.name,
-          student.email,
-          student.phone,
-          student.city || '',
-          student.password,
-          student.isActive ? 1 : 0,
-          student.enrolledAt || new Date().toISOString().split('T')[0],
-          JSON.stringify(student.completedLessons || [])
-        ]
-      );
-      return student;
-    } catch (err) {
-      console.error('mysqlAddStudent error:', err);
-    }
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    await p.query(
+      `INSERT INTO students (
+        id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+      ON DUPLICATE KEY UPDATE 
+        name = VALUES(name),
+        phone = VALUES(phone),
+        city = VALUES(city),
+        password = VALUES(password),
+        is_active = VALUES(is_active),
+        completed_lessons_json = VALUES(completed_lessons_json),
+        updated_at = NOW()`,
+      [
+        student.id,
+        student.name,
+        student.email,
+        student.phone,
+        student.city || '',
+        student.password,
+        student.isActive ? 1 : 0,
+        student.enrolledAt || new Date().toISOString().split('T')[0],
+        JSON.stringify(student.completedLessons || [])
+      ]
+    );
+    return student;
+  } catch (err) {
+    console.error('mysqlAddStudent error:', err);
   }
   return student;
 }
 
 export async function mysqlUpdateStudent(id: string, patch: Partial<Student>): Promise<Student | null> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const [rows]: any = await pool.query(`SELECT * FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`, [id, id]);
-      if (!Array.isArray(rows) || rows.length === 0) return null;
-      const current = rows[0];
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const [rows]: any = await p.query(`SELECT * FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`, [id, id]);
+    if (!Array.isArray(rows) || rows.length === 0) return null;
+    const current = rows[0];
 
-      const name = patch.name !== undefined ? patch.name : current.name;
-      const email = patch.email !== undefined ? patch.email : current.email;
-      const phone = patch.phone !== undefined ? patch.phone : current.phone;
-      const city = patch.city !== undefined ? patch.city : current.city;
-      const password = patch.password !== undefined ? patch.password : current.password;
-      const isActive = patch.isActive !== undefined ? (patch.isActive ? 1 : 0) : current.is_active;
-      const completedLessons = patch.completedLessons !== undefined ? JSON.stringify(patch.completedLessons) : current.completed_lessons_json;
-      const lastLogin = patch.lastLogin !== undefined ? patch.lastLogin : current.last_login;
-      const strikeCount = patch.strikeCount !== undefined ? patch.strikeCount : current.strike_count;
+    const name = patch.name !== undefined ? patch.name : current.name;
+    const email = patch.email !== undefined ? patch.email : current.email;
+    const phone = patch.phone !== undefined ? patch.phone : current.phone;
+    const city = patch.city !== undefined ? patch.city : current.city;
+    const password = patch.password !== undefined ? patch.password : current.password;
+    const isActive = patch.isActive !== undefined ? (patch.isActive ? 1 : 0) : current.is_active;
+    const completedLessons = patch.completedLessons !== undefined ? JSON.stringify(patch.completedLessons) : current.completed_lessons_json;
+    const lastLogin = patch.lastLogin !== undefined ? patch.lastLogin : current.last_login;
+    const strikeCount = patch.strikeCount !== undefined ? patch.strikeCount : current.strike_count;
 
-      await pool.query(
-        `UPDATE students SET 
-          name = ?, email = ?, phone = ?, city = ?, password = ?, is_active = ?, completed_lessons_json = ?, last_login = ?, strike_count = ?, updated_at = NOW()
-         WHERE id = ?`,
-        [name, email, phone, city, password, isActive, completedLessons, lastLogin, strikeCount, current.id]
-      );
+    await p.query(
+      `UPDATE students SET 
+        name = ?, email = ?, phone = ?, city = ?, password = ?, is_active = ?, completed_lessons_json = ?, last_login = ?, strike_count = ?, updated_at = NOW()
+       WHERE id = ?`,
+      [name, email, phone, city, password, isActive, completedLessons, lastLogin, strikeCount, current.id]
+    );
 
-      return {
-        id: current.id,
-        name,
-        email,
-        phone,
-        city,
-        password,
-        isActive: Boolean(isActive),
-        enrolledAt: current.enrolled_at,
-        completedLessons: typeof completedLessons === 'string' ? JSON.parse(completedLessons) : completedLessons,
-        lastLogin: lastLogin ? new Date(lastLogin).toISOString() : undefined,
-        strikeCount
-      };
-    } catch (err) {
-      console.error('mysqlUpdateStudent error:', err);
-    }
+    return {
+      id: current.id,
+      name,
+      email,
+      phone,
+      city,
+      password,
+      isActive: Boolean(isActive),
+      enrolledAt: current.enrolled_at,
+      completedLessons: typeof completedLessons === 'string' ? JSON.parse(completedLessons) : completedLessons,
+      lastLogin: lastLogin ? new Date(lastLogin).toISOString() : undefined,
+      strikeCount
+    };
+  } catch (err) {
+    console.error('mysqlUpdateStudent error:', err);
   }
   return null;
 }
 
 export async function mysqlDeleteStudent(idOrEmail: string): Promise<boolean> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      await pool.query(`DELETE FROM students WHERE id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
-      await pool.query(`DELETE FROM enrollments WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
-      return true;
-    } catch (err) {
-      console.error('mysqlDeleteStudent error:', err);
-    }
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    await p.query(`DELETE FROM students WHERE id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
+    await p.query(`DELETE FROM enrollments WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [idOrEmail, idOrEmail]);
+    return true;
+  } catch (err) {
+    console.error('mysqlDeleteStudent error:', err);
   }
   return false;
 }
 
 export async function mysqlResetStudentPassword(identifier: string, newPassword?: string): Promise<{ email: string; newPassword: string } | null> {
-  const hasTables = await ensureAnalyticsTables();
-  if (hasTables && pool) {
-    try {
-      const pass = newPassword || Math.floor(10000000 + Math.random() * 90000000).toString();
-      const [rows]: any = await pool.query(
-        `SELECT id, email FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
-        [identifier, identifier]
-      );
-      if (Array.isArray(rows) && rows.length > 0) {
-        const std = rows[0];
-        await pool.query(`UPDATE students SET password = ?, updated_at = NOW() WHERE id = ?`, [pass, std.id]);
-        await pool.query(`UPDATE enrollments SET password = ? WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [pass, std.id, std.email]);
-        return { email: std.email, newPassword: pass };
-      }
-
-      // Check enrollment if student row not yet created
-      const [enrRows]: any = await pool.query(
-        `SELECT id, email FROM enrollments WHERE id = ? OR tracking_code = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
-        [identifier, identifier, identifier]
-      );
-      if (Array.isArray(enrRows) && enrRows.length > 0) {
-        const enr = enrRows[0];
-        await pool.query(`UPDATE enrollments SET password = ? WHERE id = ?`, [pass, enr.id]);
-        return { email: enr.email, newPassword: pass };
-      }
-    } catch (err) {
-      console.error('mysqlResetStudentPassword error:', err);
+  await ensureAnalyticsTables();
+  const p = getMysqlPool();
+  try {
+    const pass = newPassword || Math.floor(10000000 + Math.random() * 90000000).toString();
+    const [rows]: any = await p.query(
+      `SELECT id, email FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+      [identifier, identifier]
+    );
+    if (Array.isArray(rows) && rows.length > 0) {
+      const std = rows[0];
+      await p.query(`UPDATE students SET password = ?, updated_at = NOW() WHERE id = ?`, [pass, std.id]);
+      await p.query(`UPDATE enrollments SET password = ? WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [pass, std.id, std.email]);
+      return { email: std.email, newPassword: pass };
     }
+
+    // Check enrollment if student row not yet created
+    const [enrRows]: any = await p.query(
+      `SELECT id, email FROM enrollments WHERE id = ? OR tracking_code = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
+      [identifier, identifier, identifier]
+    );
+    if (Array.isArray(enrRows) && enrRows.length > 0) {
+      const enr = enrRows[0];
+      await p.query(`UPDATE enrollments SET password = ? WHERE id = ?`, [pass, enr.id]);
+      return { email: enr.email, newPassword: pass };
+    }
+  } catch (err) {
+    console.error('mysqlResetStudentPassword error:', err);
   }
   return null;
 }
