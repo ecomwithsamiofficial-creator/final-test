@@ -75,7 +75,7 @@ export async function GET() {
       today: todayData,
       last30Days: last30DaysData,
       source: 'Hostinger MySQL Real-Time',
-      database: 'u787683477_ecomsaminew',
+      database: process.env.DB_NAME || process.env.DB_DATABASE || 'u787683477_ecomsamisiteh',
       lastUpdated: new Date().toISOString(),
     });
   } catch (error: any) {
