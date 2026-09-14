@@ -536,7 +536,7 @@ export default function AdminDashboardPage() {
     } catch (e) {}
   };
 
-  const handleResetPassword = async (identifier: string, name?: string) => {
+  const handleResetPassword = async (identifier: string, name?: string, email?: string) => {
     const confirmReset = confirm(
       `🔑 RESET PASSWORD:\nAre you sure you want to reset the LMS password for "${name || identifier}"?\n\nA new unique 8-digit numeric password will be generated, saved to database, and copied to your clipboard immediately.`
     );
@@ -547,18 +547,18 @@ export default function AdminDashboardPage() {
       const res = await fetch('/api/admin/enrollments', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id: identifier })
+        body: JSON.stringify({ id: identifier, email: email || '' })
       });
       const data = await res.json();
       if (data.success && data.newPassword) {
         const newPass = data.newPassword;
         setEnrollments(prev => prev.map(e => 
-          (e.id === identifier || e.trackingCode === identifier || e.email.toLowerCase() === identifier.toLowerCase() || (data.email && e.email.toLowerCase() === data.email.toLowerCase()))
+          (e.id === identifier || e.trackingCode === identifier || e.email.toLowerCase() === identifier.toLowerCase() || (data.email && e.email.toLowerCase() === data.email.toLowerCase()) || (email && e.email.toLowerCase() === email.toLowerCase()))
             ? { ...e, password: newPass }
             : e
         ));
         setStudents(prev => prev.map(s => 
-          (s.id === identifier || s.email.toLowerCase() === identifier.toLowerCase() || (data.email && s.email.toLowerCase() === data.email.toLowerCase()))
+          (s.id === identifier || s.email.toLowerCase() === identifier.toLowerCase() || (data.email && s.email.toLowerCase() === data.email.toLowerCase()) || (email && s.email.toLowerCase() === email.toLowerCase()))
             ? { ...s, password: newPass }
             : s
         ));
@@ -567,7 +567,7 @@ export default function AdminDashboardPage() {
           await navigator.clipboard.writeText(newPass);
         } catch (e) {}
 
-        setToastMessage(`🔑 New Password for ${name || data.email || 'Student'}: ${newPass} (Saved & Copied!)`);
+        setToastMessage(`🔑 New Password for ${name || data.email || email || 'Student'}: ${newPass} (Saved & Copied!)`);
         setTimeout(() => setToastMessage(null), 6000);
         return newPass;
       } else {
@@ -1301,7 +1301,7 @@ export default function AdminDashboardPage() {
                               {copiedPassId === `ov-${r.id}` ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
                             </button>
                             <button
-                              onClick={() => handleResetPassword(r.trackingCode || r.id, r.name)}
+                              onClick={() => handleResetPassword(r.trackingCode || r.id, r.name, r.email)}
                               disabled={resetLoadingId === (r.trackingCode || r.id)}
                               className="p-1 text-amber-400 hover:text-amber-300 bg-amber-500/10 rounded hover:bg-amber-500/20 transition-colors"
                               title="Reset / Generate New 8-digit Password"
@@ -1509,7 +1509,7 @@ export default function AdminDashboardPage() {
                                 {copiedPassId === `enr-${r.id}` ? <Check size={11} className="text-emerald-400" /> : <Copy size={11} />}
                               </button>
                               <button
-                                onClick={() => handleResetPassword(r.trackingCode || r.id, r.name)}
+                                onClick={() => handleResetPassword(r.trackingCode || r.id, r.name, r.email)}
                                 disabled={resetLoadingId === (r.trackingCode || r.id)}
                                 className="p-1 text-amber-400 hover:text-amber-300 bg-amber-500/10 rounded hover:bg-amber-500/20 transition-colors"
                                 title="Regenerate New 8-digit Password"
@@ -1722,7 +1722,7 @@ export default function AdminDashboardPage() {
                         <td className="py-3 text-right">
                           <div className="inline-flex items-center gap-1.5 justify-end">
                             <button
-                              onClick={() => handleResetPassword(s.id, s.name)}
+                              onClick={() => handleResetPassword(s.id, s.name, s.email)}
                               disabled={resetLoadingId === s.id}
                               className="px-2 py-1 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 rounded-lg text-[11px] font-bold flex items-center gap-1 border border-amber-500/30 transition-all active:scale-95"
                               title="Generate & Save New 8-digit Password"

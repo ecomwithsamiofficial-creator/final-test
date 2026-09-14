@@ -534,10 +534,10 @@ export async function dbUpdateEnrollmentStatus(
   }
 }
 
-export async function dbResetStudentPassword(identifier: string, newPassword?: string): Promise<{ success: boolean; email: string; newPassword: string } | null> {
+export async function dbResetStudentPassword(identifier: string, newPassword?: string, fallbackEmail?: string): Promise<{ success: boolean; email: string; newPassword: string } | null> {
   clearDatabaseCache();
   try {
-    const res = await mysqlResetStudentPassword(identifier, newPassword);
+    const res = await mysqlResetStudentPassword(identifier, newPassword, fallbackEmail);
     if (res) {
       return { success: true, email: res.email, newPassword: res.newPassword };
     }

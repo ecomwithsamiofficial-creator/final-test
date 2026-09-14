@@ -1241,32 +1241,81 @@ export async function mysqlDeleteStudent(idOrEmail: string): Promise<boolean> {
   return false;
 }
 
-export async function mysqlResetStudentPassword(identifier: string, newPassword?: string): Promise<{ email: string; newPassword: string } | null> {
+export async function mysqlResetStudentPassword(
+  identifier: string, 
+  newPassword?: string,
+  fallbackEmail?: string
+): Promise<{ email: string; newPassword: string } | null> {
   await ensureAnalyticsTables();
   const p = getMysqlPool();
   try {
     const pass = newPassword || Math.floor(10000000 + Math.random() * 90000000).toString();
-    const [rows]: any = await p.query(
-      `SELECT id, email FROM students WHERE id = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
-      [identifier, identifier]
+    const cleanIdent = String(identifier || '').trim();
+    const cleanEmail = String(fallbackEmail || '').trim().toLowerCase();
+
+    let targetEmail = cleanEmail;
+    let targetStudentId = '';
+    let studentName = '';
+    let studentPhone = '';
+    let studentCity = '';
+
+    // 1. Check students table
+    const [stdRows]: any = await p.query(
+      `SELECT id, name, email, phone, city FROM students WHERE id = ? OR LOWER(email) = LOWER(?) ${cleanEmail ? 'OR LOWER(email) = LOWER(?)' : ''} LIMIT 1`,
+      cleanEmail ? [cleanIdent, cleanIdent, cleanEmail] : [cleanIdent, cleanIdent]
     );
-    if (Array.isArray(rows) && rows.length > 0) {
-      const std = rows[0];
-      await p.query(`UPDATE students SET password = ?, updated_at = NOW() WHERE id = ?`, [pass, std.id]);
-      await p.query(`UPDATE enrollments SET password = ? WHERE student_id = ? OR LOWER(email) = LOWER(?)`, [pass, std.id, std.email]);
-      return { email: std.email, newPassword: pass };
+
+    if (Array.isArray(stdRows) && stdRows.length > 0) {
+      targetEmail = (stdRows[0].email || targetEmail).toLowerCase().trim();
+      targetStudentId = stdRows[0].id;
+      studentName = stdRows[0].name || '';
+      studentPhone = stdRows[0].phone || '';
+      studentCity = stdRows[0].city || '';
     }
 
-    // Check enrollment if student row not yet created
+    // 2. Check enrollments table
     const [enrRows]: any = await p.query(
-      `SELECT id, email FROM enrollments WHERE id = ? OR tracking_code = ? OR LOWER(email) = LOWER(?) LIMIT 1`,
-      [identifier, identifier, identifier]
+      `SELECT id, student_id, name, email, phone, city FROM enrollments WHERE id = ? OR tracking_code = ? OR LOWER(email) = LOWER(?) ${targetEmail ? 'OR LOWER(email) = LOWER(?)' : ''} LIMIT 1`,
+      targetEmail ? [cleanIdent, cleanIdent, cleanIdent, targetEmail] : [cleanIdent, cleanIdent, cleanIdent]
     );
+
     if (Array.isArray(enrRows) && enrRows.length > 0) {
-      const enr = enrRows[0];
-      await p.query(`UPDATE enrollments SET password = ? WHERE id = ?`, [pass, enr.id]);
-      return { email: enr.email, newPassword: pass };
+      if (!targetEmail) targetEmail = (enrRows[0].email || '').toLowerCase().trim();
+      if (!targetStudentId && enrRows[0].student_id) targetStudentId = enrRows[0].student_id;
+      if (!studentName) studentName = enrRows[0].name || '';
+      if (!studentPhone) studentPhone = enrRows[0].phone || '';
+      if (!studentCity) studentCity = enrRows[0].city || '';
     }
+
+    if (!targetEmail && !targetStudentId) {
+      console.warn('mysqlResetStudentPassword: no record found for', identifier, fallbackEmail);
+      return null;
+    }
+
+    // 3. Synchronize `students` table (guarantees LMS login works immediately!)
+    const [updateStdRes]: any = await p.query(
+      `UPDATE students SET password = ?, is_active = 1, updated_at = NOW() WHERE LOWER(email) = LOWER(?) OR id = ?`,
+      [pass, targetEmail, targetStudentId || 'NONE']
+    );
+
+    // If student record didn't exist in students table yet, auto-provision it
+    if (updateStdRes.affectedRows === 0 && targetEmail) {
+      const newStdId = targetStudentId || `std_${Date.now()}`;
+      await p.query(
+        `INSERT INTO students (id, name, email, phone, city, is_active, password, enrolled_at, completed_lessons_json, updated_at)
+         VALUES (?, ?, ?, ?, ?, 1, ?, NOW(), '[]', NOW())
+         ON DUPLICATE KEY UPDATE password = VALUES(password), is_active = 1, updated_at = NOW()`,
+        [newStdId, studentName || targetEmail.split('@')[0], targetEmail, studentPhone, studentCity, pass]
+      );
+    }
+
+    // 4. Synchronize `enrollments` table (guarantees Admin panel displays the new password!)
+    await p.query(
+      `UPDATE enrollments SET password = ? WHERE LOWER(email) = LOWER(?) OR student_id = ? OR id = ? OR tracking_code = ?`,
+      [pass, targetEmail, targetStudentId || 'NONE', cleanIdent, cleanIdent]
+    );
+
+    return { email: targetEmail, newPassword: pass };
   } catch (err) {
     console.error('mysqlResetStudentPassword error:', err);
   }

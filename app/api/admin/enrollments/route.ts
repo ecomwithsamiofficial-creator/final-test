@@ -86,12 +86,12 @@ export async function PUT(request: NextRequest) {
 
 export async function PATCH(request: NextRequest) {
   try {
-    const { id, password } = await request.json();
-    if (!id) {
+    const { id, password, email } = await request.json();
+    if (!id && !email) {
       return NextResponse.json({ success: false, message: 'Missing student or enrollment identifier' }, { status: 400, headers: NO_CACHE_HEADERS });
     }
 
-    const result = await dbResetStudentPassword(id, password);
+    const result = await dbResetStudentPassword(id || email, password, email);
     if (!result) {
       return NextResponse.json({ success: false, message: 'Student / enrollment record not found' }, { status: 404, headers: NO_CACHE_HEADERS });
     }
