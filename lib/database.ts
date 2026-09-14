@@ -429,6 +429,66 @@ export async function dbDeleteStudent(idOrEmail: string): Promise<boolean> {
   }
 }
 
+export async function dbRecordStudentStrike(
+  studentId: string, 
+  violationType = 'CAPTURE_ATTEMPT'
+): Promise<{ strikeCount: number; isBlocked: boolean; student: Student | null }> {
+  clearDatabaseCache();
+  const students = await dbGetStudents(true);
+  const target = students.find(s => String(s.id) === String(studentId) || s.email.toLowerCase() === studentId.toLowerCase());
+  if (!target) {
+    return { strikeCount: 1, isBlocked: false, student: null };
+  }
+
+  const currentStrikes = Number(target.strikeCount || 0);
+  const newStrikes = currentStrikes + 1;
+  const isBlocked = newStrikes >= 5;
+
+  const updated: Student = {
+    ...target,
+    strikeCount: newStrikes,
+    isActive: isBlocked ? false : target.isActive
+  };
+
+  try {
+    await mysqlUpdateStudent(target.id, {
+      strikeCount: newStrikes,
+      isActive: updated.isActive
+    });
+  } catch (e) {
+    console.error('Hostinger MySQL record strike error:', e);
+  }
+
+  return { strikeCount: newStrikes, isBlocked, student: updated };
+}
+
+export async function dbResetStudentStrikes(
+  studentId: string, 
+  reactivate = true
+): Promise<{ success: boolean; student: Student | null }> {
+  clearDatabaseCache();
+  const students = await dbGetStudents(true);
+  const target = students.find(s => String(s.id) === String(studentId) || s.email.toLowerCase() === studentId.toLowerCase());
+  if (!target) return { success: false, student: null };
+
+  const updated: Student = {
+    ...target,
+    strikeCount: 0,
+    isActive: reactivate ? true : target.isActive
+  };
+
+  try {
+    await mysqlUpdateStudent(target.id, {
+      strikeCount: 0,
+      isActive: updated.isActive
+    });
+  } catch (e) {
+    console.error('Hostinger MySQL reset strikes error:', e);
+  }
+
+  return { success: true, student: updated };
+}
+
 // -----------------------------------------------------------------------------
 // 5. ENROLLMENTS (100% NATIVE HOSTINGER MYSQL)
 // -----------------------------------------------------------------------------

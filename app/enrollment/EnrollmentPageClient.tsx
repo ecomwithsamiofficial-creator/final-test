@@ -143,43 +143,6 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }:
           }
         }
       } catch (e) {}
-
-      // 3. Direct Supabase Cloud Fetch fallback
-      if (supabase) {
-        try {
-          const { data, error } = await supabase
-            .from('cms_settings')
-            .select('value_json')
-            .eq('key', 'main_cms')
-            .maybeSingle();
-
-          if (!error && data && data.value_json) {
-            const parsed = typeof data.value_json === 'string' ? JSON.parse(data.value_json) : data.value_json;
-            if (parsed && parsed.checkout_page) {
-              setCheckoutContent(parsed.checkout_page);
-              try {
-                localStorage.setItem('sami_cms_checkout_page', JSON.stringify(parsed.checkout_page));
-              } catch (e) {}
-            }
-            if (parsed && parsed.screenshot_reviews) {
-              setScreenshotReviews(parsed.screenshot_reviews);
-            }
-            if (parsed && Array.isArray(parsed.payment_methods)) {
-              const methods = parsed.payment_methods;
-              setPaymentMethods(methods.map((pm: any) => ({
-                ...pm,
-                themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                  : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-                  : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-              })));
-              try {
-                localStorage.setItem('sami_cms_payment_methods', JSON.stringify(methods));
-              } catch (e) {}
-            }
-          }
-        } catch (e) {}
-      }
     };
 
     syncData();
