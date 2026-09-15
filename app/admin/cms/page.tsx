@@ -63,7 +63,20 @@ export default function AdminCmsPage() {
   const [activeTab, setActiveTab] = useState<
     'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page'
   >('hero');
-  const [cmsData, setCmsData] = useState<CmsContentSchema>(defaultCmsContent);
+  const [cmsData, setCmsData] = useState<CmsContentSchema>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('sami_cms_content');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object') {
+            return { ...defaultCmsContent, ...parsed };
+          }
+        }
+      } catch (e) {}
+    }
+    return defaultCmsContent;
+  });
   const [openHomeModIndex, setOpenHomeModIndex] = useState<number | null>(0);
   const [newTopicInputs, setNewTopicInputs] = useState<{ [modIdx: number]: string }>({});
   const [modules, setModules] = useState<Module[]>(initialModules);
@@ -248,10 +261,6 @@ export default function AdminCmsPage() {
   };
 
   const fetchAllData = async () => {
-    try {
-      localStorage.removeItem('sami_cms_content');
-    } catch (e) {}
-
     const cacheBuster = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
     let cmsLoadedFromApi = false;
     let suppliersLoadedFromApi = false;
@@ -267,6 +276,9 @@ export default function AdminCmsPage() {
         if (data.success && data.content) {
           cmsLoadedFromApi = true;
           setCmsData(data.content);
+          try {
+            localStorage.setItem('sami_cms_content', JSON.stringify(data.content));
+          } catch (e) {}
           const t = data.content.theme;
           const p = t?.active_preset || t?.active_theme || 'default';
           const c: ThemeCustomColors = { ...DEFAULT_THEME_COLORS, ...(t?.custom_colors || {}) };
@@ -368,6 +380,16 @@ export default function AdminCmsPage() {
   };
 
   useEffect(() => {
+    try {
+      const cached = localStorage.getItem('sami_cms_content');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        if (parsed && typeof parsed === 'object') {
+          setCmsData(prev => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch (e) {}
+
     fetch('/api/auth/me?t=' + Date.now())
       .then(res => res.json())
       .then(data => {
