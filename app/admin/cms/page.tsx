@@ -253,8 +253,10 @@ export default function AdminCmsPage() {
     } catch (e) {}
 
     const cacheBuster = `${Date.now()}_${Math.random().toString(36).substring(2, 8)}`;
+    let cmsLoadedFromApi = false;
+    let suppliersLoadedFromApi = false;
 
-    // 1. Try local API route for CMS content
+    // 1. Try local API route for CMS content (Hostinger MySQL)
     try {
       const res = await fetch(`/api/cms/content?_nocache=${cacheBuster}`, {
         cache: 'no-store',
@@ -263,6 +265,7 @@ export default function AdminCmsPage() {
       if (res.ok) {
         const data = await res.json();
         if (data.success && data.content) {
+          cmsLoadedFromApi = true;
           setCmsData(data.content);
           const t = data.content.theme;
           const p = t?.active_preset || t?.active_theme || 'default';
@@ -298,7 +301,7 @@ export default function AdminCmsPage() {
       }
     } catch (err) {}
 
-    // 3. Fetch Suppliers from API
+    // 3. Fetch Suppliers from API (Hostinger MySQL)
     try {
       const supRes = await fetch(`/api/lms/suppliers?_nocache=${cacheBuster}`, {
         cache: 'no-store',
@@ -308,12 +311,13 @@ export default function AdminCmsPage() {
         const supData = await supRes.json();
         if (supData.success && Array.isArray(supData.suppliers) && supData.suppliers.length > 0) {
           setSuppliers(supData.suppliers);
+          suppliersLoadedFromApi = true;
         }
       }
     } catch (err) {}
 
-    // 4. Direct Supabase Cloud Fetch (CMS Settings Mirror)
-    if (supabase) {
+    // 4. Direct Supabase Cloud Fetch (CMS Settings Mirror fallback ONLY if MySQL API did not load)
+    if (supabase && !cmsLoadedFromApi) {
       try {
         const { data, error } = await supabase.from('cms_settings').select('value_json').eq('key', 'main_cms').maybeSingle();
         if (!error && data && data.value_json) {
@@ -339,8 +343,9 @@ export default function AdminCmsPage() {
           }
         }
       } catch (e) {}
+    }
 
-
+    if (supabase && !suppliersLoadedFromApi) {
       try {
         const { data: supData } = await supabase.from('lms_suppliers').select('*').order('updated_at', { ascending: false });
         if (supData && supData.length > 0) {

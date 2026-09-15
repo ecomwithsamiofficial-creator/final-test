@@ -277,10 +277,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       }
     };
 
-    // Only run network fetch on mount if SSR did not supply initialContent
-    if (!initialContent) {
-      syncData();
-    }
+    // Always run network fetch on mount to guarantee latest database content
+    syncData();
 
     window.addEventListener('sami_cms_updated', syncData);
     window.addEventListener('storage', syncData);

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Navbar, Footer, TopMarquee } from '@/components/layout';
 import { HomepageProofWall } from '@/components/landing';
 import { ArrowRight } from 'lucide-react';
-import { defaultCmsContent, CmsContentSchema } from '@/utils/cmsStore';
+import { defaultCmsContent, CmsContentSchema, updateCmsContent } from '@/utils/cmsStore';
 
 interface SuccessPageClientProps {
   initialContent?: CmsContentSchema;
@@ -26,12 +26,14 @@ export function SuccessPageClient({ initialContent }: SuccessPageClientProps) {
         if (res.ok) {
           const data = await res.json();
           if (data?.sections) {
+            updateCmsContent(data.sections);
             setContent((prev) => ({ ...prev, ...data.sections }));
           }
         }
       } catch (e) {}
     };
 
+    fetchContent();
     window.addEventListener('sami_cms_updated', fetchContent);
     return () => window.removeEventListener('sami_cms_updated', fetchContent);
   }, [initialContent]);

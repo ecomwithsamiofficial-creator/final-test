@@ -158,7 +158,25 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
           highlight_tag: parsed.signature_framework?.highlight_tag ?? defaultCmsContent.signature_framework?.highlight_tag ?? '',
           cta_text: parsed.signature_framework?.cta_text ?? defaultCmsContent.signature_framework?.cta_text ?? ''
         }
-      : defaultCmsContent.signature_framework
+      : defaultCmsContent.signature_framework,
+    pixels: parsed.pixels !== undefined
+      ? {
+          ...defaultCmsContent.pixels,
+          ...parsed.pixels
+        }
+      : defaultCmsContent.pixels,
+    about_page: parsed.about_page !== undefined
+      ? {
+          ...defaultCmsContent.about_page,
+          ...parsed.about_page,
+          benefits: Array.isArray(parsed.about_page?.benefits)
+            ? parsed.about_page.benefits
+            : (defaultCmsContent.about_page?.benefits || []),
+          why_learn_cards: Array.isArray(parsed.about_page?.why_learn_cards)
+            ? parsed.about_page.why_learn_cards
+            : (defaultCmsContent.about_page?.why_learn_cards || [])
+        }
+      : defaultCmsContent.about_page
   };
 }
 
@@ -207,6 +225,7 @@ export async function dbSaveCmsSettings(patch: Partial<CmsContentSchema>): Promi
     homepage_curriculum: patch.homepage_curriculum !== undefined ? patch.homepage_curriculum : existing.homepage_curriculum,
     why_different: patch.why_different !== undefined ? patch.why_different : existing.why_different,
     signature_framework: patch.signature_framework !== undefined ? patch.signature_framework : existing.signature_framework,
+    about_page: patch.about_page !== undefined ? patch.about_page : existing.about_page,
     theme: patch.theme !== undefined 
       ? { 
           ...(existing.theme || defaultCmsContent.theme), 

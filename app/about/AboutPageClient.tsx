@@ -17,7 +17,7 @@ import {
   Phone
 } from 'lucide-react';
 import { useContactConfig } from '@/utils/contactConfig';
-import { defaultCmsContent, CmsContentSchema } from '@/utils/cmsStore';
+import { defaultCmsContent, CmsContentSchema, updateCmsContent } from '@/utils/cmsStore';
 
 interface AboutPageClientProps {
   initialContent?: CmsContentSchema;
@@ -46,6 +46,7 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
         if (res.ok) {
           const data = await res.json();
           if (data.success && data.sections) {
+            updateCmsContent(data.sections);
             if (data.sections.mentor) {
               setMentor({ ...defaultCmsContent.mentor, ...data.sections.mentor });
             }
@@ -57,6 +58,7 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
       } catch (e) {}
     };
 
+    fetchContent();
     window.addEventListener('sami_cms_updated', fetchContent);
     return () => window.removeEventListener('sami_cms_updated', fetchContent);
   }, [initialContent]);
