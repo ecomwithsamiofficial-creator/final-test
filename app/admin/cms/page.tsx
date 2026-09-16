@@ -60,6 +60,7 @@ import { optimizeVideoTo720p } from '@/utils/videoCompressor';
 export default function AdminCmsPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState(true);
+  const [isPageReady, setIsPageReady] = useState(false);
   const [activeTab, setActiveTab] = useState<
     'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page'
   >('hero');
@@ -299,6 +300,9 @@ export default function AdminCmsPage() {
       }
     } catch (err) {}
 
+    setIsPageReady(true);
+    setAuthChecking(false);
+
     // 2. Fetch LMS Modules from Hostinger MySQL API
     try {
       const modRes = await fetch(`/api/lms/modules?_nocache=${cacheBuster}`, {
@@ -396,7 +400,6 @@ export default function AdminCmsPage() {
         if (!data.authenticated || data.role !== 'ADMIN') {
           router.replace('/admin/login?redirect=/admin/cms');
         } else {
-          setAuthChecking(false);
           fetchAllData();
         }
       })
@@ -1499,6 +1502,17 @@ export default function AdminCmsPage() {
       };
     });
   };
+
+  if (!isPageReady) {
+    return (
+      <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col items-center justify-center font-sans selection:bg-[#00A0DF] selection:text-white">
+        <div className="flex flex-col items-center gap-3">
+          <div className="w-8 h-8 border-2 border-[#00A0DF] border-t-transparent rounded-full animate-spin" />
+          <p className="text-xs font-bold text-slate-400 tracking-wider uppercase">Loading CMS &amp; Live Settings...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#0B0F19] text-white pb-20 font-sans selection:bg-[#00A0DF] selection:text-white">
