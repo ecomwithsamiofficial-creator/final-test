@@ -1041,15 +1041,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               
               {/* Mentor Avatar */}
               <div className="lg:col-span-5 flex flex-col items-center text-center">
-                <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-3xl bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 shadow-2xl mb-4 animate-float overflow-hidden">
-                  <Image
+                <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 animate-float overflow-hidden flex items-center justify-center">
+                  <img
                     src={mentor.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'}
-                    alt={mentor.name || 'Mentor Muhammad Sami'}
-                    width={224}
-                    height={224}
-                    className="w-full h-full rounded-2xl object-cover"
-                    priority
-                    unoptimized={Boolean(mentor.image && (mentor.image.startsWith('http') || mentor.image.startsWith('data:')))}
+                    alt={mentor.name || 'Mentor Samiullah'}
+                    className="w-full h-full rounded-full object-cover"
+                    onError={(e) => {
+                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                    }}
                   />
                 </div>
                 <span className="inline-flex items-center gap-1.5 bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
