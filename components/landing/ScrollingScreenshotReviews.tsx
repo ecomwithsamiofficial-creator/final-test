@@ -75,13 +75,13 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
     col2Images.push(...col1Images);
   }
 
-  // Multiply items safely so height fills the container without any gaps
+  // Multiply items safely so height fills the container without any gaps on any device
   let baseCol1: string[] = [];
-  while (baseCol1.length < 6 && col1Images.length > 0) {
+  while (baseCol1.length < 10 && col1Images.length > 0) {
     baseCol1 = baseCol1.concat(col1Images);
   }
   let baseCol2: string[] = [];
-  while (baseCol2.length < 6 && col2Images.length > 0) {
+  while (baseCol2.length < 10 && col2Images.length > 0) {
     baseCol2 = baseCol2.concat(col2Images);
   }
 
@@ -120,7 +120,7 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
           {/* 2-Column Marquee Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 h-full">
             
-            {/* Column 1 (Scrolling Upwards Speed A) */}
+            {/* Column 1 (Scrolling Upwards Speed A - 75s Slow & Smooth) */}
             <div className="overflow-hidden relative h-full">
               <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col1">
                 {loopCol1.map((src, i) => (
@@ -139,7 +139,7 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
                     <img
                       src={src}
                       alt="Student Result Review"
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                       onError={(e) => {
                         (e.target as HTMLElement).style.display = 'none';
@@ -155,7 +155,7 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
               </div>
             </div>
 
-            {/* Column 2 (Scrolling Upwards Speed B - Parallax) */}
+            {/* Column 2 (Scrolling Upwards Speed B - 65s Parallax) */}
             <div className="overflow-hidden relative h-full">
               <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col2">
                 {loopCol2.map((src, i) => (
@@ -174,7 +174,7 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
                     <img
                       src={src}
                       alt="Student Result Review"
-                      loading="lazy"
+                      loading="eager"
                       decoding="async"
                       onError={(e) => {
                         (e.target as HTMLElement).style.display = 'none';

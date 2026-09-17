@@ -788,28 +788,53 @@ input[type="submit"] {
   }
 }
 
+/* ========================================================================= */
+/* ULTRA SMOOTH REVIEWS ANIMATIONS (SAFARI & IOS HARDWARE ACCELERATED)       */
+/* ========================================================================= */
+
 @-webkit-keyframes scrollReviewsUp {
   0% {
-    -webkit-transform: translateY(0);
-    transform: translateY(0);
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
   }
   100% {
-    -webkit-transform: translateY(-50%);
-    transform: translateY(-50%);
+    -webkit-transform: translate3d(0, -50%, 0);
+    transform: translate3d(0, -50%, 0);
+  }
+}
+
+@keyframes scrollReviewsUp {
+  0% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    -webkit-transform: translate3d(0, -50%, 0);
+    transform: translate3d(0, -50%, 0);
   }
 }
 
 .animate-scroll-vertical-col1 {
-  animation: scrollReviewsUp 38s linear infinite;
-  -webkit-animation: scrollReviewsUp 38s linear infinite;
+  animation: scrollReviewsUp 75s linear infinite;
+  -webkit-animation: scrollReviewsUp 75s linear infinite;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
 }
 
 .animate-scroll-vertical-col2 {
-  animation: scrollReviewsUp 30s linear infinite;
-  -webkit-animation: scrollReviewsUp 30s linear infinite;
+  animation: scrollReviewsUp 65s linear infinite;
+  -webkit-animation: scrollReviewsUp 65s linear infinite;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
 }
 
-/* Desktop-only hover pause for checkout reviews (Prevents mobile/iPhone Safari touch from sticking paused) */
+/* Desktop-only hover pause for checkout reviews */
 @media (hover: hover) and (pointer: fine) {
   .animate-scroll-vertical-col1:hover,
   .animate-scroll-vertical-col2:hover,
@@ -819,15 +844,48 @@ input[type="submit"] {
   }
 }
 
-/* Homepage & Success Stories Proof Wall: Dedicated Slow Continuous Infinite Scroll (No Pause, Cross-Platform Safe) */
-.animate-proofwall-col1 {
-  animation: scrollReviewsUp 75s linear infinite;
-  -webkit-animation: scrollReviewsUp 75s linear infinite;
+/* ========================================================================= */
+/* HOMEPAGE HORIZONTAL CONTINUOUS REVIEWS STREAM (X-AXIS RIGHT TO LEFT)       */
+/* ========================================================================= */
+
+@-webkit-keyframes scrollReviewsLeft {
+  0% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    -webkit-transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
-.animate-proofwall-col2 {
-  animation: scrollReviewsUp 65s linear infinite;
-  -webkit-animation: scrollReviewsUp 65s linear infinite;
+@keyframes scrollReviewsLeft {
+  0% {
+    -webkit-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+  }
+  100% {
+    -webkit-transform: translate3d(-50%, 0, 0);
+    transform: translate3d(-50%, 0, 0);
+  }
 }
 
-/* Test redeploy */
+.animate-scroll-horizontal-proof {
+  display: flex;
+  width: max-content;
+  animation: scrollReviewsLeft 60s linear infinite;
+  -webkit-animation: scrollReviewsLeft 60s linear infinite;
+  will-change: transform;
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-perspective: 1000;
+  perspective: 1000;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .animate-scroll-horizontal-proof:hover,
+  .group-proof-hover:hover .animate-scroll-horizontal-proof {
+    animation-play-state: paused;
+  }
+}
+

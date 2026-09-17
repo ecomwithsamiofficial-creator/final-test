@@ -31,7 +31,9 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
     subtitle: 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.',
     images: [
       'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp'
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
+      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
     ]
   };
 
@@ -46,55 +48,30 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
         ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
         : [
             'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp'
+            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
+            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
+            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
           ]);
 
-  // Split images into two columns for natural vertical parallax
-  const col1Images: string[] = [];
-  const col2Images: string[] = [];
-
-  rawImages.forEach((img, idx) => {
-    if (idx % 2 === 0) {
-      col1Images.push(img);
-    } else {
-      col2Images.push(img);
-    }
-  });
-
-  // If one column is empty (e.g. only 1 image provided), share evenly
-  if (col1Images.length === 0 && col2Images.length > 0) {
-    col1Images.push(...col2Images);
-  } else if (col2Images.length === 0 && col1Images.length > 0) {
-    col2Images.push(...col1Images);
+  // Multiply items safely so horizontal stream fills all desktop & mobile viewports seamlessly
+  let baseList: string[] = [...rawImages];
+  while (baseList.length < 8 && rawImages.length > 0) {
+    baseList = baseList.concat(rawImages);
   }
 
-  // Cap unique items per column to 4 (duplicated once = 8 items total)
-  // With cards at ~240px, total height is ~2,050px — perfectly filling viewport and well under iOS Safari's 4,096px GPU limit
-  const col1Slice = col1Images.slice(0, 4);
-  const col2Slice = col2Images.slice(0, 4);
-
-  let baseCol1: string[] = [...col1Slice];
-  while (baseCol1.length < 4 && col1Slice.length > 0) {
-    baseCol1 = baseCol1.concat(col1Slice);
-  }
-  let baseCol2: string[] = [...col2Slice];
-  while (baseCol2.length < 4 && col2Slice.length > 0) {
-    baseCol2 = baseCol2.concat(col2Slice);
-  }
-
-  const loopCol1 = [...baseCol1, ...baseCol1];
-  const loopCol2 = [...baseCol2, ...baseCol2];
+  // Exactly two sets for continuous 50% translateX loop
+  const loopImages = [...baseList, ...baseList];
 
   return (
-    <div className="w-full">
+    <div className="w-full py-6 sm:py-10">
       {/* Header Section */}
-      <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12">
+      <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 px-4">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00A0DF]/10 border border-[#00A0DF]/30 text-[#00A0DF] text-xs font-black uppercase tracking-wider mb-3 shadow-xs">
           <Sparkles size={14} className="animate-pulse" />
           <span>{badge}</span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-3">
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
           {title.includes('Success') ? (
             <>
               {title.split('Success')[0]}
@@ -106,69 +83,39 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
           )}
         </h2>
 
-        <p className="text-xs sm:text-sm md:text-base text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
           {subtitle}
         </p>
       </div>
 
-      {/* Viewport Frame: 100% Non-clickable, Pure Display, Touch-Safe for iPhone Safari & All Devices */}
-      <div className="relative h-[640px] xs:h-[720px] sm:h-[800px] w-full max-w-3xl mx-auto overflow-hidden rounded-3xl border border-white/10 bg-[#070B14]/80 shadow-2xl pointer-events-none select-none">
+      {/* Horizontal Continuous Stream Frame: 100% Non-Clickable, Ultra-Smooth on iPhone Safari & Android */}
+      <div className="relative w-full overflow-hidden select-none pointer-events-none group-proof-hover">
         
-        {/* Top Soft Gradient Fade Mask */}
-        <div className="absolute top-0 inset-x-0 h-20 sm:h-28 bg-gradient-to-b from-[#070B14] via-[#070B14]/80 to-transparent z-20 pointer-events-none" />
+        {/* Left Soft Fade Mask */}
+        <div className="absolute left-0 inset-y-0 w-16 sm:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-20 pointer-events-none" />
         
-        {/* Bottom Soft Gradient Fade Mask */}
-        <div className="absolute bottom-0 inset-x-0 h-20 sm:h-28 bg-gradient-to-t from-[#070B14] via-[#070B14]/80 to-transparent z-20 pointer-events-none" />
+        {/* Right Soft Fade Mask */}
+        <div className="absolute right-0 inset-y-0 w-16 sm:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-20 pointer-events-none" />
 
-        {/* 2-Column Continuous Infinite Vertical Marquee */}
-        <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 h-full pointer-events-none">
-          
-          {/* Column 1 (Slow Continuous Infinite Vertical Scroll 75s - 100% Full-Size Uncropped) */}
-          <div className="overflow-hidden relative h-full">
-            <div className="flex flex-col gap-3 sm:gap-4 animate-proofwall-col1">
-              {loopCol1.map((src, i) => (
-                <div
-                  key={`home-col1-${i}`}
-                  className="relative w-full rounded-2xl overflow-hidden border border-white/10 bg-[#111827] shadow-lg flex-shrink-0"
-                >
-                  <img
-                    src={src}
-                    alt="Student Result Review"
-                    loading="eager"
-                    decoding="auto"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                    className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
-                  />
-                </div>
-              ))}
+        {/* Horizontal Marquee Track */}
+        <div className="animate-scroll-horizontal-proof flex gap-4 sm:gap-6 py-4 px-2">
+          {loopImages.map((src, idx) => (
+            <div
+              key={`hproof-${idx}`}
+              className="relative w-[240px] xs:w-[270px] sm:w-[310px] md:w-[340px] h-[340px] xs:h-[380px] sm:h-[430px] md:h-[460px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-[#111827] shadow-2xl shadow-black/60"
+            >
+              <img
+                src={src}
+                alt="Student WhatsApp & Store Result Review"
+                loading="eager"
+                decoding="async"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+                className="w-full h-full object-cover block pointer-events-none"
+              />
             </div>
-          </div>
-
-          {/* Column 2 (Slow Continuous Infinite Vertical Scroll 65s - 100% Full-Size Uncropped Parallax) */}
-          <div className="overflow-hidden relative h-full">
-            <div className="flex flex-col gap-3 sm:gap-4 animate-proofwall-col2">
-              {loopCol2.map((src, i) => (
-                <div
-                  key={`home-col2-${i}`}
-                  className="relative w-full rounded-2xl overflow-hidden border border-white/10 bg-[#111827] shadow-lg flex-shrink-0"
-                >
-                  <img
-                    src={src}
-                    alt="Student Result Review"
-                    loading="eager"
-                    decoding="auto"
-                    onError={(e) => {
-                      (e.target as HTMLElement).style.display = 'none';
-                    }}
-                    className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
-                  />
-                </div>
-              ))}
-            </div>
-          </div>
-
+          ))}
         </div>
       </div>
     </div>
@@ -176,5 +123,3 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
 }
 
 export default HomepageProofWall;
-
-
