@@ -26,7 +26,26 @@ export async function POST(request: NextRequest) {
     const cleanId = `mentor_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
     const contentType = file.type || 'image/jpeg';
 
-    // 1. Upload to Supabase Storage (Persistent Cloud Storage)
+    // 1. Direct Local Hostinger SSD Storage (Primary)
+    try {
+      const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads', 'mentor');
+      if (!fs.existsSync(publicUploadsDir)) {
+        fs.mkdirSync(publicUploadsDir, { recursive: true });
+      }
+
+      const filePath = path.join(publicUploadsDir, cleanId);
+      fs.writeFileSync(filePath, buffer);
+
+      return NextResponse.json({
+        success: true,
+        url: `/uploads/mentor/${cleanId}`,
+        filename: cleanId
+      });
+    } catch (localErr: any) {
+      console.warn('Local mentor file upload error:', localErr?.message);
+    }
+
+    // 2. Fallback to Supabase Storage if configured
     if (supabase) {
       try {
         const storagePath = `mentor/${cleanId}`;
@@ -53,25 +72,6 @@ export async function POST(request: NextRequest) {
       } catch (cloudErr: any) {
         console.warn('Supabase cloud storage mentor upload fallback:', cloudErr?.message);
       }
-    }
-
-    // 2. Local fallback storage
-    try {
-      const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads', 'mentor');
-      if (!fs.existsSync(publicUploadsDir)) {
-        fs.mkdirSync(publicUploadsDir, { recursive: true });
-      }
-
-      const filePath = path.join(publicUploadsDir, cleanId);
-      fs.writeFileSync(filePath, buffer);
-
-      return NextResponse.json({
-        success: true,
-        url: `/uploads/mentor/${cleanId}`,
-        filename: cleanId
-      });
-    } catch (localErr: any) {
-      console.warn('Local mentor file upload error:', localErr?.message);
     }
 
     // 3. Base64 inline fallback if both cloud and local writes fail

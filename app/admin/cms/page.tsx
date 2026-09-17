@@ -1411,6 +1411,23 @@ export default function AdminCmsPage() {
     }
   };
 
+  // --- AUTOMATIC IMGBB / EXTERNAL VIEWER LINK RESOLVER ---
+  const autoResolveImgBbUrl = async (rawUrl: string, applyFn: (resolvedUrl: string) => void) => {
+    const trimmed = rawUrl.trim();
+    if (!trimmed) return;
+    if (trimmed.includes('ibb.co/') && !trimmed.includes('i.ibb.co/')) {
+      try {
+        const res = await fetch(`/api/utils/resolve-image?url=${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const json = await res.json();
+          if (json.success && json.directUrl) {
+            applyFn(json.directUrl);
+          }
+        }
+      } catch (e) {}
+    }
+  };
+
   // --- MENTOR PROFILE ACTIONS ---
   const handleMentorImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -3252,30 +3269,93 @@ export default function AdminCmsPage() {
                   </p>
                 </div>
 
+                {/* Direct Upload to Hostinger SSD from Laptop */}
+                <div className="w-full space-y-2 pt-3 border-t border-white/10 text-left">
+                  <div className="flex items-center justify-between">
+                    <label className="block text-xs font-bold text-white">
+                      Upload Photo from Laptop
+                    </label>
+                    <span className="text-[10px] text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full font-bold">
+                      Hostinger Direct Storage
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400">
+                    Select photo from your laptop. It will be uploaded and hosted directly on your Hostinger server.
+                  </p>
+
+                  <div className="relative border-2 border-dashed border-[#00A0DF]/30 hover:border-[#00A0DF] bg-[#0B0F19] rounded-2xl p-4 text-center transition-all group cursor-pointer">
+                    <input
+                      ref={mentorFileInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/jpg"
+                      onChange={handleMentorImageUpload}
+                      disabled={mentorUploading}
+                      className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                    />
+                    <div className="flex flex-col items-center gap-1.5 pointer-events-none">
+                      <div className="w-10 h-10 rounded-xl bg-[#00A0DF]/15 text-[#00A0DF] flex items-center justify-center group-hover:scale-110 transition-transform">
+                        {mentorUploading ? (
+                          <Loader2 size={20} className="animate-spin text-[#00A0DF]" />
+                        ) : (
+                          <UploadCloud size={20} />
+                        )}
+                      </div>
+                      <div className="text-xs font-bold text-white">
+                        {mentorUploading ? mentorUploadStatus : 'Click to select photo from your computer'}
+                      </div>
+                      <div className="text-[10px] text-slate-400">
+                        Supports PNG, JPG, WebP
+                      </div>
+                    </div>
+                  </div>
+
+                  {mentorUploadError && (
+                    <div className="p-2.5 rounded-xl bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-bold">
+                      ⚠️ {mentorUploadError}
+                    </div>
+                  )}
+
+                  {mentorUploadStatus && !mentorUploading && (
+                    <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-1.5">
+                      <CheckCircle2 size={15} />
+                      <span>{mentorUploadStatus}</span>
+                    </div>
+                  )}
+                </div>
+
                 {/* External Image URL Controls */}
                 <div className="w-full space-y-3 pt-3 border-t border-white/10 text-left">
                   <div>
                     <label className="block text-xs font-bold text-white mb-1">
-                      Mentor Picture URL (Cloud CDN / External Link)
+                      Or Image URL (Hostinger / ImgBB / External Link)
                     </label>
                     <p className="text-[11px] text-slate-400 mb-2">
-                      Paste direct link from Imgur, Cloudinary, PostImages, AWS S3, Google Drive, or any image CDN.
+                      Paste direct link or ImgBB link (automatically converted to direct image).
                     </p>
                     <input
                       type="text"
-                      placeholder="e.g. https://images.unsplash.com/... or https://i.imgur.com/..."
+                      placeholder="e.g. /uploads/mentor/... or https://i.ibb.co/..."
                       value={cmsData.mentor?.image ?? ''}
-                      onChange={(e) => setCmsData({
-                        ...cmsData,
-                        mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: e.target.value }
-                      })}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setCmsData({
+                          ...cmsData,
+                          mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: val }
+                        });
+                        autoResolveImgBbUrl(val, (resolved) => {
+                          setCmsData(prev => ({
+                            ...prev,
+                            mentor: { ...(prev.mentor || defaultCmsContent.mentor), image: resolved }
+                          }));
+                        });
+                      }}
                       className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
                     />
                   </div>
 
-                  <div className="p-2.5 rounded-xl bg-blue-500/10 border border-blue-500/20 text-[11px] text-blue-300 flex items-start gap-2">
-                    <Sparkles size={14} className="text-[#00A0DF] flex-shrink-0 mt-0.5" />
-                    <span>External image URLs load instantly via CDN without using any Vercel or host disk space.</span>
+                  <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-[11px] text-emerald-300 flex items-start gap-2">
+                    <Sparkles size={14} className="text-emerald-400 flex-shrink-0 mt-0.5" />
+                    <span>Images hosted directly on Hostinger load ultra-fast with unlimited bandwidth.</span>
                   </div>
 
                   {/* Reset to Default Image */}
@@ -4931,9 +5011,13 @@ export default function AdminCmsPage() {
                     <div className="mt-3 flex items-center gap-2">
                       <input
                         type="text"
-                        placeholder="Or paste direct image URL (https://...)"
+                        placeholder="Or paste direct image URL (https://... or /uploads/...)"
                         value={newScreenshotUrl}
-                        onChange={(e) => setNewScreenshotUrl(e.target.value)}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setNewScreenshotUrl(val);
+                          autoResolveImgBbUrl(val, (resolved) => setNewScreenshotUrl(resolved));
+                        }}
                         className="flex-1 px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
                       />
                       <button
@@ -5268,9 +5352,13 @@ export default function AdminCmsPage() {
                     <Link2 size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-500" />
                     <input
                       type="url"
-                      placeholder="https://.../screenshot.jpg or https://images.unsplash.com/..."
+                      placeholder="https://.../screenshot.jpg or /uploads/..."
                       value={newHomeProofUrl}
-                      onChange={(e) => setNewHomeProofUrl(e.target.value)}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setNewHomeProofUrl(val);
+                        autoResolveImgBbUrl(val, (resolved) => setNewHomeProofUrl(resolved));
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           e.preventDefault();
