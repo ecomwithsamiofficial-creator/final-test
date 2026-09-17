@@ -53,9 +53,9 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
             'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
           ]);
 
-  // Multiply items safely so horizontal stream fills all desktop & mobile viewports seamlessly
+  // Multiply items safely so horizontal stream fills all viewports seamlessly (>6,000px width)
   let baseList: string[] = [...rawImages];
-  while (baseList.length < 8 && rawImages.length > 0) {
+  while (baseList.length < 10 && rawImages.length > 0) {
     baseList = baseList.concat(rawImages);
   }
 
@@ -71,7 +71,8 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
           <span>{badge}</span>
         </div>
 
-        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight mb-3">
+        {/* 100% Legible Dark Title with Blue Highlight */}
+        <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight mb-3">
           {title.includes('Success') ? (
             <>
               {title.split('Success')[0]}
@@ -83,26 +84,26 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
           )}
         </h2>
 
-        <p className="text-xs sm:text-sm md:text-base text-slate-400 font-medium max-w-2xl mx-auto leading-relaxed">
+        <p className="text-xs sm:text-sm md:text-base text-slate-600 font-medium max-w-2xl mx-auto leading-relaxed">
           {subtitle}
         </p>
       </div>
 
-      {/* Horizontal Continuous Stream Frame: 100% Non-Clickable, Ultra-Smooth on iPhone Safari & Android */}
+      {/* Horizontal Continuous Stream Frame: 100% Non-Clickable, Ultra-Smooth & Premium */}
       <div className="relative w-full overflow-hidden select-none pointer-events-none group-proof-hover">
         
-        {/* Left Soft Fade Mask */}
-        <div className="absolute left-0 inset-y-0 w-16 sm:w-32 bg-gradient-to-r from-[#0B0F19] to-transparent z-20 pointer-events-none" />
+        {/* Left Soft Pure White Fade Mask */}
+        <div className="absolute left-0 inset-y-0 w-16 sm:w-36 bg-gradient-to-r from-white via-white/80 to-transparent z-20 pointer-events-none" />
         
-        {/* Right Soft Fade Mask */}
-        <div className="absolute right-0 inset-y-0 w-16 sm:w-32 bg-gradient-to-l from-[#0B0F19] to-transparent z-20 pointer-events-none" />
+        {/* Right Soft Pure White Fade Mask */}
+        <div className="absolute right-0 inset-y-0 w-16 sm:w-36 bg-gradient-to-l from-white via-white/80 to-transparent z-20 pointer-events-none" />
 
         {/* Horizontal Marquee Track */}
         <div className="animate-scroll-horizontal-proof flex gap-4 sm:gap-6 py-4 px-2">
           {loopImages.map((src, idx) => (
             <div
               key={`hproof-${idx}`}
-              className="relative w-[240px] xs:w-[270px] sm:w-[310px] md:w-[340px] h-[340px] xs:h-[380px] sm:h-[430px] md:h-[460px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-white/10 bg-[#111827] shadow-2xl shadow-black/60"
+              className="relative w-[260px] xs:w-[290px] sm:w-[320px] md:w-[350px] h-[440px] xs:h-[480px] sm:h-[520px] md:h-[560px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1 flex items-center justify-center"
             >
               <img
                 src={src}
@@ -112,7 +113,7 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
-                className="w-full h-full object-cover block pointer-events-none"
+                className="w-full h-full object-cover object-top rounded-xl sm:rounded-2xl block pointer-events-none"
               />
             </div>
           ))}
