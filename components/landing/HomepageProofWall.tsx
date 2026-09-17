@@ -53,14 +53,11 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
             'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
           ]);
 
-  // Multiply items safely so horizontal stream fills all viewports seamlessly (>6,000px width)
+  // Keep single track under 2,200px width (well below Safari's 4,096px GPU texture limit)
   let baseList: string[] = [...rawImages];
-  while (baseList.length < 10 && rawImages.length > 0) {
+  while (baseList.length < 6 && rawImages.length > 0) {
     baseList = baseList.concat(rawImages);
   }
-
-  // Exactly two sets for continuous 50% translateX loop
-  const loopImages = [...baseList, ...baseList];
 
   return (
     <div className="w-full py-6 sm:py-10">
@@ -89,21 +86,21 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
         </p>
       </div>
 
-      {/* Horizontal Continuous Stream Frame: 100% Non-Clickable, Ultra-Smooth & Premium */}
-      <div className="relative w-full overflow-hidden select-none pointer-events-none group-proof-hover">
+      {/* Dual-Track Infinite Stream Frame: 100% Non-Clickable, 0% White Space, Uncropped WhatsApp Screenshots */}
+      <div className="relative w-full overflow-hidden select-none pointer-events-none group-proof-hover flex">
         
         {/* Left Soft Pure White Fade Mask */}
-        <div className="absolute left-0 inset-y-0 w-16 sm:w-36 bg-gradient-to-r from-white via-white/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute left-0 inset-y-0 w-12 sm:w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-20 pointer-events-none" />
         
         {/* Right Soft Pure White Fade Mask */}
-        <div className="absolute right-0 inset-y-0 w-16 sm:w-36 bg-gradient-to-l from-white via-white/80 to-transparent z-20 pointer-events-none" />
+        <div className="absolute right-0 inset-y-0 w-12 sm:w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-20 pointer-events-none" />
 
-        {/* Horizontal Marquee Track */}
-        <div className="animate-scroll-horizontal-proof flex gap-4 sm:gap-6 py-4 px-2">
-          {loopImages.map((src, idx) => (
+        {/* Track 1: First Seamless Loop Segment */}
+        <div className="animate-marquee-track flex gap-4 sm:gap-6 py-4 pr-4 sm:pr-6">
+          {baseList.map((src, idx) => (
             <div
-              key={`hproof-${idx}`}
-              className="relative w-[260px] xs:w-[290px] sm:w-[320px] md:w-[350px] h-[440px] xs:h-[480px] sm:h-[520px] md:h-[560px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1 flex items-center justify-center"
+              key={`track-a-${idx}`}
+              className="relative h-[480px] xs:h-[520px] sm:h-[580px] md:h-[620px] w-auto max-w-[340px] sm:max-w-[380px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1.5 flex items-center justify-center"
             >
               <img
                 src={src}
@@ -113,11 +110,33 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
                 onError={(e) => {
                   (e.target as HTMLElement).style.display = 'none';
                 }}
-                className="w-full h-full object-cover object-top rounded-xl sm:rounded-2xl block pointer-events-none"
+                className="h-full w-auto max-w-full object-contain rounded-xl sm:rounded-2xl block pointer-events-none"
               />
             </div>
           ))}
         </div>
+
+        {/* Track 2: Identical Twin Loop Segment (Follows Track 1 with Zero Gap & Zero White Space) */}
+        <div className="animate-marquee-track flex gap-4 sm:gap-6 py-4 pr-4 sm:pr-6" aria-hidden="true">
+          {baseList.map((src, idx) => (
+            <div
+              key={`track-b-${idx}`}
+              className="relative h-[480px] xs:h-[520px] sm:h-[580px] md:h-[620px] w-auto max-w-[340px] sm:max-w-[380px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1.5 flex items-center justify-center"
+            >
+              <img
+                src={src}
+                alt="Student WhatsApp & Store Result Review"
+                loading="eager"
+                decoding="async"
+                onError={(e) => {
+                  (e.target as HTMLElement).style.display = 'none';
+                }}
+                className="h-full w-auto max-w-full object-contain rounded-xl sm:rounded-2xl block pointer-events-none"
+              />
+            </div>
+          ))}
+        </div>
+
       </div>
     </div>
   );
