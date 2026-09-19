@@ -4,6 +4,25 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
+const VERIFIED_FALLBACKS = [
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-353.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-351.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-356.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-349.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-313.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-310.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-314.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-362.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-352.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-360.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-354.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-350.jpg'
+];
+
 interface HomepageProofWallProps {
   data?: {
     badge?: string;
@@ -20,7 +39,7 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
     setMounted(true);
   }, []);
 
-  // CRITICAL: Guarantee 0 hydration mismatches by returning null until client mount
+  // Guarantee 0 hydration mismatches
   if (!mounted) {
     return null;
   }
@@ -29,38 +48,54 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
     badge: 'STUDENT RESULTS',
     title: 'Students Success',
     subtitle: 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.',
-    images: [
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
-    ]
+    images: VERIFIED_FALLBACKS
   };
 
   const badge = data?.badge || fallback.badge || 'STUDENT RESULTS';
   const title = data?.title || fallback.title || 'Students Success';
   const subtitle = data?.subtitle || fallback.subtitle || 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.';
 
-  // Safely extract and sanitize image URLs
+  // Extract non-empty image strings, fallback to verified CDN reviews
   const rawImages: string[] = (Array.isArray(data?.images) && data!.images.length > 0)
     ? data!.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
-    : (Array.isArray(fallback.images) && fallback.images.length > 0
-        ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
-        : [
-            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
-            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
-            'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg'
-          ]);
+    : VERIFIED_FALLBACKS;
 
-  // Keep single track under 2,200px width (well below Safari's 4,096px GPU texture limit)
-  let baseList: string[] = [...rawImages];
-  while (baseList.length < 6 && rawImages.length > 0) {
-    baseList = baseList.concat(rawImages);
+  const validImages = rawImages.length > 0 ? rawImages : VERIFIED_FALLBACKS;
+
+  // Split images into two columns for natural vertical parallax
+  const col1Images: string[] = [];
+  const col2Images: string[] = [];
+
+  validImages.forEach((img, idx) => {
+    if (idx % 2 === 0) {
+      col1Images.push(img);
+    } else {
+      col2Images.push(img);
+    }
+  });
+
+  if (col1Images.length === 0 && col2Images.length > 0) {
+    col1Images.push(...col2Images);
+  } else if (col2Images.length === 0 && col1Images.length > 0) {
+    col2Images.push(...col1Images);
   }
 
+  // Ensure each column has at least 8 items for infinite seamless scroll
+  let baseCol1: string[] = [...col1Images];
+  while (baseCol1.length < 8 && col1Images.length > 0) {
+    baseCol1 = baseCol1.concat(col1Images);
+  }
+
+  let baseCol2: string[] = [...col2Images];
+  while (baseCol2.length < 8 && col2Images.length > 0) {
+    baseCol2 = baseCol2.concat(col2Images);
+  }
+
+  const loopCol1 = [...baseCol1, ...baseCol1];
+  const loopCol2 = [...baseCol2, ...baseCol2];
+
   return (
-    <div className="w-full py-6 sm:py-10">
+    <div className="w-full">
       {/* Header Section */}
       <div className="text-center max-w-3xl mx-auto mb-8 sm:mb-12 px-4">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00A0DF]/10 border border-[#00A0DF]/30 text-[#00A0DF] text-xs font-black uppercase tracking-wider mb-3 shadow-xs">
@@ -86,57 +121,73 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
         </p>
       </div>
 
-      {/* Dual-Track Infinite Stream Frame: 100% Non-Clickable, 0% White Space, Uncropped WhatsApp Screenshots */}
-      <div className="relative w-full overflow-hidden select-none pointer-events-none group-proof-hover flex">
+      {/* Viewport Frame: 100% Non-Clickable, Pure Display, Battle-Tested 2-Column Vertical Scroll */}
+      <div className="relative h-[580px] xs:h-[640px] sm:h-[720px] w-full max-w-3xl mx-auto overflow-hidden rounded-3xl border border-slate-200/80 bg-slate-50/60 shadow-2xl pointer-events-none select-none">
         
-        {/* Left Soft Pure White Fade Mask */}
-        <div className="absolute left-0 inset-y-0 w-12 sm:w-32 bg-gradient-to-r from-white via-white/80 to-transparent z-20 pointer-events-none" />
+        {/* Top Soft Gradient Fade Mask */}
+        <div className="absolute top-0 inset-x-0 h-20 sm:h-28 bg-gradient-to-b from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
         
-        {/* Right Soft Pure White Fade Mask */}
-        <div className="absolute right-0 inset-y-0 w-12 sm:w-32 bg-gradient-to-l from-white via-white/80 to-transparent z-20 pointer-events-none" />
+        {/* Bottom Soft Gradient Fade Mask */}
+        <div className="absolute bottom-0 inset-x-0 h-20 sm:h-28 bg-gradient-to-t from-slate-50 via-slate-50/80 to-transparent z-20 pointer-events-none" />
 
-        {/* Track 1: First Seamless Loop Segment */}
-        <div className="animate-marquee-track flex gap-4 sm:gap-6 py-4 pr-4 sm:pr-6">
-          {baseList.map((src, idx) => (
-            <div
-              key={`track-a-${idx}`}
-              className="relative h-[480px] xs:h-[520px] sm:h-[580px] md:h-[620px] w-auto max-w-[340px] sm:max-w-[380px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1.5 flex items-center justify-center"
-            >
-              <img
-                src={src}
-                alt="Student WhatsApp & Store Result Review"
-                loading="eager"
-                decoding="async"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-                className="h-full w-auto max-w-full object-contain rounded-xl sm:rounded-2xl block pointer-events-none"
-              />
+        {/* 2-Column Continuous Infinite Vertical Marquee */}
+        <div className="grid grid-cols-2 gap-3 sm:gap-4 p-3 sm:p-4 h-full pointer-events-none">
+          
+          {/* Column 1 (Slow Continuous Infinite Vertical Scroll 75s) */}
+          <div className="overflow-hidden relative h-full">
+            <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col1">
+              {loopCol1.map((src, i) => (
+                <div
+                  key={`home-col1-${i}`}
+                  className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md flex-shrink-0"
+                >
+                  <img
+                    src={src}
+                    alt="Student Result Review"
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = VERIFIED_FALLBACKS[i % VERIFIED_FALLBACKS.length];
+                      }
+                    }}
+                    className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
-        {/* Track 2: Identical Twin Loop Segment (Follows Track 1 with Zero Gap & Zero White Space) */}
-        <div className="animate-marquee-track flex gap-4 sm:gap-6 py-4 pr-4 sm:pr-6" aria-hidden="true">
-          {baseList.map((src, idx) => (
-            <div
-              key={`track-b-${idx}`}
-              className="relative h-[480px] xs:h-[520px] sm:h-[580px] md:h-[620px] w-auto max-w-[340px] sm:max-w-[380px] flex-shrink-0 rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-200/90 bg-white shadow-xl shadow-slate-300/40 p-1.5 flex items-center justify-center"
-            >
-              <img
-                src={src}
-                alt="Student WhatsApp & Store Result Review"
-                loading="eager"
-                decoding="async"
-                onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
-                }}
-                className="h-full w-auto max-w-full object-contain rounded-xl sm:rounded-2xl block pointer-events-none"
-              />
+          {/* Column 2 (Slow Continuous Infinite Vertical Scroll 65s - Parallax) */}
+          <div className="overflow-hidden relative h-full">
+            <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col2">
+              {loopCol2.map((src, i) => (
+                <div
+                  key={`home-col2-${i}`}
+                  className="relative w-full rounded-2xl overflow-hidden border border-slate-200 bg-white shadow-md flex-shrink-0"
+                >
+                  <img
+                    src={src}
+                    alt="Student Result Review"
+                    loading="eager"
+                    decoding="async"
+                    onError={(e) => {
+                      const img = e.target as HTMLImageElement;
+                      if (!img.dataset.fallback) {
+                        img.dataset.fallback = 'true';
+                        img.src = VERIFIED_FALLBACKS[(i + 1) % VERIFIED_FALLBACKS.length];
+                      }
+                    }}
+                    className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                  />
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </div>
 
+        </div>
       </div>
     </div>
   );
