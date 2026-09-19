@@ -4,6 +4,32 @@ import React, { useState, useEffect } from 'react';
 import { X, ZoomIn, Sparkles } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
+const VERIFIED_CDN_REVIEWS = [
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-353.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-351.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-356.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-349.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-313.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-310.webp',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-314.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-362.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-352.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-360.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-354.jpg',
+  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-350.jpg'
+];
+
+function getReviewUrl(src: string, idx: number): string {
+  if (!src) return VERIFIED_CDN_REVIEWS[idx % VERIFIED_CDN_REVIEWS.length];
+  if (src.startsWith('http://') || src.startsWith('https://')) return src;
+  const separator = src.includes('?') ? '&' : '?';
+  return `${src}${separator}v=20260919_v2`;
+}
+
 interface ScrollingScreenshotReviewsProps {
   data?: {
     badge?: string;
@@ -50,17 +76,17 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
   // Safely extract and sanitize image URLs
   const rawImages: string[] = (Array.isArray(data?.images) && data!.images.length > 0)
     ? data!.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
-    : (Array.isArray(fallback.images) ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0) : []);
+    : (Array.isArray(fallback.images) && fallback.images.length > 0 
+        ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0) 
+        : VERIFIED_CDN_REVIEWS);
 
-  if (rawImages.length === 0) {
-    return null;
-  }
+  const validImages = rawImages.length > 0 ? rawImages : VERIFIED_CDN_REVIEWS;
 
   // Split images into two columns for natural vertical parallax
   const col1Images: string[] = [];
   const col2Images: string[] = [];
 
-  rawImages.forEach((img, idx) => {
+  validImages.forEach((img, idx) => {
     if (idx % 2 === 0) {
       col1Images.push(img);
     } else {
@@ -123,117 +149,121 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
             {/* Column 1 (Scrolling Upwards Speed A - 75s Slow & Smooth) */}
             <div className="overflow-hidden relative h-full">
               <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col1">
-                {loopCol1.map((src, i) => (
-                  <div
-                    key={`col1-${i}`}
-                    role="button"
-                    tabIndex={0}
-                    style={{ touchAction: 'manipulation' }}
-                    onClick={() => setSelectedImage(src)}
-                    onTouchEnd={(e) => {
-                      e.stopPropagation();
-                      setSelectedImage(src);
-                    }}
-                    className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
-                  >
-                    <img
-                      src={src}
-                      alt="Student Result Review"
-                      loading="eager"
-                      decoding="async"
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        const parent = img.closest('.group') as HTMLElement;
-                        if (parent) parent.style.display = 'none';
+                {loopCol1.map((src, i) => {
+                  const finalUrl = getReviewUrl(src, i);
+                  return (
+                    <div
+                      key={`col1-${i}`}
+                      role="button"
+                      tabIndex={0}
+                      style={{ touchAction: 'manipulation' }}
+                      onClick={() => setSelectedImage(finalUrl)}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(finalUrl);
                       }}
-                      className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
-                      <ZoomIn size={16} className="text-[#00A0DF]" />
-                      <span>Click to Zoom</span>
+                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
+                    >
+                      <img
+                        src={finalUrl}
+                        alt="Student Result Review"
+                        loading="eager"
+                        decoding="async"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (!img.dataset.fallback) {
+                            img.dataset.fallback = 'true';
+                            img.src = VERIFIED_CDN_REVIEWS[i % VERIFIED_CDN_REVIEWS.length];
+                          }
+                        }}
+                        className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
+                        <ZoomIn size={16} className="text-[#00A0DF]" />
+                        <span>Click to Zoom</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
             {/* Column 2 (Scrolling Upwards Speed B - 65s Parallax) */}
             <div className="overflow-hidden relative h-full">
               <div className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col2">
-                {loopCol2.map((src, i) => (
-                  <div
-                    key={`col2-${i}`}
-                    role="button"
-                    tabIndex={0}
-                    style={{ touchAction: 'manipulation' }}
-                    onClick={() => setSelectedImage(src)}
-                    onTouchEnd={(e) => {
-                      e.stopPropagation();
-                      setSelectedImage(src);
-                    }}
-                    className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
-                  >
-                    <img
-                      src={src}
-                      alt="Student Result Review"
-                      loading="eager"
-                      decoding="async"
-                      onError={(e) => {
-                        const img = e.target as HTMLImageElement;
-                        const parent = img.closest('.group') as HTMLElement;
-                        if (parent) parent.style.display = 'none';
+                {loopCol2.map((src, i) => {
+                  const finalUrl = getReviewUrl(src, i + 1);
+                  return (
+                    <div
+                      key={`col2-${i}`}
+                      role="button"
+                      tabIndex={0}
+                      style={{ touchAction: 'manipulation' }}
+                      onClick={() => setSelectedImage(finalUrl)}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        setSelectedImage(finalUrl);
                       }}
-                      className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
-                    />
-                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
-                      <ZoomIn size={16} className="text-[#00A0DF]" />
-                      <span>Click to Zoom</span>
+                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
+                    >
+                      <img
+                        src={finalUrl}
+                        alt="Student Result Review"
+                        loading="eager"
+                        decoding="async"
+                        onError={(e) => {
+                          const img = e.target as HTMLImageElement;
+                          if (!img.dataset.fallback) {
+                            img.dataset.fallback = 'true';
+                            img.src = VERIFIED_CDN_REVIEWS[(i + 1) % VERIFIED_CDN_REVIEWS.length];
+                          }
+                        }}
+                        className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                      />
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
+                        <ZoomIn size={16} className="text-[#00A0DF]" />
+                        <span>Click to Zoom</span>
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
 
           </div>
         </div>
 
-        {/* Caption Hint below reviews */}
-        <p className="text-center text-[11px] text-slate-500 mt-4 flex items-center justify-center gap-1.5">
-          <span>👆 Click any screenshot to view full-size earnings proof &amp; WhatsApp chat</span>
-        </p>
-
       </div>
 
-      {/* Lightbox Modal for Enlarged View */}
+      {/* Click-to-Zoom Lightbox Modal (For Mobile & Desktop Deep Inspection) */}
       {selectedImage && (
         <div
+          role="dialog"
+          aria-modal="true"
           onClick={() => setSelectedImage(null)}
           className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
         >
           <div
             onClick={(e) => e.stopPropagation()}
-            className="relative max-w-2xl max-h-[90vh] bg-[#111827] border border-white/20 rounded-3xl overflow-hidden shadow-2xl flex flex-col items-center"
+            className="relative max-w-lg w-full max-h-[92vh] flex flex-col items-center justify-center"
           >
-            {/* Modal Close Button */}
             <button
               onClick={() => setSelectedImage(null)}
-              className="absolute top-3 right-3 z-10 p-2.5 rounded-full bg-black/70 hover:bg-black text-white hover:text-[#00A0DF] transition-colors border border-white/20"
-              title="Close Preview (Esc)"
+              className="absolute -top-12 right-0 sm:-right-4 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+              title="Close modal"
             >
-              <X size={20} />
+              <X size={22} />
             </button>
-
-            {/* Enlarged Image */}
-            <div className="overflow-y-auto max-h-[85vh] p-2 sm:p-4">
-              <img
-                src={selectedImage}
-                alt="Enlarged Student Review"
-                className="max-w-full h-auto rounded-2xl shadow-2xl mx-auto block"
-              />
-            </div>
+            <img
+              src={selectedImage}
+              alt="Zoomed Student Review Proof"
+              className="max-h-[85vh] w-auto max-w-full rounded-2xl shadow-2xl border border-white/20 object-contain block"
+            />
           </div>
         </div>
       )}
     </section>
   );
 }
+
+export default ScrollingScreenshotReviews;
