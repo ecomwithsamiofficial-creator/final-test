@@ -97,13 +97,13 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
               <div className="w-full max-w-sm bg-slate-950 rounded-3xl p-6 border-2 border-[#00A0DF]/30 shadow-2xl text-center">
                 <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 mb-6 shadow-xl shadow-[#00A0DF]/30 overflow-hidden">
                   <Image
-                    src={mentor.image || '/sami-logo.jpg'}
+                    src={mentor.image ? (mentor.image.startsWith('data:') ? mentor.image : `${mentor.image}${mentor.image.includes('?') ? '&' : '?'}v=20260919_v3`) : '/sami-logo.jpg?v=20260919_v3'}
                     alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
                     width={192}
                     height={192}
                     className="w-full h-full rounded-full object-cover"
                     priority
-                    unoptimized={Boolean(mentor.image && (mentor.image.startsWith('http') || mentor.image.startsWith('data:')))}
+                    unoptimized={true}
                   />
                 </div>
                 <h2 className="text-2xl font-black text-white mb-1">{mentor.name || 'Muhammad Sami'}</h2>

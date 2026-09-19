@@ -687,9 +687,10 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }:
       {/* ========================================================================= */}
       {/* REAL STUDENT RESULTS SCREENSHOT REVIEWS MARQUEE (LEARNWITHAFAQ STYLE)     */}
       {/* ========================================================================= */}
-      {screenshotReviews && Array.isArray(screenshotReviews.images) && screenshotReviews.images.length > 0 && (
-        <ScrollingScreenshotReviews data={screenshotReviews} />
-      )}
+      <ScrollingScreenshotReviews 
+        data={screenshotReviews} 
+        backupImages={initialContent?.homepage_proof_wall?.images}
+      />
 
       {/* ========================================================================= */}
       {/* POPUP CONFIRMATION MODAL WINDOW */}

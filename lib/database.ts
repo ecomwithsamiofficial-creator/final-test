@@ -102,7 +102,7 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
           ...defaultCmsContent.screenshot_reviews,
           ...parsed.screenshot_reviews,
           images: Array.isArray(parsed.screenshot_reviews.images)
-            ? parsed.screenshot_reviews.images
+            ? parsed.screenshot_reviews.images.filter((url: any) => typeof url === 'string' && !url.includes('learnwithafaq.com'))
             : []
         }
       : defaultCmsContent.screenshot_reviews,
@@ -111,7 +111,7 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
           ...defaultCmsContent.homepage_proof_wall,
           ...parsed.homepage_proof_wall,
           images: Array.isArray(parsed.homepage_proof_wall.images)
-            ? parsed.homepage_proof_wall.images
+            ? parsed.homepage_proof_wall.images.filter((url: any) => typeof url === 'string' && !url.includes('learnwithafaq.com'))
             : []
         }
       : defaultCmsContent.homepage_proof_wall,

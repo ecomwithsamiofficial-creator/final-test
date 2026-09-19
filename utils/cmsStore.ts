@@ -891,11 +891,7 @@ export const defaultCmsContent: CmsContentSchema = {
     badge: 'STUDENT RESULTS',
     title: 'Students Success',
     subtitle: 'Real screenshots and verified reviews shared by our students — unedited and unfiltered.',
-    images: [
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
-      'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp'
-    ]
+    images: []
   },
   success_page: {
     badge: 'VERIFIED STUDENT PROOF',

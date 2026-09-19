@@ -817,21 +817,19 @@ input[type="submit"] {
 .animate-scroll-vertical-col1 {
   animation: scrollReviewsUp 75s linear infinite;
   -webkit-animation: scrollReviewsUp 75s linear infinite;
-  will-change: transform;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
 }
 
 .animate-scroll-vertical-col2 {
   animation: scrollReviewsUp 65s linear infinite;
   -webkit-animation: scrollReviewsUp 65s linear infinite;
-  will-change: transform;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
-  -webkit-perspective: 1000;
-  perspective: 1000;
 }
 
 /* Desktop-only hover pause for checkout reviews */
@@ -845,7 +843,7 @@ input[type="submit"] {
 }
 
 /* ========================================================================= */
-/* LEARNWITHAFAQ.COM EXACT HORIZONTAL REVIEWS MARQUEE ENGINE                */
+/* ULTRA-SMOOTH HORIZONTAL REVIEWS MARQUEE ENGINE                           */
 /* ========================================================================= */
 
 .lwaSsHead {

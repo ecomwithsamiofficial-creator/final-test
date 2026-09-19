@@ -1043,7 +1043,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               <div className="lg:col-span-5 flex flex-col items-center text-center">
                 <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 animate-float overflow-hidden flex items-center justify-center">
                   <img
-                    src={mentor.image || '/sami-logo.jpg'}
+                    src={mentor.image ? (mentor.image.startsWith('data:') ? mentor.image : `${mentor.image}${mentor.image.includes('?') ? '&' : '?'}v=20260919_v3`) : '/sami-logo.jpg?v=20260919_v3'}
                     alt={mentor.name || 'Mentor Samiullah'}
                     className="w-full h-full rounded-full object-cover"
                     onError={(e) => {
@@ -1313,7 +1313,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       <section className="py-14 sm:py-20 bg-white">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           
-          <HomepageProofWall data={content.homepage_proof_wall} />
+          <HomepageProofWall 
+            data={content.homepage_proof_wall} 
+            backupImages={content.screenshot_reviews?.images}
+          />
 
           <div className="text-center mt-10">
             <Link

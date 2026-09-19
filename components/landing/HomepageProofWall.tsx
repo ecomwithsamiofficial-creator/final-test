@@ -4,30 +4,11 @@ import React, { useState, useEffect } from 'react';
 import { Sparkles } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
-const VERIFIED_CDN_REVIEWS = [
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-312-1.webp',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-309.webp',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-311.webp',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-315.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-353.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-351.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-356.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-349.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-313.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-310.webp',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-314.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-362.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-352.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-360.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-354.jpg',
-  'https://learnwithafaq.com/wp-content/uploads/2025/11/image-350.jpg'
-];
-
-function getReviewUrl(src: string, idx: number): string {
-  if (!src) return VERIFIED_CDN_REVIEWS[idx % VERIFIED_CDN_REVIEWS.length];
+function getReviewUrl(src: string): string {
+  if (!src) return '/images/sami-logo.jpg';
   if (src.startsWith('http://') || src.startsWith('https://')) return src;
   const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=20260919_v2`;
+  return `${src}${separator}v=20260919_v3`;
 }
 
 interface HomepageProofWallProps {
@@ -37,9 +18,10 @@ interface HomepageProofWallProps {
     subtitle?: string;
     images?: string[];
   };
+  backupImages?: string[];
 }
 
-export function HomepageProofWall({ data }: HomepageProofWallProps) {
+export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps) {
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -62,19 +44,25 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
   const title = data?.title || fallback.title || 'Students Success';
   const subtitle = data?.subtitle || fallback.subtitle || 'Real screenshots shared by our students — unedited and unfiltered.';
 
-  // Extract non-empty image strings from data/CMS
-  const rawImages: string[] = (Array.isArray(data?.images) && data!.images.length > 0)
+  // Smart Bi-directional Fallback:
+  // 1. Primary: Tab 11B (Homepage proof wall uploaded by admin)
+  // 2. Backup: Tab 11A (Checkout reviews uploaded by admin)
+  const primaryImages = (Array.isArray(data?.images) && data!.images.length > 0)
     ? data!.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
-    : (Array.isArray(fallback.images) && fallback.images.length > 0 
-        ? fallback.images.filter((img): img is string => typeof img === 'string' && img.trim().length > 0) 
-        : VERIFIED_CDN_REVIEWS);
+    : [];
 
-  const validImages = rawImages.length > 0 ? rawImages : VERIFIED_CDN_REVIEWS;
+  const secondaryImages = (Array.isArray(backupImages) && backupImages.length > 0)
+    ? backupImages.filter((img): img is string => typeof img === 'string' && img.trim().length > 0)
+    : [];
+
+  const rawImages: string[] = primaryImages.length > 0
+    ? primaryImages
+    : (secondaryImages.length > 0 ? secondaryImages : ['/uploads/reviews/review_verified_student.svg']);
 
   // Duplicate for seamless continuous translateX loop
-  let baseImages = [...validImages];
-  while (baseImages.length < 10) {
-    baseImages = baseImages.concat(validImages);
+  let baseImages = [...rawImages];
+  while (baseImages.length < 6 && rawImages.length > 0) {
+    baseImages = baseImages.concat(rawImages);
   }
   const loopImages = [...baseImages, ...baseImages];
 
@@ -104,7 +92,7 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
         </p>
       </div>
 
-      {/* LearnWithAfaq Exact Viewport & Track */}
+      {/* Viewport & Track */}
       <div className="lwaSsViewport">
         <div className="lwaSsFade lwaSsFadeL" />
         <div className="lwaSsFade lwaSsFadeR" />
@@ -112,16 +100,13 @@ export function HomepageProofWall({ data }: HomepageProofWallProps) {
           {loopImages.map((src, idx) => (
             <img
               key={`proof-img-${idx}`}
-              src={getReviewUrl(src, idx)}
+              src={getReviewUrl(src)}
               alt="Student result"
               loading="eager"
               decoding="async"
               onError={(e) => {
                 const img = e.target as HTMLImageElement;
-                if (!img.dataset.fallback) {
-                  img.dataset.fallback = 'true';
-                  img.src = VERIFIED_CDN_REVIEWS[idx % VERIFIED_CDN_REVIEWS.length];
-                }
+                img.style.opacity = '0.6';
               }}
             />
           ))}
