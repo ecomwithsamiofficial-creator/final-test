@@ -195,48 +195,140 @@ export async function dbGetCmsSettings(): Promise<CmsContentSchema> {
   return defaultCmsContent;
 }
 
-export async function dbSaveCmsSettings(patch: Partial<CmsContentSchema>): Promise<CmsContentSchema> {
+export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Promise<CmsContentSchema> {
   const existing = await dbGetCmsSettings();
-  const updated: CmsContentSchema = {
-    ...existing,
-    ...patch,
-    hero: patch.hero !== undefined ? { ...existing.hero, ...patch.hero } : existing.hero,
-    stats: patch.stats !== undefined ? { ...existing.stats, ...patch.stats } : existing.stats,
-    mentor: patch.mentor !== undefined ? { ...existing.mentor, ...patch.mentor } : existing.mentor,
-    marquee: patch.marquee !== undefined ? { ...existing.marquee, ...patch.marquee } : existing.marquee,
-    contact: patch.contact !== undefined ? { ...existing.contact, ...patch.contact } : existing.contact,
-    bonuses: patch.bonuses !== undefined ? patch.bonuses : existing.bonuses,
-    why_dropshipping: patch.why_dropshipping !== undefined ? patch.why_dropshipping : existing.why_dropshipping,
-    what_you_get: patch.what_you_get !== undefined ? patch.what_you_get : existing.what_you_get,
-    who_is_this_for: patch.who_is_this_for !== undefined ? patch.who_is_this_for : existing.who_is_this_for,
-    video_reviews: patch.video_reviews !== undefined ? patch.video_reviews : existing.video_reviews,
-    options_comparison: patch.options_comparison !== undefined ? patch.options_comparison : existing.options_comparison,
-    cost_of_waiting: patch.cost_of_waiting !== undefined ? patch.cost_of_waiting : existing.cost_of_waiting,
-    final_cta: patch.final_cta !== undefined ? { ...existing.final_cta, ...patch.final_cta } : existing.final_cta,
-    footer: patch.footer !== undefined ? { ...existing.footer, ...patch.footer } : existing.footer,
-    testimonials: patch.testimonials !== undefined ? patch.testimonials : existing.testimonials,
-    faqs: patch.faqs !== undefined ? patch.faqs : existing.faqs,
-    payment_methods: patch.payment_methods !== undefined ? patch.payment_methods : existing.payment_methods,
-    pixels: patch.pixels !== undefined ? patch.pixels : existing.pixels,
-    screenshot_reviews: patch.screenshot_reviews !== undefined ? patch.screenshot_reviews : existing.screenshot_reviews,
-    homepage_proof_wall: patch.homepage_proof_wall !== undefined ? patch.homepage_proof_wall : existing.homepage_proof_wall,
-    success_page: patch.success_page !== undefined ? patch.success_page : existing.success_page,
-    checkout_page: patch.checkout_page !== undefined ? { ...existing.checkout_page, ...patch.checkout_page } : existing.checkout_page,
-    homepage_curriculum: patch.homepage_curriculum !== undefined ? patch.homepage_curriculum : existing.homepage_curriculum,
-    why_different: patch.why_different !== undefined ? patch.why_different : existing.why_different,
-    signature_framework: patch.signature_framework !== undefined ? patch.signature_framework : existing.signature_framework,
-    about_page: patch.about_page !== undefined ? patch.about_page : existing.about_page,
-    theme: patch.theme !== undefined 
-      ? { 
-          ...(existing.theme || defaultCmsContent.theme), 
-          ...patch.theme, 
-          custom_colors: { 
-            ...((existing.theme && existing.theme.custom_colors) || defaultCmsContent.theme?.custom_colors || DEFAULT_THEME_COLORS), 
-            ...(patch.theme.custom_colors || {}) 
-          } as ThemeCustomColors
-        } 
-      : (existing.theme || defaultCmsContent.theme)
+  const activeTab = patch?._activeTab || patch?._section || activeTabHint;
+
+  // 1. Explicit Tab/Section Targeted Save (Guarantees other tabs are 100% untouched)
+  if (activeTab) {
+    const updated: CmsContentSchema = { ...existing };
+    if (activeTab === 'faqs' && patch.faqs !== undefined) {
+      updated.faqs = patch.faqs;
+    } else if (activeTab === 'homepage_curriculum' && patch.homepage_curriculum !== undefined) {
+      updated.homepage_curriculum = patch.homepage_curriculum;
+    } else if (activeTab === 'hero' && patch.hero !== undefined) {
+      updated.hero = { ...existing.hero, ...patch.hero };
+    } else if (activeTab === 'mentor' && patch.mentor !== undefined) {
+      updated.mentor = { ...existing.mentor, ...patch.mentor };
+    } else if (activeTab === 'marquee' && patch.marquee !== undefined) {
+      updated.marquee = { ...existing.marquee, ...patch.marquee };
+    } else if (activeTab === 'stats' && patch.stats !== undefined) {
+      updated.stats = { ...existing.stats, ...patch.stats };
+    } else if (activeTab === 'why' && patch.why_dropshipping !== undefined) {
+      updated.why_dropshipping = patch.why_dropshipping;
+    } else if (activeTab === 'what' && patch.what_you_get !== undefined) {
+      updated.what_you_get = patch.what_you_get;
+    } else if (activeTab === 'why_different' && patch.why_different !== undefined) {
+      updated.why_different = patch.why_different;
+    } else if (activeTab === 'signature_framework' && patch.signature_framework !== undefined) {
+      updated.signature_framework = patch.signature_framework;
+    } else if (activeTab === 'who' && patch.who_is_this_for !== undefined) {
+      updated.who_is_this_for = patch.who_is_this_for;
+    } else if (activeTab === 'video_reviews' && patch.video_reviews !== undefined) {
+      updated.video_reviews = patch.video_reviews;
+    } else if (activeTab === 'bonuses' && patch.bonuses !== undefined) {
+      updated.bonuses = patch.bonuses;
+    } else if (activeTab === 'reviews' && patch.screenshot_reviews !== undefined) {
+      updated.screenshot_reviews = patch.screenshot_reviews;
+    } else if (activeTab === 'proofwall_home' && patch.homepage_proof_wall !== undefined) {
+      updated.homepage_proof_wall = patch.homepage_proof_wall;
+    } else if (activeTab === 'options' && patch.options_comparison !== undefined) {
+      updated.options_comparison = patch.options_comparison;
+    } else if (activeTab === 'cost' && patch.cost_of_waiting !== undefined) {
+      updated.cost_of_waiting = patch.cost_of_waiting;
+    } else if (activeTab === 'final_cta' || activeTab === 'cta') {
+      if (patch.final_cta !== undefined) updated.final_cta = { ...existing.final_cta, ...patch.final_cta };
+    } else if (activeTab === 'contact' && patch.contact !== undefined) {
+      updated.contact = { ...existing.contact, ...patch.contact };
+    } else if (activeTab === 'payments' && patch.payment_methods !== undefined) {
+      updated.payment_methods = patch.payment_methods;
+    } else if (activeTab === 'themes' && patch.theme !== undefined) {
+      updated.theme = { ...existing.theme, ...patch.theme };
+    } else if (activeTab === 'pixels' && patch.pixels !== undefined) {
+      updated.pixels = { ...existing.pixels, ...patch.pixels };
+    } else if (activeTab === 'success_page' && patch.success_page !== undefined) {
+      updated.success_page = { ...existing.success_page, ...patch.success_page };
+    } else if (activeTab === 'checkout_page' && patch.checkout_page !== undefined) {
+      updated.checkout_page = { ...existing.checkout_page, ...patch.checkout_page };
+    } else if (activeTab === 'about_page' && patch.about_page !== undefined) {
+      updated.about_page = patch.about_page;
+    }
+
+    try {
+      await mysqlSaveCmsSettings(updated);
+    } catch (e) {
+      console.error('Hostinger MySQL save CMS error:', e);
+    }
+    return updated;
+  }
+
+  // 2. Intelligent Non-Destructive Delta Merge (For dual-browser / multi-profile saves)
+  const updated: CmsContentSchema = { ...existing };
+
+  const isCustomFaqs = (faqs: any[]) => Array.isArray(faqs) && (
+    faqs.length > 8 || 
+    faqs.some(f => (f?.q && f.q.includes('PKR')) || (f?.a && (f.a.includes('Sami') || f.a.includes('LMS') || f.a.includes('Weak'))))
+  );
+
+  const isCustomCurriculum = (curr: any) => {
+    if (!curr || !Array.isArray(curr.modules)) return false;
+    const defaultMods = defaultCmsContent.homepage_curriculum?.modules || [];
+    if (curr.modules.length !== defaultMods.length) return true;
+    return curr.modules.some((m: any, idx: number) => {
+      const def = defaultMods[idx];
+      return !def || m.id !== def.id || m.title !== def.title;
+    });
   };
+
+  // Merge FAQs: Do not allow stale generic default FAQs to overwrite rich customized FAQs
+  if (patch.faqs !== undefined) {
+    if (isCustomFaqs(patch.faqs) || !isCustomFaqs(existing.faqs)) {
+      updated.faqs = patch.faqs;
+    }
+  }
+
+  // Merge Homepage Curriculum: Do not allow stale default curriculum to overwrite rich customized modules
+  if (patch.homepage_curriculum !== undefined) {
+    if (isCustomCurriculum(patch.homepage_curriculum) || !isCustomCurriculum(existing.homepage_curriculum)) {
+      updated.homepage_curriculum = patch.homepage_curriculum;
+    }
+  }
+
+  // Merge other sections with non-destructive fallback
+  if (patch.hero !== undefined) updated.hero = { ...existing.hero, ...patch.hero };
+  if (patch.stats !== undefined) updated.stats = { ...existing.stats, ...patch.stats };
+  if (patch.mentor !== undefined) updated.mentor = { ...existing.mentor, ...patch.mentor };
+  if (patch.marquee !== undefined) updated.marquee = { ...existing.marquee, ...patch.marquee };
+  if (patch.contact !== undefined) updated.contact = { ...existing.contact, ...patch.contact };
+  if (patch.bonuses !== undefined) updated.bonuses = patch.bonuses;
+  if (patch.why_dropshipping !== undefined) updated.why_dropshipping = patch.why_dropshipping;
+  if (patch.what_you_get !== undefined) updated.what_you_get = patch.what_you_get;
+  if (patch.who_is_this_for !== undefined) updated.who_is_this_for = patch.who_is_this_for;
+  if (patch.video_reviews !== undefined) updated.video_reviews = patch.video_reviews;
+  if (patch.options_comparison !== undefined) updated.options_comparison = patch.options_comparison;
+  if (patch.cost_of_waiting !== undefined) updated.cost_of_waiting = patch.cost_of_waiting;
+  if (patch.final_cta !== undefined) updated.final_cta = { ...existing.final_cta, ...patch.final_cta };
+  if (patch.footer !== undefined) updated.footer = { ...existing.footer, ...patch.footer };
+  if (patch.testimonials !== undefined) updated.testimonials = patch.testimonials;
+  if (patch.payment_methods !== undefined) updated.payment_methods = patch.payment_methods;
+  if (patch.pixels !== undefined) updated.pixels = { ...existing.pixels, ...patch.pixels };
+  if (patch.screenshot_reviews !== undefined) updated.screenshot_reviews = patch.screenshot_reviews;
+  if (patch.homepage_proof_wall !== undefined) updated.homepage_proof_wall = patch.homepage_proof_wall;
+  if (patch.success_page !== undefined) updated.success_page = { ...existing.success_page, ...patch.success_page };
+  if (patch.checkout_page !== undefined) updated.checkout_page = { ...existing.checkout_page, ...patch.checkout_page };
+  if (patch.why_different !== undefined) updated.why_different = patch.why_different;
+  if (patch.signature_framework !== undefined) updated.signature_framework = patch.signature_framework;
+  if (patch.about_page !== undefined) updated.about_page = patch.about_page;
+  if (patch.theme !== undefined) {
+    updated.theme = {
+      ...(existing.theme || defaultCmsContent.theme),
+      ...patch.theme,
+      custom_colors: {
+        ...((existing.theme && existing.theme.custom_colors) || defaultCmsContent.theme?.custom_colors || DEFAULT_THEME_COLORS),
+        ...(patch.theme.custom_colors || {})
+      } as ThemeCustomColors
+    };
+  }
 
   try {
     await mysqlSaveCmsSettings(updated);

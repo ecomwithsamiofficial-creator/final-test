@@ -429,7 +429,10 @@ export default function AdminCmsPage() {
       } catch (e) {}
     }
 
-    let dataToSave = cmsData;
+    let dataToSave: any = {
+      ...cmsData,
+      _activeTab: activeTab
+    };
     if (activeTab === 'checkout_page') {
       const currentCp = dataToSave.checkout_page || defaultCmsContent.checkout_page!;
       dataToSave = {
@@ -443,8 +446,8 @@ export default function AdminCmsPage() {
     }
 
     try {
-      // 1. Persist main CMS content to server API & trigger revalidation
-      const res = await fetch('/api/cms/content', {
+      // 1. Persist main CMS content to server API with explicit activeTab hint
+      const res = await fetch(`/api/cms/content?tab=${activeTab}`, {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',

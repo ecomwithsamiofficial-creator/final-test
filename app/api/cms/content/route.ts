@@ -30,7 +30,8 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const updated = await dbSaveCmsSettings(body);
+    const activeTabHint = request.nextUrl.searchParams.get('tab') || body?._activeTab || body?._section;
+    const updated = await dbSaveCmsSettings(body, activeTabHint || undefined);
 
     // On-demand revalidate all client routes so changes reflect instantly without delay
     try {
