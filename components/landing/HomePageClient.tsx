@@ -44,7 +44,8 @@ import {
   LayoutGrid,
   Pause,
   Volume2,
-  VolumeX
+  VolumeX,
+  ChevronDown
 } from 'lucide-react';
 import { defaultCmsContent, CmsContentSchema, updateCmsContent } from '@/utils/cmsStore';
 import { Module } from '@/utils/db';
@@ -1436,8 +1437,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               >
                 <summary className="font-extrabold text-sm sm:text-base text-slate-900 cursor-pointer list-none flex justify-between items-center select-none">
                   <span>{faq.q}</span>
-                  <span className="text-[#00A0DF] font-black text-xl transition-transform group-open:rotate-45 ml-2">
-                    +
+                  <span className="text-[#00A0DF] transition-transform duration-200 group-open:rotate-180 ml-2 flex-shrink-0">
+                    <ChevronDown size={20} strokeWidth={2.5} />
                   </span>
                 </summary>
                 <p className="mt-3.5 text-xs sm:text-sm text-slate-600 leading-relaxed font-medium pt-3 border-t border-gray-100">
