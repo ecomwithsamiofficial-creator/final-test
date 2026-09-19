@@ -179,6 +179,8 @@ export default function AdminCmsPage() {
   const [screenshotUploadStatus, setScreenshotUploadStatus] = useState('');
   const [screenshotUploadError, setScreenshotUploadError] = useState('');
   const [newScreenshotUrl, setNewScreenshotUrl] = useState('');
+  const [purgingReviews, setPurgingReviews] = useState(false);
+  const [purgeResultMsg, setPurgeResultMsg] = useState('');
   const screenshotFileInputRef = useRef<HTMLInputElement>(null);
 
   // Homepage Proof Wall State (Vertical Scrolling Screenshots on Homepage)
@@ -1351,6 +1353,28 @@ export default function AdminCmsPage() {
         }
       };
     });
+  };
+
+  const handlePurgeReviews = async () => {
+    if (!window.confirm('Are you sure you want to clean up legacy review cache and purge corrupted entries? This resets the reviews to clean verified cards so you can upload fresh student reviews.')) return;
+    setPurgingReviews(true);
+    setPurgeResultMsg('');
+    try {
+      const res = await fetch('/api/admin/cms/purge-corrupted-reviews', { method: 'POST' });
+      const data = await res.json();
+      if (data.success) {
+        setPurgeResultMsg(`✅ Success! Purged ${data.results?.deletedDbRows || 0} DB items and cleaned server disk.`);
+        setTimeout(() => {
+          window.location.reload();
+        }, 1200);
+      } else {
+        alert(data.message || 'Purge failed');
+      }
+    } catch (err: any) {
+      alert(err?.message || 'Purge request error');
+    } finally {
+      setPurgingReviews(false);
+    }
   };
 
   const handleAddFaq = () => {
@@ -4885,23 +4909,39 @@ export default function AdminCmsPage() {
                       <h3 className="text-sm sm:text-lg font-black text-white flex items-center gap-2">
                         <span>Checkout Screenshot Reviews</span>
                         <span className="text-[10px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-2 py-0.5 rounded-full font-bold">
-                          LearnWithAfaq Marquee
+                          Verified Results Marquee
                         </span>
                       </h3>
                       <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
                         These real WhatsApp chats and store earning screenshots scroll vertically on the checkout page.
                       </p>
+                      {purgeResultMsg && (
+                        <p className="text-xs text-emerald-400 font-bold mt-1.5">{purgeResultMsg}</p>
+                      )}
                     </div>
 
-                    <button
-                      type="button"
-                      onClick={handleSaveAll}
-                      disabled={loading}
-                      className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition-all active:scale-95 flex-shrink-0"
-                    >
-                      <Save size={14} />
-                      <span>{loading ? 'Saving...' : 'Save Reviews Changes'}</span>
-                    </button>
+                    <div className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={handlePurgeReviews}
+                        disabled={purgingReviews}
+                        className="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 text-red-400 text-xs font-bold transition-all active:scale-95 disabled:opacity-50"
+                        title="Clean up legacy Afaq review entries"
+                      >
+                        <Trash2 size={13} />
+                        <span>{purgingReviews ? 'Purging...' : 'Purge Afaq Cache'}</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={handleSaveAll}
+                        disabled={loading}
+                        className="inline-flex items-center gap-1.5 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-black shadow-lg shadow-emerald-600/30 transition-all active:scale-95 flex-shrink-0"
+                      >
+                        <Save size={14} />
+                        <span>{loading ? 'Saving...' : 'Save Reviews Changes'}</span>
+                      </button>
+                    </div>
                   </div>
 
                   {/* Title & Subtitle Config */}

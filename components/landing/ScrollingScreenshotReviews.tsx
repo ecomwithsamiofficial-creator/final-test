@@ -8,7 +8,7 @@ function getReviewUrl(src: string): string {
   if (!src) return '/images/sami-logo.jpg';
   if (src.startsWith('http://') || src.startsWith('https://')) return src;
   const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=20260919_v3`;
+  return `${src}${separator}v=20260920_v1_clean`;
 }
 
 interface ScrollingScreenshotReviewsProps {
