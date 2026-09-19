@@ -294,10 +294,43 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
     }
   }
 
+  // Merge Mentor Profile: Do not allow stale default mentor profile to overwrite customized mentor profile
+  const isCustomMentor = (m: any) => {
+    if (!m || typeof m !== 'object') return false;
+    if (m.image && m.image.includes('/uploads/mentor/')) return true;
+    if (m.stat1_value && m.stat1_value !== '9,700+' && m.stat1_value !== '9,742+') return true;
+    if (m.stat2_value && m.stat2_value !== 'UAE & KSA') return true;
+    if (m.bio && m.bio.includes('Pakistani sellers')) return true;
+    return false;
+  };
+
+  if (patch.mentor !== undefined) {
+    if (isCustomMentor(patch.mentor) || !isCustomMentor(existing.mentor)) {
+      updated.mentor = { ...existing.mentor, ...patch.mentor };
+    }
+  }
+
+  // Merge Student Success Proof Wall: Do not allow stale empty arrays to wipe active student results
+  if (patch.homepage_proof_wall !== undefined) {
+    const incomingImages = Array.isArray(patch.homepage_proof_wall?.images) ? patch.homepage_proof_wall.images : [];
+    const existingImages = Array.isArray(existing.homepage_proof_wall?.images) ? existing.homepage_proof_wall.images : [];
+    if (incomingImages.length >= existingImages.length || existingImages.length === 0) {
+      updated.homepage_proof_wall = patch.homepage_proof_wall;
+    }
+  }
+
+  // Merge Screenshot Reviews: Do not allow stale empty arrays to wipe checkout reviews
+  if (patch.screenshot_reviews !== undefined) {
+    const incomingImages = Array.isArray(patch.screenshot_reviews?.images) ? patch.screenshot_reviews.images : [];
+    const existingImages = Array.isArray(existing.screenshot_reviews?.images) ? existing.screenshot_reviews.images : [];
+    if (incomingImages.length >= existingImages.length || existingImages.length === 0) {
+      updated.screenshot_reviews = patch.screenshot_reviews;
+    }
+  }
+
   // Merge other sections with non-destructive fallback
   if (patch.hero !== undefined) updated.hero = { ...existing.hero, ...patch.hero };
   if (patch.stats !== undefined) updated.stats = { ...existing.stats, ...patch.stats };
-  if (patch.mentor !== undefined) updated.mentor = { ...existing.mentor, ...patch.mentor };
   if (patch.marquee !== undefined) updated.marquee = { ...existing.marquee, ...patch.marquee };
   if (patch.contact !== undefined) updated.contact = { ...existing.contact, ...patch.contact };
   if (patch.bonuses !== undefined) updated.bonuses = patch.bonuses;
@@ -312,8 +345,6 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   if (patch.testimonials !== undefined) updated.testimonials = patch.testimonials;
   if (patch.payment_methods !== undefined) updated.payment_methods = patch.payment_methods;
   if (patch.pixels !== undefined) updated.pixels = { ...existing.pixels, ...patch.pixels };
-  if (patch.screenshot_reviews !== undefined) updated.screenshot_reviews = patch.screenshot_reviews;
-  if (patch.homepage_proof_wall !== undefined) updated.homepage_proof_wall = patch.homepage_proof_wall;
   if (patch.success_page !== undefined) updated.success_page = { ...existing.success_page, ...patch.success_page };
   if (patch.checkout_page !== undefined) updated.checkout_page = { ...existing.checkout_page, ...patch.checkout_page };
   if (patch.why_different !== undefined) updated.why_different = patch.why_different;
