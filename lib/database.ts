@@ -280,9 +280,18 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
     });
   };
 
-  // Merge FAQs: Do not allow stale generic default FAQs to overwrite rich customized FAQs
+  // Merge FAQs:
+  // 1. If incoming has 10+ questions, it is the full customized FAQ list -> ALWAYS accept it!
+  // 2. If DB already has 10+ questions, and incoming has fewer than 10 (e.g. 6 items from Browser B),
+  //    DO NOT ALLOW stale payload to overwrite the rich 15 FAQs in the database!
   if (patch.faqs !== undefined) {
-    if (isCustomFaqs(patch.faqs) || !isCustomFaqs(existing.faqs)) {
+    const incomingFaqs = Array.isArray(patch.faqs) ? patch.faqs : [];
+    const existingFaqs = Array.isArray(existing.faqs) ? existing.faqs : [];
+    if (incomingFaqs.length >= 10) {
+      updated.faqs = patch.faqs;
+    } else if (existingFaqs.length >= 10 && incomingFaqs.length < 10) {
+      console.log(`[CMS Merge] Protecting rich ${existingFaqs.length} FAQs against stale ${incomingFaqs.length} payload`);
+    } else {
       updated.faqs = patch.faqs;
     }
   }
