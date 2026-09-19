@@ -97,7 +97,7 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
               <div className="w-full max-w-sm bg-slate-950 rounded-3xl p-6 border-2 border-[#00A0DF]/30 shadow-2xl text-center">
                 <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 mb-6 shadow-xl shadow-[#00A0DF]/30 overflow-hidden">
                   <Image
-                    src={mentor.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'}
+                    src={mentor.image || '/sami-logo.jpg'}
                     alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
                     width={192}
                     height={192}

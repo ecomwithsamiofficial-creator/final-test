@@ -463,7 +463,7 @@ export const defaultCmsContent: CmsContentSchema = {
   mentor: {
     name: 'Muhammad Sami',
     title: 'Top E-Commerce Mentor & GCC Dropshipping Expert',
-    image: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80',
+    image: '/sami-logo.jpg',
     tag: 'YOUR MENTOR',
     badge: 'Digital Marketing Expert',
     bio: 'You don’t just need the right mentor — you need the right community too. Both are included in your purchase today.',

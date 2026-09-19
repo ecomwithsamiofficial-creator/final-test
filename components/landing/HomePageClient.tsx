@@ -1043,11 +1043,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               <div className="lg:col-span-5 flex flex-col items-center text-center">
                 <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 animate-float overflow-hidden flex items-center justify-center">
                   <img
-                    src={mentor.image || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80'}
+                    src={mentor.image || '/sami-logo.jpg'}
                     alt={mentor.name || 'Mentor Samiullah'}
                     className="w-full h-full rounded-full object-cover"
                     onError={(e) => {
-                      (e.target as HTMLImageElement).src = 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=800&q=80';
+                      (e.target as HTMLImageElement).src = '/sami-logo.jpg';
                     }}
                   />
                 </div>

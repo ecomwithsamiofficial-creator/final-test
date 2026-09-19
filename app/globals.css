@@ -848,6 +848,45 @@ input[type="submit"] {
 /* LEARNWITHAFAQ.COM EXACT HORIZONTAL REVIEWS MARQUEE ENGINE                */
 /* ========================================================================= */
 
+.lwaSsHead {
+  text-align: center !important;
+  margin-bottom: 34px !important;
+}
+
+.lwaSsTag {
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 6px !important;
+  color: #00A0DF !important;
+  font-size: 12px !important;
+  font-weight: 700 !important;
+  letter-spacing: 2px !important;
+  background: #E2EFF7 !important;
+  padding: 6px 18px !important;
+  border-radius: 30px !important;
+  text-transform: uppercase !important;
+}
+
+.lwaSsTitle {
+  margin: 16px 0 8px 0 !important;
+  font-size: 32px !important;
+  font-weight: 800 !important;
+  color: #0f172a !important;
+  line-height: 1.2 !important;
+}
+
+.lwaSsTitle span {
+  color: #00A0DF !important;
+}
+
+.lwaSsSub {
+  margin: 0 auto !important;
+  max-width: 620px !important;
+  font-size: 15px !important;
+  color: #64748b !important;
+  line-height: 1.6 !important;
+}
+
 .lwaSsViewport {
   position: relative !important;
   overflow: hidden !important;

@@ -142,7 +142,9 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
                       loading="eager"
                       decoding="async"
                       onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
+                        const img = e.target as HTMLImageElement;
+                        const parent = img.closest('.group') as HTMLElement;
+                        if (parent) parent.style.display = 'none';
                       }}
                       className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
                     />
@@ -177,7 +179,9 @@ export function ScrollingScreenshotReviews({ data }: ScrollingScreenshotReviewsP
                       loading="eager"
                       decoding="async"
                       onError={(e) => {
-                        (e.target as HTMLElement).style.display = 'none';
+                        const img = e.target as HTMLImageElement;
+                        const parent = img.closest('.group') as HTMLElement;
+                        if (parent) parent.style.display = 'none';
                       }}
                       className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
                     />
