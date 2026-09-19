@@ -26,7 +26,7 @@ export async function POST(request: NextRequest) {
     const cleanId = `mentor_${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
     const contentType = file.type || 'image/jpeg';
 
-    // 1. Direct Local Hostinger SSD Storage (Primary)
+    // 1. Direct Local Hostinger SSD Storage (Primary) + MySQL Persistent Backup
     try {
       const publicUploadsDir = path.join(process.cwd(), 'public', 'uploads', 'mentor');
       if (!fs.existsSync(publicUploadsDir)) {
@@ -35,6 +35,14 @@ export async function POST(request: NextRequest) {
 
       const filePath = path.join(publicUploadsDir, cleanId);
       fs.writeFileSync(filePath, buffer);
+
+      // Save permanently to MySQL (Immune to Git deployments & Hostinger disk wipes)
+      try {
+        const { mysqlSaveMediaUpload } = await import('@/lib/mysql');
+        await mysqlSaveMediaUpload(cleanId, 'mentor', cleanId, contentType, buffer);
+      } catch (dbErr: any) {
+        console.warn('MySQL media backup error:', dbErr?.message);
+      }
 
       return NextResponse.json({
         success: true,

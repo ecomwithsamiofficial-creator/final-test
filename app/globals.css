@@ -845,36 +845,38 @@ input[type="submit"] {
 }
 
 /* ========================================================================= */
-/* HOMEPAGE DUAL-TRACK INFINITE REVIEWS STREAM (SAFARI 4096px SAFE)         */
+/* LEARNWITHAFAQ.COM EXACT HORIZONTAL REVIEWS MARQUEE ENGINE                */
 /* ========================================================================= */
 
-@-webkit-keyframes marqueeScrollStream {
-  0% {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    -webkit-transform: translate3d(-100%, 0, 0);
-    transform: translate3d(-100%, 0, 0);
-  }
+.lwaSsViewport {
+  position: relative !important;
+  overflow: hidden !important;
 }
 
-@keyframes marqueeScrollStream {
-  0% {
-    -webkit-transform: translate3d(0, 0, 0);
-    transform: translate3d(0, 0, 0);
-  }
-  100% {
-    -webkit-transform: translate3d(-100%, 0, 0);
-    transform: translate3d(-100%, 0, 0);
-  }
+.lwaSsFade {
+  position: absolute !important;
+  top: 0 !important;
+  bottom: 0 !important;
+  width: 80px !important;
+  z-index: 2 !important;
+  pointer-events: none !important;
 }
 
-.animate-marquee-track {
-  display: flex;
-  flex-shrink: 0;
-  animation: marqueeScrollStream 45s linear infinite;
-  -webkit-animation: marqueeScrollStream 45s linear infinite;
+.lwaSsFadeL {
+  left: 0 !important;
+  background: linear-gradient(to right, #fff, rgba(255, 255, 255, 0)) !important;
+}
+
+.lwaSsFadeR {
+  right: 0 !important;
+  background: linear-gradient(to left, #fff, rgba(255, 255, 255, 0)) !important;
+}
+
+.lwaSsTrack {
+  display: flex !important;
+  gap: 18px !important;
+  width: max-content !important;
+  animation: lwaSsScroll 120s linear infinite !important;
   will-change: transform;
   -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
@@ -882,10 +884,55 @@ input[type="submit"] {
   perspective: 1000;
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .group-proof-hover:hover .animate-marquee-track {
-    animation-play-state: paused;
+.lwaSsTrack img {
+  width: 260px !important;
+  height: auto !important;
+  display: block !important;
+  border-radius: 16px !important;
+  border: 1px solid #E2EFF7 !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08) !important;
+  flex: 0 0 auto !important;
+  pointer-events: none !important;
+  user-select: none !important;
+}
+
+.lwaSsViewport:hover .lwaSsTrack {
+  animation-play-state: paused !important;
+}
+
+@-webkit-keyframes lwaSsScroll {
+  0% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(calc(-50% - 9px));
+    transform: translateX(calc(-50% - 9px));
   }
 }
+
+@keyframes lwaSsScroll {
+  0% {
+    -webkit-transform: translateX(0);
+    transform: translateX(0);
+  }
+  100% {
+    -webkit-transform: translateX(calc(-50% - 9px));
+    transform: translateX(calc(-50% - 9px));
+  }
+}
+
+@media (max-width: 600px) {
+  .lwaSsTrack img {
+    width: 200px !important;
+  }
+  .lwaSsTrack {
+    animation-duration: 90s !important;
+  }
+  .lwaSsFade {
+    width: 50px !important;
+  }
+}
+
 
 

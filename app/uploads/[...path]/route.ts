@@ -38,6 +38,32 @@ export async function GET(
     const fullPath = path.join(process.cwd(), 'public', 'uploads', relativePath);
 
     if (!fs.existsSync(fullPath)) {
+      // Check MySQL persistent media storage (Permanent backup immune to Git wipes)
+      try {
+        const { mysqlGetMediaUpload } = await import('@/lib/mysql');
+        const media = await mysqlGetMediaUpload(relativePath);
+        if (media && media.buffer) {
+          // Re-hydrate file back to disk cache for ultra-fast subsequent serving
+          try {
+            const dir = path.dirname(fullPath);
+            if (!fs.existsSync(dir)) fs.mkdirSync(dir, { recursive: true });
+            fs.writeFileSync(fullPath, media.buffer);
+          } catch {}
+
+          return new NextResponse(new Uint8Array(media.buffer), {
+            status: 200,
+            headers: {
+              'Content-Type': media.contentType || 'image/jpeg',
+              'Content-Length': String(media.buffer.length),
+              'Cache-Control': 'public, max-age=31536000, immutable',
+              'Access-Control-Allow-Origin': '*'
+            }
+          });
+        }
+      } catch (dbErr: any) {
+        console.warn('MySQL persistent media lookup failed:', dbErr?.message);
+      }
+
       return new NextResponse('File not found', { status: 404 });
     }
 
@@ -50,7 +76,7 @@ export async function GET(
     const contentType = MIME_TYPES[ext] || 'application/octet-stream';
     const fileBuffer = fs.readFileSync(fullPath);
 
-    return new NextResponse(fileBuffer, {
+    return new NextResponse(new Uint8Array(fileBuffer), {
       status: 200,
       headers: {
         'Content-Type': contentType,

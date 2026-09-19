@@ -1,4 +1,5 @@
 import mysql from 'mysql2/promise';
+import path from 'path';
 import { defaultCmsContent } from '@/utils/cmsStore';
 import { 
   Module, 
@@ -93,6 +94,26 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
         \`updated_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
       ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
     `);
+
+    // 4B. Persistent Media Uploads Table (Immune to Git deployments & Hostinger disk resets)
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`media_uploads\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`category\` VARCHAR(64) NOT NULL DEFAULT 'reviews',
+          \`filename\` VARCHAR(255) NOT NULL,
+          \`content_type\` VARCHAR(64) NOT NULL DEFAULT 'image/jpeg',
+          \`data_base64\` LONGTEXT NOT NULL,
+          \`created_at\` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+          PRIMARY KEY (\`id\`),
+          KEY \`idx_media_filename\` (\`filename\`),
+          KEY \`idx_media_category\` (\`category\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+    } catch (mErr: any) {
+      console.warn('media_uploads table init error:', mErr?.message);
+    }
+
 
     // 5. LMS Modules table in Hostinger MySQL
     await p.query(`
@@ -1502,3 +1523,59 @@ export async function mysqlBulkDeleteTickets(ids: string[]): Promise<boolean> {
   }
   return false;
 }
+
+// ============================================================================
+// PERSISTENT MEDIA UPLOADS (SAVED PERMANENTLY IN MYSQL - IMMUNE TO GIT WIPES)
+// ============================================================================
+
+export async function mysqlSaveMediaUpload(
+  id: string,
+  category: string,
+  filename: string,
+  contentType: string,
+  buffer: Buffer
+): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const base64Data = buffer.toString('base64');
+      await pool.query(
+        `INSERT INTO media_uploads (\`id\`, \`category\`, \`filename\`, \`content_type\`, \`data_base64\`)
+         VALUES (?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE \`content_type\` = VALUES(\`content_type\`), \`data_base64\` = VALUES(\`data_base64\`)`,
+        [id, category, filename, contentType, base64Data]
+      );
+      return true;
+    } catch (err) {
+      console.error('mysqlSaveMediaUpload error:', err);
+    }
+  }
+  return false;
+}
+
+export async function mysqlGetMediaUpload(idOrFilename: string): Promise<{
+  contentType: string;
+  buffer: Buffer;
+} | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const cleanName = path.basename(idOrFilename);
+      const cleanId = cleanName.includes('.') ? cleanName.split('.')[0] : cleanName;
+      const [rows]: any = await pool.query(
+        `SELECT content_type, data_base64 FROM media_uploads WHERE id = ? OR filename = ? OR id = ? LIMIT 1`,
+        [idOrFilename, cleanName, cleanId]
+      );
+      if (rows && rows.length > 0 && rows[0].data_base64) {
+        return {
+          contentType: rows[0].content_type || 'image/jpeg',
+          buffer: Buffer.from(rows[0].data_base64, 'base64')
+        };
+      }
+    } catch (err) {
+      console.error('mysqlGetMediaUpload error:', err);
+    }
+  }
+  return null;
+}
+
