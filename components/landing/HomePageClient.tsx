@@ -231,12 +231,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroMuted, setIsHeroMuted] = useState(true);
   const [isHeroPlaying, setIsHeroPlaying] = useState(true);
   const [heroCurrentTime, setHeroCurrentTime] = useState(1);
-  const [heroDuration, setHeroDuration] = useState(128);
+  const [heroDuration, setHeroDuration] = useState(135);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroIframeRef = useRef<HTMLIFrameElement>(null);
   const heroTimelineTrackRef = useRef<HTMLDivElement>(null);
   const lastTouchTimeRef = useRef<number>(0);
+  const lastIframeMsgTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (initialContent) {
@@ -512,8 +513,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       try {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data && data.event === 'infoDelivery' && data.info) {
+          lastIframeMsgTimeRef.current = Date.now();
           if (typeof data.info.currentTime === 'number') {
-            setHeroCurrentTime(Math.floor(data.info.currentTime));
+            const secs = Math.floor(data.info.currentTime);
+            setHeroCurrentTime(secs);
           }
           if (typeof data.info.duration === 'number' && data.info.duration > 0) {
             setHeroDuration(Math.floor(data.info.duration));
@@ -530,10 +533,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  // Auto increment counter when playing if video is an embed iframe
+  // Fallback counter ONLY when iframe message stream is NOT available (prevents timer flicker collision)
   useEffect(() => {
     if (!isDirectVideo && isHeroPlaying) {
       const interval = setInterval(() => {
+        // If iframe is actively streaming postMessages, DO NOT touch currentTime to avoid flickering!
+        if (Date.now() - lastIframeMsgTimeRef.current < 2000) {
+          return;
+        }
         setHeroCurrentTime(prev => (prev >= heroDuration ? 0 : prev + 1));
       }, 1000);
       return () => clearInterval(interval);
