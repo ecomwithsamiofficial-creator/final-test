@@ -443,6 +443,41 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     }
   }, [isDirectVideo, hero.video_url]);
 
+  // Derive duration from video header text if available (e.g. "Watch this 128 seconds...")
+  useEffect(() => {
+    if (hero.video_header) {
+      const match = hero.video_header.match(/(\d+)\s*(?:seconds|sec|s)/i);
+      if (match && match[1]) {
+        const parsed = parseInt(match[1], 10);
+        if (parsed > 0) setHeroDuration(parsed);
+      }
+    }
+  }, [hero.video_header]);
+
+  // Listen for real YouTube / PlayerJS time and duration updates
+  useEffect(() => {
+    const handleWindowMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && data.event === 'infoDelivery' && data.info) {
+          if (typeof data.info.currentTime === 'number') {
+            setHeroCurrentTime(Math.floor(data.info.currentTime));
+          }
+          if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+            setHeroDuration(Math.floor(data.info.duration));
+          }
+          if (typeof data.info.playerState === 'number') {
+            if (data.info.playerState === 1) setIsHeroPlaying(true);
+            if (data.info.playerState === 2) setIsHeroPlaying(false);
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  }, []);
+
   // Auto increment counter when playing if video is an embed iframe
   useEffect(() => {
     if (!isDirectVideo && isHeroPlaying) {
@@ -768,20 +803,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
                   {/* Bottom Sleek Control Bar (Afaq style - 44px touch targets for mobile) */}
                   <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-80' : 'opacity-100'}`}>
-                    <div className="flex items-center gap-1 sm:gap-2">
-                      <button
-                        type="button"
-                        onClick={toggleHeroPlay}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                          toggleHeroPlay();
-                        }}
-                        style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer select-none"
-                        title={isHeroPlaying ? 'Pause Video' : 'Play Video'}
-                      >
-                        {isHeroPlaying ? <Pause size={17} /> : <Play size={17} className="fill-current" />}
-                      </button>
+                    <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
                         onClick={toggleHeroMute}
@@ -790,13 +812,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           toggleHeroMute();
                         }}
                         style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] transition-colors min-w-[44px] min-h-[44px] flex items-center justify-center cursor-pointer select-none"
+                        className="text-white hover:text-[#00A0DF] transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center cursor-pointer select-none"
                         title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
                       >
-                        {isHeroMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+                        {isHeroMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
                       </button>
-                      <span className="text-[10px] sm:text-xs font-mono font-bold text-white">
-                        {formatHeroTime(heroCurrentTime)}
+                      <span className="text-[10px] sm:text-xs font-mono font-bold text-white tracking-tight whitespace-nowrap">
+                        {formatHeroTime(heroCurrentTime)} / {formatHeroTime(heroDuration)}
                       </span>
                     </div>
 
