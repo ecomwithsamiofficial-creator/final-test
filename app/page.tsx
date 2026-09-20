@@ -27,6 +27,7 @@ export default async function HomePage() {
       initialContent={content} 
       initialModules={modules} 
       serverRemainingSeconds={serverRemainingSeconds}
+      serverTime={now}
     />
   );
 }

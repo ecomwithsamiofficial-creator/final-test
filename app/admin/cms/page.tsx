@@ -1641,7 +1641,7 @@ export default function AdminCmsPage() {
             { id: 'themes', label: '18. 🎨 Theme Colors', icon: Palette },
             { id: 'pixels', label: '19. 🎯 Pixels & Code', icon: Settings },
             { id: 'success_page', label: '20. 🏆 Success Stories Page', icon: Award },
-            { id: 'checkout_page', label: '21. 🛒 Checkout & Homepage Timer', icon: ShoppingBag },
+            { id: 'checkout_page', label: '21. ⏱️ Urgency Timer & Seats (Home & Checkout)', icon: Clock },
             { id: 'about_page', label: '22. 👤 About Sami Page', icon: Users }
           ].map((t) => {
             const Icon = t.icon;
@@ -7359,12 +7359,21 @@ export default function AdminCmsPage() {
             {/* Header Description */}
             <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
               <div>
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="text-[10px] uppercase font-black bg-emerald-500/20 text-emerald-400 px-2.5 py-0.5 rounded-full border border-emerald-500/30 flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Universal Real-Time Sync Active
+                  </span>
+                  <span className="text-[10px] uppercase font-bold bg-[#00A0DF]/20 text-[#00A0DF] px-2.5 py-0.5 rounded-full border border-[#00A0DF]/30">
+                    Controls Both Pages
+                  </span>
+                </div>
                 <h2 className="text-base sm:text-2xl font-black text-white flex items-center gap-2">
-                  <ShoppingBag size={20} className="text-[#00A0DF]" />
-                  <span>Checkout Page &amp; Homepage Countdown Timer Settings</span>
+                  <Clock size={22} className="text-[#00A0DF]" />
+                  <span>Urgency Countdown Timer, Seats Bar &amp; Badges</span>
                 </h2>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Customize the top banner, synchronized countdown clock, remaining seats alert, progress bar fill line, and trust badges across both the Checkout page (/enrollment) and Homepage bottom CTA simultaneously.
+                <p className="text-xs text-slate-400 mt-1 max-w-2xl">
+                  Ye single section <strong className="text-white">Homepage (Footer Area)</strong> aur <strong className="text-white">Checkout Page (/enrollment)</strong> dono ke Countdown Timer, Remaining Seats Alert, Progress Bar aur Trust Badges ko ek sath control karta hai. Tamam devices (Android, iPhone Safari, PC) par exact same real-time second sync rehta hai.
                 </p>
               </div>
 

@@ -217,9 +217,10 @@ interface HomePageClientProps {
   initialContent: CmsContentSchema;
   initialModules: Module[];
   serverRemainingSeconds?: number;
+  serverTime?: number;
 }
 
-export function HomePageClient({ initialContent, initialModules, serverRemainingSeconds }: HomePageClientProps) {
+export function HomePageClient({ initialContent, initialModules, serverRemainingSeconds, serverTime }: HomePageClientProps) {
   const [isVideoOpen, setIsVideoOpen] = useState(false);
   const [activeVideoUrl, setActiveVideoUrl] = useState('');
   const [activeVideoTitle, setActiveVideoTitle] = useState('');
@@ -1491,6 +1492,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
             <CountdownTimer 
               timerAnchorTime={content.checkout_page?.timer_anchor_time ?? defaultCmsContent.checkout_page?.timer_anchor_time}
               serverRemainingSeconds={serverRemainingSeconds}
+              serverTime={serverTime}
               timerHeading={content.checkout_page?.timer_heading ?? defaultCmsContent.checkout_page?.timer_heading}
               initialHours={content.checkout_page?.timer_hours ?? defaultCmsContent.checkout_page?.timer_hours}
               initialMinutes={content.checkout_page?.timer_minutes ?? defaultCmsContent.checkout_page?.timer_minutes}

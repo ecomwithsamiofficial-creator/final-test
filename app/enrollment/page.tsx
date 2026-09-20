@@ -23,6 +23,7 @@ export default async function EnrollmentPage() {
     <EnrollmentPageClient 
       initialContent={content} 
       serverRemainingSeconds={serverRemainingSeconds}
+      serverTime={now}
     />
   );
 }

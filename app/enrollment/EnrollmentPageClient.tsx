@@ -30,9 +30,10 @@ import { defaultCmsContent, CmsContentSchema } from '@/utils/cmsStore';
 interface EnrollmentPageClientProps {
   initialContent?: CmsContentSchema | null;
   serverRemainingSeconds?: number;
+  serverTime?: number;
 }
 
-export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }: EnrollmentPageClientProps) {
+export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, serverTime }: EnrollmentPageClientProps) {
   const { displayPhone } = useContactConfig();
 
   const [selectedMethod, setSelectedMethod] = useState<string>('easypaisa');
@@ -307,6 +308,7 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds }:
             <CountdownTimer
               timerAnchorTime={checkoutContent.timer_anchor_time}
               serverRemainingSeconds={serverRemainingSeconds}
+              serverTime={serverTime}
               timerHeading={checkoutContent.timer_heading}
               initialHours={checkoutContent.timer_hours}
               initialMinutes={checkoutContent.timer_minutes}

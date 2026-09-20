@@ -6,6 +6,7 @@ import { Clock, Flame, ShieldCheck, Zap, Users } from 'lucide-react';
 export interface CountdownTimerProps {
   timerAnchorTime?: number;
   serverRemainingSeconds?: number;
+  serverTime?: number;
   initialHours?: number;
   initialMinutes?: number;
   initialSeconds?: number;
@@ -20,6 +21,7 @@ export interface CountdownTimerProps {
 export function CountdownTimer({
   timerAnchorTime,
   serverRemainingSeconds,
+  serverTime,
   initialHours = 2,
   initialMinutes = 27,
   initialSeconds = 38,
@@ -35,42 +37,36 @@ export function CountdownTimer({
     Number(initialHours || 0) * 3600 + Number(initialMinutes || 0) * 60 + Number(initialSeconds || 0)
   );
 
+  // Server-calibrated clock skew (100% immune to individual phone clock differences)
+  const clockSkew = typeof serverTime === 'number' && serverTime > 0
+    ? Date.now() - serverTime
+    : 0;
+
   const calculateGlobalRemaining = () => {
     const anchor = Number(timerAnchorTime) || 1773100000000;
-    const now = Date.now();
-    const elapsed = Math.max(0, Math.floor((now - anchor) / 1000)) % configuredDuration;
+    const calibratedNow = Date.now() - clockSkew;
+    const elapsed = Math.max(0, Math.floor((calibratedNow - anchor) / 1000)) % configuredDuration;
     return Math.max(0, configuredDuration - elapsed);
   };
 
-  const baseRemaining = typeof serverRemainingSeconds === 'number' && serverRemainingSeconds >= 0
-    ? serverRemainingSeconds
-    : calculateGlobalRemaining();
-
-  const [totalSeconds, setTotalSeconds] = useState<number>(baseRemaining);
+  const [totalSeconds, setTotalSeconds] = useState<number>(() => {
+    if (typeof serverRemainingSeconds === 'number' && serverRemainingSeconds >= 0) {
+      return serverRemainingSeconds;
+    }
+    return calculateGlobalRemaining();
+  });
 
   useEffect(() => {
-    // Record mount moment via high-resolution monotonic timer (100% immune to phone clock differences!)
-    const mountTime = typeof performance !== 'undefined' ? performance.now() : Date.now();
-    const startSeconds = baseRemaining;
+    // Initial sync
+    setTotalSeconds(calculateGlobalRemaining());
 
-    const tick = () => {
-      const now = typeof performance !== 'undefined' ? performance.now() : Date.now();
-      const elapsedSinceMount = Math.floor((now - mountTime) / 1000);
-      let remaining = startSeconds - elapsedSinceMount;
+    // Continuous 1-second real-time tick with automatic rollover
+    const timer = setInterval(() => {
+      setTotalSeconds(calculateGlobalRemaining());
+    }, 1000);
 
-      // Auto-restart loop when reaching 00:00:00
-      if (remaining <= 0) {
-        const overtime = Math.abs(remaining);
-        remaining = configuredDuration - (overtime % configuredDuration);
-      }
-
-      setTotalSeconds(Math.max(0, remaining));
-    };
-
-    tick();
-    const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [baseRemaining, configuredDuration]);
+  }, [timerAnchorTime, configuredDuration, clockSkew]);
 
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
