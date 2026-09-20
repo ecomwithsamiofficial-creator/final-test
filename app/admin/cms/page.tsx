@@ -3518,7 +3518,7 @@ export default function AdminCmsPage() {
                       <label className="block text-[11px] font-bold text-[#00A0DF]">Stat #1 (Blue)</label>
                       <input
                         type="text"
-                        placeholder="e.g. 9,700+"
+                        placeholder="e.g. 1,200+"
                         value={cmsData.mentor?.stat1_value ?? cmsData.mentor?.students_count ?? ''}
                         onChange={(e) => setCmsData({
                           ...cmsData,
@@ -6950,7 +6950,7 @@ export default function AdminCmsPage() {
                       </div>
                       <div className="flex items-center gap-1 text-[11px] text-slate-400">
                         <span style={{ color: currentThemeColors.secondary }}>★★★★★</span>
-                        <span>• 9,742+ Students Enrolled</span>
+                        <span>• 1,200+ Students Enrolled</span>
                       </div>
                     </div>
 

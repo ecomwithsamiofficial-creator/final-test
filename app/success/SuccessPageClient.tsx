@@ -42,9 +42,9 @@ export function SuccessPageClient({ initialContent }: SuccessPageClientProps) {
   const badge = successCms.badge || 'VERIFIED STUDENT PROOF';
   const titleLine1 = successCms.title_line1 || 'Real Students. Real Stores.';
   const titleHighlight = successCms.title_highlight || 'Real Results.';
-  const subtitle = successCms.subtitle || 'Explore real earnings screenshots, case studies, and reviews from over 9,700 students who joined the Ecom With Sami mentorship.';
+  const subtitle = successCms.subtitle || 'Explore real earnings screenshots, case studies, and reviews from over 1,200 students who joined the Ecom With Sami mentorship.';
 
-  const stat1Val = successCms.stat1_value || '9,700+';
+  const stat1Val = successCms.stat1_value || '1,200+';
   const stat1Lbl = successCms.stat1_label || 'Total Students';
   const stat2Val = successCms.stat2_value || '89%';
   const stat2Lbl = successCms.stat2_label || 'First Sale in 14 Days';

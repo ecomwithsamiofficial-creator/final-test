@@ -46,13 +46,13 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
 
   const fallback = defaultCmsContent.screenshot_reviews || {
     badge: 'REAL STUDENT RESULTS',
-    title: 'Join 9,700+ Happy Students',
+    title: 'Join 1,200+ Happy Students',
     subtitle: 'Real, unedited screenshots from our students — results & feedback.',
     images: []
   };
 
   const badge = data?.badge || fallback.badge || 'REAL STUDENT RESULTS';
-  const title = data?.title || fallback.title || 'Join 9,700+ Happy Students';
+  const title = data?.title || fallback.title || 'Join 1,200+ Happy Students';
   const subtitle = data?.subtitle || fallback.subtitle || 'Real, unedited screenshots from our students — results & feedback.';
   
   // Smart Bi-directional Fallback:

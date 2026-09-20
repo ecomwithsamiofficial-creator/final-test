@@ -307,7 +307,7 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   const isCustomMentor = (m: any) => {
     if (!m || typeof m !== 'object') return false;
     if (m.image && m.image.includes('/uploads/mentor/')) return true;
-    if (m.stat1_value && m.stat1_value !== '9,700+' && m.stat1_value !== '9,742+') return true;
+    if (m.stat1_value && m.stat1_value !== '1,200+' && m.stat1_value !== '9,700+' && m.stat1_value !== '9,742+') return true;
     if (m.stat2_value && m.stat2_value !== 'UAE & KSA') return true;
     if (m.bio && m.bio.includes('Pakistani sellers')) return true;
     return false;

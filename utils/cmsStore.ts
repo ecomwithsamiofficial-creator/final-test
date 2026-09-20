@@ -433,7 +433,7 @@ export const defaultCmsContent: CmsContentSchema = {
     is_active: true,
     items: [
       '🔥 RAMADAN SPECIAL 88% DISCOUNT &bull; PKR 3,799 ONLY FOR LIFETIME ACCESS',
-      '⚡ 9,742+ SUCCESSFUL STUDENTS TRAINED ACROSS PAKISTAN, UAE & SAUDI ARABIA',
+      '⚡ 1,200+ SUCCESSFUL STUDENTS TRAINED ACROSS PAKISTAN, UAE & SAUDI ARABIA',
       '🚀 2026 UPDATED GCC SCALING BLUEPRINT WITH DIRECT DUBAI SUPPLIERS',
       '💬 DIRECT 1-ON-1 WHATSAPP MENTORSHIP WITH MENTOR SAMI INCLUDED'
     ]
@@ -473,7 +473,7 @@ export const defaultCmsContent: CmsContentSchema = {
       'Private WhatsApp community',
       'Smooth, guided journey'
     ],
-    stat1_value: '9,700+',
+    stat1_value: '1,200+',
     stat1_label: 'Students mentored',
     stat2_value: 'UAE & KSA',
     stat2_label: 'Market focus',
@@ -481,7 +481,7 @@ export const defaultCmsContent: CmsContentSchema = {
     stat3_label: 'Access & support',
     quote: 'You Don’t Need Millions To Start. You Just Need A Proven Step-by-Step Blueprint.',
     story: 'When I started dropshipping, the biggest hurdle wasn’t the technical setup — it was the lack of reliable local supplier contacts in the GCC and constant trial-and-error wasting hard-earned ad spend.\n\nAfter years of testing, scaling, and establishing direct relationships with verified warehouses across Dubai, Sharjah, and Riyadh, I designed this training specifically for beginners in Pakistan who want to earn in Dirhams and Riyals from home.\n\nOur goal is simple: eliminate the guesswork, give you direct phone numbers to real suppliers, teach you high-converting TikTok & Facebook media buying, and provide live mentorship whenever you get stuck.',
-    students_count: '9,700+',
+    students_count: '1,200+',
     primary_markets: 'UAE & Saudi Arabia (KSA)',
     access_badge: 'Verified Mentor & Coach'
   },
@@ -768,7 +768,7 @@ export const defaultCmsContent: CmsContentSchema = {
     ]
   },
   final_cta: {
-    badge: 'JOIN 9,700+ STUDENTS',
+    badge: 'JOIN 1,200+ STUDENTS',
     title: 'Take the First Step Toward a',
     title_highlight: 'Profitable Dropshipping Business',
     subtitle: 'Thousands of beginners across UAE & KSA markets have already started. Today it\'s your turn.',
@@ -883,7 +883,7 @@ export const defaultCmsContent: CmsContentSchema = {
   },
   screenshot_reviews: {
     badge: 'REAL STUDENT RESULTS',
-    title: 'Join 9,700+ Happy Students',
+    title: 'Join 1,200+ Happy Students',
     subtitle: 'Real, unedited screenshots from our students — results & feedback.',
     images: []
   },
@@ -897,8 +897,8 @@ export const defaultCmsContent: CmsContentSchema = {
     badge: 'VERIFIED STUDENT PROOF',
     title_line1: 'Real Students. Real Stores.',
     title_highlight: 'Real Results.',
-    subtitle: 'Explore real earnings screenshots, case studies, and reviews from over 9,700 students who joined the Ecom With Sami mentorship.',
-    stat1_value: '9,700+',
+    subtitle: 'Explore real earnings screenshots, case studies, and reviews from over 1,200 students who joined the Ecom With Sami mentorship.',
+    stat1_value: '1,200+',
     stat1_label: 'Total Students',
     stat2_value: '89%',
     stat2_label: 'First Sale in 14 Days',

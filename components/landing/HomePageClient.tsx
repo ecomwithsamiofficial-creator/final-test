@@ -628,7 +628,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop" alt="Student" />
                     <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop" alt="Student" />
                   </div>
-                  <span>{hero.trusted_text || `Trusted by ${mentor.students_count || '9,700+'} Students`}</span>
+                  <span>{hero.trusted_text || `Trusted by ${mentor.students_count || '1,200+'} Students`}</span>
                 </div>
               </div>
 
@@ -843,7 +843,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <Star key={i} size={12} className="fill-amber-400 text-amber-400" />
                     ))}
                   </div>
-                  <span>{hero.trusted_text || `Trusted by ${mentor.students_count || '9,700+'} Students`}</span>
+                  <span>{hero.trusted_text || `Trusted by ${mentor.students_count || '1,200+'} Students`}</span>
                 </div>
               </div>
 
@@ -955,7 +955,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               YES! I WANT TO LEARN THIS
             </Link>
             <p className="text-xs text-slate-500 font-semibold mt-3">
-              Join 9,700+ students already building their stores
+              Join 1,200+ students already building their stores
             </p>
           </div>
 
@@ -1091,7 +1091,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                 {/* Stat Counters */}
                 <div className="grid grid-cols-3 gap-3 pt-5 border-t border-slate-800 text-center">
                   <div>
-                    <div className="text-lg sm:text-2xl font-black text-[#00A0DF]">{mentor.stat1_value || mentor.students_count || '9,700+'}</div>
+                    <div className="text-lg sm:text-2xl font-black text-[#00A0DF]">{mentor.stat1_value || mentor.students_count || '1,200+'}</div>
                     <div className="text-[11px] text-slate-400 font-semibold">{mentor.stat1_label || 'Students mentored'}</div>
                   </div>
                   <div>
@@ -1462,7 +1462,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
           <span className="inline-block bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full mb-4 animate-float">
-            {content.final_cta?.badge || 'JOIN 9,700+ STUDENTS'}
+            {content.final_cta?.badge || 'JOIN 1,200+ STUDENTS'}
           </span>
 
           <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-4 leading-tight">
