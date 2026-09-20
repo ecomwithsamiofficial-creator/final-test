@@ -45,6 +45,7 @@ import {
   Pause,
   Volume2,
   VolumeX,
+  Settings,
   ChevronDown
 } from 'lucide-react';
 import { defaultCmsContent, CmsContentSchema, updateCmsContent } from '@/utils/cmsStore';
@@ -238,6 +239,21 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const heroTimelineTrackRef = useRef<HTMLDivElement>(null);
   const lastTouchTimeRef = useRef<number>(0);
   const lastIframeMsgTimeRef = useRef<number>(0);
+  const [selectedQuality, setSelectedQuality] = useState<'auto' | '1080p' | '720p' | '480p'>('auto');
+  const [isQualityMenuOpen, setIsQualityMenuOpen] = useState(false);
+  const qualityMenuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      if (qualityMenuRef.current && !qualityMenuRef.current.contains(e.target as Node)) {
+        setIsQualityMenuOpen(false);
+      }
+    };
+    if (isQualityMenuOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, [isQualityMenuOpen]);
 
   useEffect(() => {
     if (initialContent) {
@@ -458,6 +474,40 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
     const targetSeconds = Math.floor(percent * Math.max(1, heroDuration));
     seekHeroVideo(targetSeconds);
+  };
+
+  const changeHeroQuality = (quality: 'auto' | '1080p' | '720p' | '480p') => {
+    setSelectedQuality(quality);
+    setIsQualityMenuOpen(false);
+
+    if (heroIframeRef.current) {
+      try {
+        const qualityMap: Record<string, string> = {
+          'auto': 'default',
+          '1080p': 'hd1080',
+          '720p': 'hd720',
+          '480p': 'large'
+        };
+        const ytQuality = qualityMap[quality] || 'default';
+
+        heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setPlaybackQuality',
+            args: [ytQuality]
+          }),
+          '*'
+        );
+        heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setPlaybackQualityRange',
+            args: [ytQuality, ytQuality]
+          }),
+          '*'
+        );
+      } catch (e) {}
+    }
   };
 
   const formatHeroTime = (secs: number) => {
@@ -914,6 +964,51 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           style={{ left: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
                         />
                       </div>
+                    </div>
+
+                    {/* Settings / Video Quality Menu Button */}
+                    <div className="relative ml-1 sm:ml-2" ref={qualityMenuRef}>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsQualityMenuOpen(prev => !prev);
+                        }}
+                        style={{ touchAction: 'manipulation' }}
+                        className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none rounded-lg hover:bg-white/10"
+                        title="Video Quality Settings"
+                      >
+                        <Settings size={16} className={`transition-transform duration-300 ${isQualityMenuOpen ? 'rotate-90 text-[#00A0DF]' : ''}`} />
+                      </button>
+
+                      {/* Glassmorphic Quality Popover Menu */}
+                      {isQualityMenuOpen && (
+                        <div 
+                          onClick={(e) => e.stopPropagation()}
+                          className="absolute right-0 bottom-full mb-2.5 w-36 sm:w-40 bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs select-none"
+                        >
+                          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-white/10">
+                            Quality
+                          </div>
+                          {(['auto', '1080p', '720p', '480p'] as const).map((q) => (
+                            <button
+                              key={q}
+                              type="button"
+                              onClick={() => changeHeroQuality(q)}
+                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors ${
+                                selectedQuality === q 
+                                  ? 'bg-[#00A0DF] text-white font-bold' 
+                                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
+                              }`}
+                            >
+                              <span>
+                                {q === 'auto' ? 'Auto (Best)' : q === '1080p' ? '1080p HD' : q === '720p' ? '720p' : '480p'}
+                              </span>
+                              {selectedQuality === q && <Check size={14} className="stroke-[3]" />}
+                            </button>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
