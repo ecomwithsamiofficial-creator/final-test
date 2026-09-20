@@ -33,7 +33,7 @@ export function StickyMobileCta() {
         {/* Price & Benefits */}
         <div className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
           <div className="flex items-baseline gap-2">
-            <span className="text-xs line-through text-red-500 font-semibold">32,500</span>
+            <span className="text-xs line-through text-red-500 font-semibold">14,999</span>
             <span className="text-base sm:text-lg font-black text-slate-900">PKR 3,799/- Only</span>
           </div>
 

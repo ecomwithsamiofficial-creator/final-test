@@ -827,7 +827,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   <p className="text-xs sm:text-sm font-bold text-slate-700">
                     Originally{' '}
                     <span className="line-through font-extrabold text-red-500">
-                      {hero.original_price || '32,500 PKR'}
+                      {hero.original_price || '14,999 PKR'}
                     </span>{' '}
                     — Get Instant Access Today for Just{' '}
                     <span className="font-extrabold text-[#00A0DF]">
