@@ -235,6 +235,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroIframeRef = useRef<HTMLIFrameElement>(null);
+  const heroTimelineTrackRef = useRef<HTMLDivElement>(null);
+  const lastTouchTimeRef = useRef<number>(0);
 
   useEffect(() => {
     if (initialContent) {
@@ -375,7 +377,15 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   };
 
   const toggleHeroMute = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (e) e.stopPropagation();
+    if (e) {
+      e.stopPropagation();
+      // Prevent synthetic click right after touchend on Android Chrome
+      if ('touches' in e || e.type === 'touchend') {
+        lastTouchTimeRef.current = Date.now();
+      } else if (e.type === 'click' && Date.now() - lastTouchTimeRef.current < 450) {
+        return;
+      }
+    }
     const nextMuted = !isHeroMuted;
     setIsHeroMuted(nextMuted);
 
@@ -384,10 +394,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       if (!nextMuted) heroVideoRef.current.volume = 1;
     } else if (heroIframeRef.current) {
       try {
+        // YouTube API requires args: [] for commands
         heroIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({
             event: 'command',
-            func: nextMuted ? 'mute' : 'unMute'
+            func: nextMuted ? 'mute' : 'unMute',
+            args: []
           }),
           '*'
         );
@@ -397,14 +409,54 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
             '*'
           );
         }
+        // PlayerJS / Bunny.net
+        heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: nextMuted ? 'mute' : 'unmute' }),
+          '*'
+        );
+        heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: 'setVolume', value: nextMuted ? 0 : 100 }),
+          '*'
+        );
+      } catch (e) {}
+    }
+  };
+
+  const seekHeroVideo = (targetSeconds: number) => {
+    const clamped = Math.max(0, Math.min(targetSeconds, Math.max(1, heroDuration)));
+    setHeroCurrentTime(clamped);
+
+    if (isDirectVideo && heroVideoRef.current) {
+      heroVideoRef.current.currentTime = clamped;
+    } else if (heroIframeRef.current) {
+      try {
+        // YouTube API seekTo with fast seek (allowSeekAhead = true)
         heroIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({
-            method: nextMuted ? 'mute' : 'unmute'
+            event: 'command',
+            func: 'seekTo',
+            args: [clamped, true]
+          }),
+          '*'
+        );
+        // PlayerJS / Bunny setCurrentTime
+        heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            method: 'setCurrentTime',
+            value: clamped
           }),
           '*'
         );
       } catch (e) {}
     }
+  };
+
+  const handleTimelineInteraction = (clientX: number) => {
+    if (!heroTimelineTrackRef.current) return;
+    const rect = heroTimelineTrackRef.current.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetSeconds = Math.floor(percent * Math.max(1, heroDuration));
+    seekHeroVideo(targetSeconds);
   };
 
   const formatHeroTime = (secs: number) => {
@@ -807,12 +859,9 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <button
                         type="button"
                         onClick={toggleHeroMute}
-                        onTouchEnd={(e) => {
-                          e.stopPropagation();
-                          toggleHeroMute();
-                        }}
+                        onTouchEnd={toggleHeroMute}
                         style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] transition-colors min-w-[40px] min-h-[40px] flex items-center justify-center cursor-pointer select-none"
+                        className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[38px] min-h-[38px] sm:min-w-[40px] sm:min-h-[40px] flex items-center justify-center cursor-pointer select-none"
                         title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
                       >
                         {isHeroMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
@@ -822,12 +871,38 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       </span>
                     </div>
 
-                    {/* Progress Bar Track */}
-                    <div className="flex-1 ml-2 bg-white/30 rounded-full h-1 sm:h-1.5 overflow-hidden">
-                      <div 
-                        className="bg-[#00A0DF] h-full rounded-full transition-all duration-300"
-                        style={{ width: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
-                      />
+                    {/* Interactive Draggable & Tap-to-Seek Timeline (Hand Drag/Seek on Mobile) */}
+                    <div 
+                      ref={heroTimelineTrackRef}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTimelineInteraction(e.clientX);
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                      }}
+                      onTouchMove={(e) => {
+                        e.stopPropagation();
+                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                      }}
+                      style={{ touchAction: 'none' }}
+                      className="flex-1 ml-2.5 py-3 -my-3 flex items-center cursor-pointer select-none group/timeline relative"
+                      title="Drag or tap to seek"
+                    >
+                      {/* Track Background */}
+                      <div className="w-full bg-white/30 group-hover/timeline:bg-white/40 rounded-full h-1.5 sm:h-2 relative overflow-visible transition-colors">
+                        {/* Progress Fill */}
+                        <div 
+                          className="bg-[#00A0DF] h-full rounded-full transition-[width] duration-75"
+                          style={{ width: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
+                        />
+                        {/* Draggable Glowing Scrubber Thumb */}
+                        <div 
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg border-2 border-[#00A0DF] transition-transform active:scale-125 group-hover/timeline:scale-110 pointer-events-none"
+                          style={{ left: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
+                        />
+                      </div>
                     </div>
                   </div>
 
