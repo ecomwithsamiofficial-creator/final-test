@@ -98,9 +98,10 @@ export function BonusStack({ customData }: { customData?: any }) {
       <div className="text-center">
         <Link
           href="/enrollment"
-          className="lwa-btn px-10 py-4 text-sm sm:text-base font-black rounded-xl"
+          className="lwa-btn px-10 py-4 text-sm sm:text-base font-black rounded-xl inline-flex items-center justify-center gap-2 hover:gap-3 transition-all uppercase tracking-wider shadow-xl shadow-[#00A0DF]/30"
         >
-          YES! I WANT TO LEARN THIS
+          <span>CLAIM MY BONUSES</span>
+          <ArrowRight size={18} className="stroke-[3]" />
         </Link>
       </div>
     </div>
