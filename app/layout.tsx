@@ -7,6 +7,7 @@ import { dbGetCmsSettings } from '@/lib/database';
 import { generateThemeCss, DEFAULT_THEME_COLORS } from '@/utils/cmsStore';
 
 import { JsonLd } from '@/components/seo/JsonLd';
+import { AntiInspectShield } from '@/components/security/AntiInspectShield';
 
 export const revalidate = 60;
 
@@ -154,6 +155,7 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#00A0DF] selection:text-white">
+        <AntiInspectShield />
         <DynamicPixels />
         <LiveVisitorTracker />
         {children}

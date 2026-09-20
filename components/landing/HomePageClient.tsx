@@ -542,7 +542,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
   const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&showinfo=0&iv_load_policy=3&fs=0&disablekb=1`;
   };
 
   const getBunnyEmbedUrl = (url: string) => {
@@ -806,18 +806,22 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="w-full h-full object-cover"
                     />
                   ) : isYouTubeVideo ? (
-                    <iframe
-                      ref={heroIframeRef}
-                      src={getYouTubeEmbedUrl(hero.video_url)}
-                      title="Hero Overview Video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className="w-full h-full pointer-events-none scale-[1.02]"
-                    />
+                    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
+                      <iframe
+                        ref={heroIframeRef}
+                        src={getYouTubeEmbedUrl(hero.video_url)}
+                        title="Hero Overview Video"
+                        loading="eager"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        className="absolute -top-[52px] sm:-top-[62px] left-0 w-full h-[calc(100%+85px)] sm:h-[calc(100%+98px)] pointer-events-none scale-[1.03] origin-center"
+                      />
+                    </div>
                   ) : (
                     <iframe
                       ref={heroIframeRef}
                       src={getBunnyEmbedUrl(hero.video_url)}
                       title="Hero Overview Video"
+                      loading="eager"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       className="w-full h-full pointer-events-none scale-[1.02]"
                     />
