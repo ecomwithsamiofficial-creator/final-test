@@ -45,7 +45,6 @@ import {
   Pause,
   Volume2,
   VolumeX,
-  Settings,
   ChevronDown
 } from 'lucide-react';
 import { defaultCmsContent, CmsContentSchema, updateCmsContent } from '@/utils/cmsStore';
@@ -232,29 +231,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroMuted, setIsHeroMuted] = useState(true);
   const [isHeroPlaying, setIsHeroPlaying] = useState(true);
   const [heroCurrentTime, setHeroCurrentTime] = useState(1);
-  const [heroDuration, setHeroDuration] = useState(135);
+  const [heroDuration, setHeroDuration] = useState(128);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroIframeRef = useRef<HTMLIFrameElement>(null);
   const heroTimelineTrackRef = useRef<HTMLDivElement>(null);
   const lastTouchTimeRef = useRef<number>(0);
-  const lastIframeMsgTimeRef = useRef<number>(0);
-  const [selectedQuality, setSelectedQuality] = useState<'auto' | '1080p' | '720p' | '480p'>('auto');
-  const [isQualityMenuOpen, setIsQualityMenuOpen] = useState(false);
-  const [isVideoReady, setIsVideoReady] = useState(false);
-  const qualityMenuRef = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    const handleClickOutside = (e: MouseEvent) => {
-      if (qualityMenuRef.current && !qualityMenuRef.current.contains(e.target as Node)) {
-        setIsQualityMenuOpen(false);
-      }
-    };
-    if (isQualityMenuOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [isQualityMenuOpen]);
 
   useEffect(() => {
     if (initialContent) {
@@ -477,40 +459,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     seekHeroVideo(targetSeconds);
   };
 
-  const changeHeroQuality = (quality: 'auto' | '1080p' | '720p' | '480p') => {
-    setSelectedQuality(quality);
-    setIsQualityMenuOpen(false);
-
-    if (heroIframeRef.current) {
-      try {
-        const qualityMap: Record<string, string> = {
-          'auto': 'default',
-          '1080p': 'hd1080',
-          '720p': 'hd720',
-          '480p': 'large'
-        };
-        const ytQuality = qualityMap[quality] || 'default';
-
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({
-            event: 'command',
-            func: 'setPlaybackQuality',
-            args: [ytQuality]
-          }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({
-            event: 'command',
-            func: 'setPlaybackQualityRange',
-            args: [ytQuality, ytQuality]
-          }),
-          '*'
-        );
-      } catch (e) {}
-    }
-  };
-
   const formatHeroTime = (secs: number) => {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
@@ -564,11 +512,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       try {
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data && data.event === 'infoDelivery' && data.info) {
-          lastIframeMsgTimeRef.current = Date.now();
-          setIsVideoReady(true);
           if (typeof data.info.currentTime === 'number') {
-            const secs = Math.floor(data.info.currentTime);
-            setHeroCurrentTime(secs);
+            setHeroCurrentTime(Math.floor(data.info.currentTime));
           }
           if (typeof data.info.duration === 'number' && data.info.duration > 0) {
             setHeroDuration(Math.floor(data.info.duration));
@@ -581,22 +526,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       } catch (err) {}
     };
 
-    const readyTimer = setTimeout(() => setIsVideoReady(true), 2200);
     window.addEventListener('message', handleWindowMessage);
-    return () => {
-      clearTimeout(readyTimer);
-      window.removeEventListener('message', handleWindowMessage);
-    };
+    return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  // Fallback counter ONLY when iframe message stream is NOT available (prevents timer flicker collision)
+  // Auto increment counter when playing if video is an embed iframe
   useEffect(() => {
     if (!isDirectVideo && isHeroPlaying) {
       const interval = setInterval(() => {
-        // If iframe is actively streaming postMessages, DO NOT touch currentTime to avoid flickering!
-        if (Date.now() - lastIframeMsgTimeRef.current < 2000) {
-          return;
-        }
         setHeroCurrentTime(prev => (prev >= heroDuration ? 0 : prev + 1));
       }, 1000);
       return () => clearInterval(interval);
@@ -605,7 +542,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
   const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&showinfo=0&iv_load_policy=3&fs=0&disablekb=1`;
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
   };
 
   const getBunnyEmbedUrl = (url: string) => {
@@ -869,36 +806,22 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="w-full h-full object-cover"
                     />
                   ) : isYouTubeVideo ? (
-                    <div className="absolute inset-0 w-full h-full overflow-hidden pointer-events-none">
-                      <iframe
-                        ref={heroIframeRef}
-                        src={getYouTubeEmbedUrl(hero.video_url)}
-                        title="Hero Overview Video"
-                        loading="eager"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        className="w-full h-full pointer-events-none scale-[1.01]"
-                      />
-                    </div>
+                    <iframe
+                      ref={heroIframeRef}
+                      src={getYouTubeEmbedUrl(hero.video_url)}
+                      title="Hero Overview Video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      className="w-full h-full pointer-events-none scale-[1.02]"
+                    />
                   ) : (
                     <iframe
                       ref={heroIframeRef}
                       src={getBunnyEmbedUrl(hero.video_url)}
                       title="Hero Overview Video"
-                      loading="eager"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       className="w-full h-full pointer-events-none scale-[1.02]"
                     />
                   )}
-
-                  {/* Clean Dark Initial Frame to Hide YouTube Red Logo/Buffer Screen */}
-                  <div 
-                    className={`absolute inset-0 z-10 bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-none select-none ${
-                      isVideoReady ? 'opacity-0' : 'opacity-100'
-                    }`}
-                  >
-                    <div className="w-10 h-10 rounded-full border-2 border-[#00A0DF] border-t-transparent animate-spin mb-2" />
-                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 tracking-wider uppercase">Loading Video...</span>
-                  </div>
 
                   {/* Frosted Glassmorphic "Click To Unmute" Center Overlay (Native button with instant touch for iOS 15) */}
                   {isHeroMuted && (
@@ -930,30 +853,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     </button>
                   )}
 
-                  {/* Custom Branded Pause Screen (Completely masks YouTube native pause screen and logo) */}
-                  {!isHeroPlaying && !isHeroMuted && (
-                    <button 
-                      type="button"
-                      aria-label="Resume video"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleHeroPlay();
-                      }}
-                      onTouchEnd={(e) => {
-                        e.stopPropagation();
-                        toggleHeroPlay();
-                      }}
-                      style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/60 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-200 border-none outline-none select-none"
-                    >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#00A0DF] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/50 hover:scale-110 active:scale-95 transition-all pl-1">
-                        <Play size={32} className="text-white fill-white" />
-                      </div>
-                    </button>
-                  )}
-
-                  {/* Bottom Sleek Control Bar (Deep gradient smoothly masks bottom YouTube watermark) */}
-                  <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pt-8 pb-2.5 px-3 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-90' : 'opacity-100'}`}>
+                  {/* Bottom Sleek Control Bar (Afaq style - 44px touch targets for mobile) */}
+                  <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-80' : 'opacity-100'}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
@@ -1002,51 +903,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           style={{ left: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
                         />
                       </div>
-                    </div>
-
-                    {/* Settings / Video Quality Menu Button */}
-                    <div className="relative ml-1 sm:ml-2" ref={qualityMenuRef}>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setIsQualityMenuOpen(prev => !prev);
-                        }}
-                        style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none rounded-lg hover:bg-white/10"
-                        title="Video Quality Settings"
-                      >
-                        <Settings size={16} className={`transition-transform duration-300 ${isQualityMenuOpen ? 'rotate-90 text-[#00A0DF]' : ''}`} />
-                      </button>
-
-                      {/* Glassmorphic Quality Popover Menu */}
-                      {isQualityMenuOpen && (
-                        <div 
-                          onClick={(e) => e.stopPropagation()}
-                          className="absolute right-0 bottom-full mb-2.5 w-36 sm:w-40 bg-slate-900/95 backdrop-blur-md border border-white/20 rounded-xl shadow-2xl p-1.5 z-50 flex flex-col gap-1 text-xs select-none"
-                        >
-                          <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider border-b border-white/10">
-                            Quality
-                          </div>
-                          {(['auto', '1080p', '720p', '480p'] as const).map((q) => (
-                            <button
-                              key={q}
-                              type="button"
-                              onClick={() => changeHeroQuality(q)}
-                              className={`flex items-center justify-between px-2.5 py-1.5 rounded-lg text-left font-medium transition-colors ${
-                                selectedQuality === q 
-                                  ? 'bg-[#00A0DF] text-white font-bold' 
-                                  : 'text-slate-200 hover:bg-white/10 hover:text-white'
-                              }`}
-                            >
-                              <span>
-                                {q === 'auto' ? 'Auto (Best)' : q === '1080p' ? '1080p HD' : q === '720p' ? '720p' : '480p'}
-                              </span>
-                              {selectedQuality === q && <Check size={14} className="stroke-[3]" />}
-                            </button>
-                          ))}
-                        </div>
-                      )}
                     </div>
                   </div>
 
