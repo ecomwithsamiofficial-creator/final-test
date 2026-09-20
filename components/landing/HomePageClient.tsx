@@ -241,6 +241,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const lastIframeMsgTimeRef = useRef<number>(0);
   const [selectedQuality, setSelectedQuality] = useState<'auto' | '1080p' | '720p' | '480p'>('auto');
   const [isQualityMenuOpen, setIsQualityMenuOpen] = useState(false);
+  const [isVideoReady, setIsVideoReady] = useState(false);
   const qualityMenuRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -564,6 +565,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
         const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
         if (data && data.event === 'infoDelivery' && data.info) {
           lastIframeMsgTimeRef.current = Date.now();
+          setIsVideoReady(true);
           if (typeof data.info.currentTime === 'number') {
             const secs = Math.floor(data.info.currentTime);
             setHeroCurrentTime(secs);
@@ -579,8 +581,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       } catch (err) {}
     };
 
+    const readyTimer = setTimeout(() => setIsVideoReady(true), 2200);
     window.addEventListener('message', handleWindowMessage);
-    return () => window.removeEventListener('message', handleWindowMessage);
+    return () => {
+      clearTimeout(readyTimer);
+      window.removeEventListener('message', handleWindowMessage);
+    };
   }, []);
 
   // Fallback counter ONLY when iframe message stream is NOT available (prevents timer flicker collision)
@@ -870,7 +876,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         title="Hero Overview Video"
                         loading="eager"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        className="absolute -top-[52px] sm:-top-[62px] left-0 w-full h-[calc(100%+85px)] sm:h-[calc(100%+98px)] pointer-events-none scale-[1.03] origin-center"
+                        className="w-full h-full pointer-events-none scale-[1.01]"
                       />
                     </div>
                   ) : (
@@ -883,6 +889,16 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="w-full h-full pointer-events-none scale-[1.02]"
                     />
                   )}
+
+                  {/* Clean Dark Initial Frame to Hide YouTube Red Logo/Buffer Screen */}
+                  <div 
+                    className={`absolute inset-0 z-10 bg-slate-950 flex flex-col items-center justify-center transition-opacity duration-700 pointer-events-none select-none ${
+                      isVideoReady ? 'opacity-0' : 'opacity-100'
+                    }`}
+                  >
+                    <div className="w-10 h-10 rounded-full border-2 border-[#00A0DF] border-t-transparent animate-spin mb-2" />
+                    <span className="text-[10px] sm:text-xs font-bold text-slate-400 tracking-wider uppercase">Loading Video...</span>
+                  </div>
 
                   {/* Frosted Glassmorphic "Click To Unmute" Center Overlay (Native button with instant touch for iOS 15) */}
                   {isHeroMuted && (
@@ -914,8 +930,30 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     </button>
                   )}
 
-                  {/* Bottom Sleek Control Bar (Afaq style - 44px touch targets for mobile) */}
-                  <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-80' : 'opacity-100'}`}>
+                  {/* Custom Branded Pause Screen (Completely masks YouTube native pause screen and logo) */}
+                  {!isHeroPlaying && !isHeroMuted && (
+                    <button 
+                      type="button"
+                      aria-label="Resume video"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        toggleHeroPlay();
+                      }}
+                      onTouchEnd={(e) => {
+                        e.stopPropagation();
+                        toggleHeroPlay();
+                      }}
+                      style={{ touchAction: 'manipulation' }}
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/60 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-200 border-none outline-none select-none"
+                    >
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#00A0DF] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/50 hover:scale-110 active:scale-95 transition-all pl-1">
+                        <Play size={32} className="text-white fill-white" />
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Bottom Sleek Control Bar (Deep gradient smoothly masks bottom YouTube watermark) */}
+                  <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-slate-950 via-slate-950/95 to-transparent pt-8 pb-2.5 px-3 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-90' : 'opacity-100'}`}>
                     <div className="flex items-center gap-1.5 sm:gap-2">
                       <button
                         type="button"
