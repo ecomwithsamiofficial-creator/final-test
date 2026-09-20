@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Clock, Flame, ShieldCheck, Zap, Users } from 'lucide-react';
 
 export interface CountdownTimerProps {
@@ -37,14 +37,21 @@ export function CountdownTimer({
     Number(initialHours || 0) * 3600 + Number(initialMinutes || 0) * 60 + Number(initialSeconds || 0)
   );
 
-  // Server-calibrated clock skew (100% immune to individual phone clock differences)
-  const clockSkew = typeof serverTime === 'number' && serverTime > 0
-    ? Date.now() - serverTime
-    : 0;
+  // Lock initial clock skew ONCE on mount so Date.now() ticks forward naturally every second
+  const skewRef = useRef<number>(0);
+  const isSkewInitialized = useRef<boolean>(false);
+
+  if (!isSkewInitialized.current) {
+    if (typeof window !== 'undefined' && typeof serverTime === 'number' && serverTime > 0) {
+      skewRef.current = Date.now() - serverTime;
+    }
+    isSkewInitialized.current = true;
+  }
 
   const calculateGlobalRemaining = () => {
     const anchor = Number(timerAnchorTime) || 1773100000000;
-    const calibratedNow = Date.now() - clockSkew;
+    // Calibrated time advances by 1000ms every second
+    const calibratedNow = Date.now() - skewRef.current;
     const elapsed = Math.max(0, Math.floor((calibratedNow - anchor) / 1000)) % configuredDuration;
     return Math.max(0, configuredDuration - elapsed);
   };
@@ -66,7 +73,7 @@ export function CountdownTimer({
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [timerAnchorTime, configuredDuration, clockSkew]);
+  }, [timerAnchorTime, configuredDuration]);
 
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
