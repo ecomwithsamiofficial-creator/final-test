@@ -869,10 +869,32 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       aria-label="Resume video"
                       onClick={toggleHeroPlay}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/50 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
                     >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#00A0DF] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/50 hover:scale-110 active:scale-95 transition-all pl-1">
-                        <Play size={28} className="text-white fill-white" />
+                      <div className="relative flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36">
+                        {/* Concentric Expanding Ripple Waves (LearnWithAfaq Style) */}
+                        <span className="afaq-wave-ring afaq-wave-ring-1" />
+                        <span className="afaq-wave-ring afaq-wave-ring-2" />
+                        <span className="afaq-wave-ring afaq-wave-ring-3" />
+
+                        {/* Main Circular Button with Glowing Drop Shadow */}
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_0_30px_rgba(0,160,223,0.6)] border border-white/30 hover:scale-105 active:scale-95 transition-transform duration-200">
+                          {/* Outlined Play Triangle (LearnWithAfaq / Vidalytics Exact Icon) */}
+                          <svg
+                            className="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-white pointer-events-none"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <polygon
+                              points="6 4 19 12 6 20 6 4"
+                              stroke="currentColor"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                        </div>
                       </div>
                     </button>
                   )}

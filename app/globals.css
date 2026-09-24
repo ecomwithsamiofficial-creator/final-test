@@ -1005,6 +1005,43 @@ input[type="submit"] {
   }
 }
 
+/* ==========================================================================
+   LearnWithAfaq / Vidalytics Expanding Sonar Waves for Play Button
+   ========================================================================== */
+@keyframes afaqButtonWave {
+  0% {
+    transform: scale(1);
+    opacity: 0.9;
+    border-width: 2.5px;
+  }
+  50% {
+    opacity: 0.45;
+  }
+  100% {
+    transform: scale(1.95);
+    opacity: 0;
+    border-width: 1px;
+  }
+}
 
+.afaq-wave-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  border: 2px solid #00A0DF;
+  pointer-events: none;
+  animation: afaqButtonWave 2.4s cubic-bezier(0.1, 0.4, 0.2, 1) infinite;
+  will-change: transform, opacity;
+}
 
+.afaq-wave-ring-1 {
+  animation-delay: 0s;
+}
 
+.afaq-wave-ring-2 {
+  animation-delay: 0.8s;
+}
+
+.afaq-wave-ring-3 {
+  animation-delay: 1.6s;
+}
