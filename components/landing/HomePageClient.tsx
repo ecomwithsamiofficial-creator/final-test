@@ -822,22 +822,40 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="w-full h-full object-cover"
                     />
                   ) : isYouTubeVideo ? (
-                    <iframe
-                      ref={heroIframeRef}
-                      src={getYouTubeEmbedUrl(hero.video_url)}
-                      title="Hero Overview Video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className={`w-full h-full scale-[1.02] ${isHeroMuted ? 'pointer-events-none' : 'pointer-events-auto'}`}
-                    />
+                    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+                      <iframe
+                        ref={heroIframeRef}
+                        src={getYouTubeEmbedUrl(hero.video_url)}
+                        title="Hero Overview Video"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        tabIndex={-1}
+                        className="absolute top-[-14%] left-[-7%] w-[114%] h-[128%] pointer-events-none select-none border-0"
+                      />
+                    </div>
                   ) : (
                     <iframe
                       ref={heroIframeRef}
                       src={getBunnyEmbedUrl(hero.video_url)}
                       title="Hero Overview Video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className={`w-full h-full scale-[1.02] ${isHeroMuted ? 'pointer-events-none' : 'pointer-events-auto'}`}
+                      className="w-full h-full scale-[1.02] pointer-events-none select-none"
                     />
                   )}
+
+                  {/* Transparent Click Shield (Physically intercepts all taps and prevents YouTube redirect) */}
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (isHeroMuted) {
+                        handleHeroUnmute(e);
+                      } else {
+                        toggleHeroPlay(e);
+                      }
+                    }}
+                    style={{ touchAction: 'manipulation' }}
+                    className="absolute inset-0 z-10 cursor-pointer"
+                    title={isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
+                  />
 
                   {/* Frosted Glassmorphic "Click To Unmute" Center Overlay (Native button with instant touch for iOS 15) */}
                   {isHeroMuted && (
