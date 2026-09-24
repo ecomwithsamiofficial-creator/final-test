@@ -230,7 +230,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   // Hero Autoplay Video & Sound States (LearnWithAfaq Style)
   const [isHeroMuted, setIsHeroMuted] = useState(true);
   const [isHeroPlaying, setIsHeroPlaying] = useState(true);
-  const [heroCurrentTime, setHeroCurrentTime] = useState(1);
+  const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
@@ -535,16 +535,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  // Auto increment counter when playing if video is an embed iframe
-  useEffect(() => {
-    if (!isDirectVideo && isHeroPlaying) {
-      const interval = setInterval(() => {
-        setHeroCurrentTime(prev => (prev >= heroDuration ? 0 : prev + 1));
-      }, 1000);
-      return () => clearInterval(interval);
-    }
-  }, [isDirectVideo, isHeroPlaying, heroDuration]);
-
   const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
     return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
@@ -816,7 +806,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       src={getYouTubeEmbedUrl(hero.video_url)}
                       title="Hero Overview Video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className="w-full h-full pointer-events-none scale-[1.02]"
+                      className={`w-full h-full scale-[1.02] ${isHeroMuted ? 'pointer-events-none' : 'pointer-events-auto'}`}
                     />
                   ) : (
                     <iframe
@@ -824,11 +814,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       src={getBunnyEmbedUrl(hero.video_url)}
                       title="Hero Overview Video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className="w-full h-full pointer-events-none scale-[1.02]"
+                      className={`w-full h-full scale-[1.02] ${isHeroMuted ? 'pointer-events-none' : 'pointer-events-auto'}`}
                     />
                   )}
 
-                  {/* Glowing Pulsing Center "Click To Unmute" Overlay (LearnWithAfaq / VSL Style) */}
+                  {/* Frosted Glassmorphic "Click To Unmute" Center Overlay (Native button with instant touch for iOS 15) */}
                   {isHeroMuted && (
                     <button 
                       type="button"
@@ -842,37 +832,17 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         handleHeroUnmute();
                       }}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex flex-col items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer p-4 transition-all duration-300 border-none outline-none select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/25 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-300 border-none outline-none select-none"
                     >
-                      <div className="relative flex flex-col items-center">
-                        {/* Outer pulsating rings & Glowing Center Circle */}
-                        <div className="relative flex items-center justify-center mb-2.5 sm:mb-3">
-                          <span className="absolute w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-[#00A0DF]/30 animate-ping pointer-events-none" />
-                          <span className="absolute w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#00A0DF]/40 animate-pulse pointer-events-none" />
-                          
-                          {/* Center Sound Icon Circle with Moving Equalizer Waves */}
-                          <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-[#00A0DF] to-[#38bdf8] p-0.5 shadow-2xl flex items-center justify-center">
-                            <div className="w-full h-full rounded-full bg-slate-950/85 backdrop-blur-md flex items-center justify-center gap-1 px-2">
-                              {/* Animated Equalizer Bars */}
-                              <span className="w-1 bg-[#00A0DF] rounded-full hero-sound-bar-1" />
-                              <span className="w-1 bg-white rounded-full hero-sound-bar-2" />
-                              <Volume2 size={22} className="text-white mx-0.5 animate-pulse shrink-0" />
-                              <span className="w-1 bg-white rounded-full hero-sound-bar-3" />
-                              <span className="w-1 bg-[#00A0DF] rounded-full hero-sound-bar-4" />
-                            </div>
-                          </div>
+                      <div className="bg-white/20 hover:bg-white/30 border-2 border-white/60 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center text-white shadow-2xl transition-transform active:scale-95 max-w-[260px] sm:max-w-[290px] group/card pointer-events-none">
+                        <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-2.5 rounded-full bg-white/25 flex items-center justify-center border border-white/60 shadow-inner group-hover/card:scale-110 transition-transform">
+                          <Volume2 size={28} className="text-white animate-pulse" />
                         </div>
-
-                        {/* Top micro badge */}
-                        <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white text-[10px] sm:text-[11px] font-bold uppercase tracking-wider mb-2">
-                          <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                          <span>Video Is Playing (Muted)</span>
-                        </div>
-
-                        {/* Pulsing CTA Action Button */}
-                        <div className="hero-pulse-btn inline-flex items-center gap-2 px-5 sm:px-6 py-2 sm:py-2.5 rounded-full bg-[#00A0DF] hover:bg-[#008ac2] text-white text-xs sm:text-sm font-black uppercase tracking-wider shadow-xl shadow-[#00A0DF]/50 transition-transform active:scale-95">
-                          <Volume2 size={16} className="animate-bounce shrink-0" />
-                          <span>Tap For Sound / Unmute</span>
+                        <h4 className="text-sm sm:text-base font-extrabold text-white tracking-tight drop-shadow-sm">
+                          Your Video Is Playing
+                        </h4>
+                        <div className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-black text-white bg-[#00A0DF] hover:bg-[#008ac2] px-3.5 py-1 sm:py-1.5 rounded-full shadow-md inline-block uppercase tracking-wider">
+                          Click To Unmute
                         </div>
                       </div>
                     </button>
@@ -892,12 +862,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         toggleHeroPlay();
                       }}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/50 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
                     >
-                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#00A0DF] to-[#38bdf8] p-0.5 shadow-2xl flex items-center justify-center animate-pulse">
-                        <div className="w-full h-full rounded-full bg-slate-950/80 flex items-center justify-center">
-                          <Play size={26} className="text-white ml-1 fill-white" />
-                        </div>
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-[#00A0DF] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/50 hover:scale-110 active:scale-95 transition-all pl-1">
+                        <Play size={28} className="text-white fill-white" />
                       </div>
                     </button>
                   )}

@@ -115,7 +115,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
 
         {/* Viewport Frame with Gradient Fading Masks (Top & Bottom) */}
         <div 
-          style={{ WebkitTransform: 'translateZ(0)', transform: 'translateZ(0)', WebkitOverflowScrolling: 'touch' }}
+          style={{ WebkitTransform: 'translate3d(0, 0, 0)', transform: 'translate3d(0, 0, 0)', WebkitPerspective: 1000, perspective: 1000 }}
           className="relative h-[560px] xs:h-[620px] sm:h-[680px] w-full max-w-2xl mx-auto overflow-hidden rounded-3xl border border-white/10 bg-[#070B14]/80 shadow-2xl group-scroll"
         >
           
@@ -136,7 +136,6 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
               >
                 {loopCol1.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
-                  const isInitial = i < 2;
                   return (
                     <div
                       key={`col1-${i}`}
@@ -148,19 +147,19 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[300px] sm:min-h-[380px] max-h-[460px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading={isInitial ? 'eager' : 'lazy'}
+                        loading="eager"
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.style.opacity = '0.7';
                         }}
-                        className="w-full h-auto max-h-[450px] object-contain rounded-xl block pointer-events-none"
+                        className="w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
@@ -180,7 +179,6 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
               >
                 {loopCol2.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
-                  const isInitial = i < 2;
                   return (
                     <div
                       key={`col2-${i}`}
@@ -192,19 +190,19 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[300px] sm:min-h-[380px] max-h-[460px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading={isInitial ? 'eager' : 'lazy'}
+                        loading="eager"
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.style.opacity = '0.7';
                         }}
-                        className="w-full h-auto max-h-[450px] object-contain rounded-xl block pointer-events-none"
+                        className="w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
