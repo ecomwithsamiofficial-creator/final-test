@@ -310,7 +310,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     setIsVideoOpen(true);
   };
 
-  const handleHeroUnmute = () => {
+  const handleHeroUnmute = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
+    }
     setIsHeroMuted(false);
     setIsHeroPlaying(true);
     if (isDirectVideo && heroVideoRef.current) {
@@ -348,8 +354,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     }
   };
 
-  const toggleHeroPlay = (e?: React.MouseEvent | React.TouchEvent) => {
-    if (e) e.stopPropagation();
+  const toggleHeroPlay = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
+    }
     const nextPlaying = !isHeroPlaying;
     setIsHeroPlaying(nextPlaying);
 
@@ -370,6 +381,16 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
           }),
           '*'
         );
+        if (nextPlaying) {
+          heroIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+            '*'
+          );
+          heroIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+            '*'
+          );
+        }
         // Bunny.net PlayerJS command
         heroIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({
@@ -381,15 +402,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     }
   };
 
-  const toggleHeroMute = (e?: React.MouseEvent | React.TouchEvent) => {
+  const toggleHeroMute = (e?: React.SyntheticEvent) => {
     if (e) {
       e.stopPropagation();
-      // Prevent synthetic click right after touchend on Android Chrome
-      if ('touches' in e || e.type === 'touchend') {
-        lastTouchTimeRef.current = Date.now();
-      } else if (e.type === 'click' && Date.now() - lastTouchTimeRef.current < 450) {
-        return;
-      }
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
     }
     const nextMuted = !isHeroMuted;
     setIsHeroMuted(nextMuted);
@@ -537,7 +555,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
   const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1`;
+    const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string) => {
@@ -754,11 +773,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
                 {/* 16:9 Video Canvas Frame */}
                 <div 
-                  onClick={() => {
-                    if (isHeroMuted) {
-                      handleHeroUnmute();
-                    } else {
-                      toggleHeroPlay();
+                  onClick={(e) => {
+                    if (e.target === e.currentTarget) {
+                      if (isHeroMuted) {
+                        handleHeroUnmute(e);
+                      } else {
+                        toggleHeroPlay(e);
+                      }
                     }
                   }}
                   className="relative aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border-2 border-[#00A0DF]/30 shadow-lg group select-none cursor-pointer"
@@ -823,14 +844,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     <button 
                       type="button"
                       aria-label="Click to unmute video"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleHeroUnmute();
-                      }}
-                      onTouchEnd={(e) => {
-                        e.stopPropagation();
-                        handleHeroUnmute();
-                      }}
+                      onClick={handleHeroUnmute}
                       style={{ touchAction: 'manipulation' }}
                       className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/25 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-300 border-none outline-none select-none"
                     >
@@ -853,14 +867,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     <button
                       type="button"
                       aria-label="Resume video"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        toggleHeroPlay();
-                      }}
-                      onTouchEnd={(e) => {
-                        e.stopPropagation();
-                        toggleHeroPlay();
-                      }}
+                      onClick={toggleHeroPlay}
                       style={{ touchAction: 'manipulation' }}
                       className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/50 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
                     >
@@ -877,7 +884,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <button
                         type="button"
                         onClick={toggleHeroPlay}
-                        onTouchEnd={toggleHeroPlay}
                         style={{ touchAction: 'manipulation' }}
                         className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
                         title={isHeroPlaying ? 'Pause Video' : 'Play Video'}
@@ -889,7 +895,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <button
                         type="button"
                         onClick={toggleHeroMute}
-                        onTouchEnd={toggleHeroMute}
                         style={{ touchAction: 'manipulation' }}
                         className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
                         title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
