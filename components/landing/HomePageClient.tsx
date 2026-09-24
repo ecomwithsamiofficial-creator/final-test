@@ -822,14 +822,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="w-full h-full object-cover"
                     />
                   ) : isYouTubeVideo ? (
-                    <div className="absolute inset-0 overflow-hidden pointer-events-none select-none">
+                    <div className="absolute inset-0 pointer-events-none select-none">
                       <iframe
                         ref={heroIframeRef}
                         src={getYouTubeEmbedUrl(hero.video_url)}
                         title="Hero Overview Video"
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                         tabIndex={-1}
-                        className="absolute top-[-14%] left-[-7%] w-[114%] h-[128%] pointer-events-none select-none border-0"
+                        className="w-full h-full pointer-events-none select-none border-0"
                       />
                     </div>
                   ) : (
