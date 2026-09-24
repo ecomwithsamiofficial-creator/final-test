@@ -1,14 +1,14 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, X, ZoomIn } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
 function getReviewUrl(src: string): string {
   if (!src) return '/images/sami-logo.jpg';
   if (src.startsWith('http://') || src.startsWith('https://')) return src;
   const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=20260920_v1_clean`;
+  return `${src}${separator}v=sami_review_v2`;
 }
 
 interface HomepageProofWallProps {
@@ -22,16 +22,17 @@ interface HomepageProofWallProps {
 }
 
 export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps) {
-  const [mounted, setMounted] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
+  // Close modal on Escape key
   useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  // Guarantee 0 hydration mismatches
-  if (!mounted) {
-    return null;
-  }
+    if (!selectedImage) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setSelectedImage(null);
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [selectedImage]);
 
   const fallback = defaultCmsContent.homepage_proof_wall || {
     badge: 'STUDENT RESULTS',
@@ -68,7 +69,7 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
 
   return (
     <div className="lwaSs w-full py-6 sm:py-10">
-      {/* Header Section (Pure Tailwind Utility Styling - Immune to CSS load issues) */}
+      {/* Header Section */}
       <div className="text-center mb-8 sm:mb-10 px-4 max-w-3xl mx-auto">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-[#00A0DF]/15 border border-[#00A0DF]/30 text-[#00A0DF] text-xs font-black uppercase tracking-wider mb-3 shadow-xs">
           <Sparkles size={14} className="animate-pulse" />
@@ -97,21 +98,66 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
         <div className="lwaSsFade lwaSsFadeL" />
         <div className="lwaSsFade lwaSsFadeR" />
         <div className="lwaSsTrack">
-          {loopImages.map((src, idx) => (
-            <img
-              key={`proof-img-${idx}`}
-              src={getReviewUrl(src)}
-              alt="Student result"
-              loading="eager"
-              decoding="async"
-              onError={(e) => {
-                const img = e.target as HTMLImageElement;
-                img.style.opacity = '0.6';
-              }}
-            />
-          ))}
+          {loopImages.map((src, idx) => {
+            const finalUrl = getReviewUrl(src);
+            const isInitial = idx < 6;
+            return (
+              <div
+                key={`proof-card-${idx}`}
+                role="button"
+                tabIndex={0}
+                onClick={() => setSelectedImage(finalUrl)}
+                className="relative group flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-transform hover:-translate-y-1 bg-slate-900/5 aspect-[9/16] w-[200px] sm:w-[260px] h-[355px] sm:h-[462px]"
+                title="Click to view full screenshot proof"
+              >
+                <img
+                  src={finalUrl}
+                  alt={`Student Result ${idx + 1}`}
+                  loading={isInitial ? 'eager' : 'lazy'}
+                  decoding="async"
+                  onError={(e) => {
+                    const img = e.target as HTMLImageElement;
+                    img.style.opacity = '0.7';
+                  }}
+                  className="w-full h-full object-cover rounded-2xl block"
+                />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold pointer-events-none rounded-2xl">
+                  <ZoomIn size={18} className="text-[#00A0DF]" />
+                  <span>Click to Zoom</span>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
+
+      {/* Click-to-Zoom Lightbox Modal */}
+      {selectedImage && (
+        <div
+          role="dialog"
+          aria-modal="true"
+          onClick={() => setSelectedImage(null)}
+          className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            className="relative max-w-lg w-full max-h-[92vh] flex flex-col items-center justify-center"
+          >
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute -top-12 right-0 sm:-right-4 p-2 rounded-full bg-white/10 hover:bg-white/25 text-white transition-colors"
+              title="Close modal"
+            >
+              <X size={22} />
+            </button>
+            <img
+              src={selectedImage}
+              alt="Zoomed Student Review Proof"
+              className="max-h-[85vh] w-auto max-w-full rounded-2xl shadow-2xl border border-white/20 object-contain block"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -40,39 +40,7 @@ export async function GET(
     // Primary path in public/uploads
     const fullPath = path.join(process.cwd(), 'public', 'uploads', relativePath);
 
-    // 1. Check if the file is from the legacy corrupted Afaq review batch (September 17)
-    if (isReview && filename.startsWith('review_1789677')) {
-      // Purge from disk if exists
-      if (fs.existsSync(fullPath)) {
-        try { fs.unlinkSync(fullPath); } catch {}
-      }
-      // Purge from MySQL media_uploads
-      try {
-        const { getMysqlPool } = await import('@/lib/mysql');
-        const pool = getMysqlPool();
-        await pool.query(
-          `DELETE FROM media_uploads WHERE category = 'reviews' AND (filename = ? OR id = ?)`,
-          [filename, filename.split('.')[0]]
-        );
-      } catch {}
-
-      // Serve clean local verified student SVG
-      const svgFallbackPath = path.join(process.cwd(), 'public', 'uploads', 'reviews', 'review_verified_student.svg');
-      if (fs.existsSync(svgFallbackPath)) {
-        const svgBuf = fs.readFileSync(svgFallbackPath);
-        return new NextResponse(new Uint8Array(svgBuf), {
-          status: 200,
-          headers: {
-            'Content-Type': 'image/svg+xml',
-            'Content-Length': String(svgBuf.length),
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            'Access-Control-Allow-Origin': '*'
-          }
-        });
-      }
-    }
-
-    // 2. If file exists physically on server disk and is valid, serve it immediately
+    // 1. If file exists physically on server disk, serve it immediately with fast caching headers
     if (fs.existsSync(fullPath)) {
       const stat = fs.statSync(fullPath);
       if (stat.isFile()) {
@@ -85,7 +53,7 @@ export async function GET(
           headers: {
             'Content-Type': contentType,
             'Content-Length': String(stat.size),
-            'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
+            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
             'Access-Control-Allow-Origin': '*'
           }
         });

@@ -8,7 +8,7 @@ function getReviewUrl(src: string): string {
   if (!src) return '/images/sami-logo.jpg';
   if (src.startsWith('http://') || src.startsWith('https://')) return src;
   const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=20260920_v1_clean`;
+  return `${src}${separator}v=sami_review_v2`;
 }
 
 interface ScrollingScreenshotReviewsProps {
@@ -22,12 +22,7 @@ interface ScrollingScreenshotReviewsProps {
 }
 
 export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScreenshotReviewsProps) {
-  const [mounted, setMounted] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   // Close modal on Escape key
   useEffect(() => {
@@ -38,11 +33,6 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [selectedImage]);
-
-  // CRITICAL: Guarantee 0 hydration mismatches by returning null until client mount
-  if (!mounted) {
-    return null;
-  }
 
   const fallback = defaultCmsContent.screenshot_reviews || {
     badge: 'REAL STUDENT RESULTS',
@@ -89,18 +79,16 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
     col2Images.push(...col1Images);
   }
 
-  // Cap column items strictly so total height never exceeds iOS Safari GPU texture limits (~2000px)
-  let baseCol1: string[] = [];
+  // Ensure minimum items in each column for continuous looping, but NEVER slice/drop user reviews!
+  let baseCol1 = [...col1Images];
   while (baseCol1.length < 3 && col1Images.length > 0) {
     baseCol1 = baseCol1.concat(col1Images);
   }
-  baseCol1 = baseCol1.slice(0, 4);
 
-  let baseCol2: string[] = [];
+  let baseCol2 = [...col2Images];
   while (baseCol2.length < 3 && col2Images.length > 0) {
     baseCol2 = baseCol2.concat(col2Images);
   }
-  baseCol2 = baseCol2.slice(0, 4);
 
   const loopCol1 = [...baseCol1, ...baseCol1];
   const loopCol2 = [...baseCol2, ...baseCol2];
@@ -148,6 +136,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
               >
                 {loopCol1.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
+                  const isInitial = i < 2;
                   return (
                     <div
                       key={`col1-${i}`}
@@ -159,18 +148,19 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
+                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none aspect-[9/16] min-h-[260px]"
+                      title="Click to zoom screenshot"
                     >
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="eager"
+                        loading={isInitial ? 'eager' : 'lazy'}
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
-                          img.style.opacity = '0.6';
+                          img.style.opacity = '0.7';
                         }}
-                        className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                        className="w-full h-full object-cover rounded-2xl block pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
@@ -190,6 +180,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
               >
                 {loopCol2.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
+                  const isInitial = i < 2;
                   return (
                     <div
                       key={`col2-${i}`}
@@ -201,18 +192,19 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none"
+                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none aspect-[9/16] min-h-[260px]"
+                      title="Click to zoom screenshot"
                     >
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="eager"
+                        loading={isInitial ? 'eager' : 'lazy'}
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
-                          img.style.opacity = '0.6';
+                          img.style.opacity = '0.7';
                         }}
-                        className="w-full h-auto object-cover rounded-2xl block pointer-events-none"
+                        className="w-full h-full object-cover rounded-2xl block pointer-events-none"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
                         <ZoomIn size={16} className="text-[#00A0DF]" />

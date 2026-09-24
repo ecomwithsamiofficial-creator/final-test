@@ -888,6 +888,10 @@ input[type="submit"] {
 .lwaSsViewport {
   position: relative !important;
   overflow: hidden !important;
+  min-height: 490px !important;
+  display: flex !important;
+  align-items: center !important;
+  width: 100% !important;
 }
 
 .lwaSsFade {
@@ -919,18 +923,29 @@ input[type="submit"] {
   backface-visibility: hidden;
   -webkit-perspective: 1000;
   perspective: 1000;
+  padding: 10px 0 !important;
 }
 
 .lwaSsTrack img {
   width: 260px !important;
-  height: auto !important;
+  height: 462px !important;
+  aspect-ratio: 9 / 16 !important;
+  object-fit: cover !important;
+  background-color: #0B0F19 !important;
   display: block !important;
   border-radius: 16px !important;
   border: 1px solid #E2EFF7 !important;
   box-shadow: 0 8px 22px rgba(0, 0, 0, 0.08) !important;
   flex: 0 0 auto !important;
-  pointer-events: none !important;
+  pointer-events: auto !important;
+  cursor: pointer !important;
   user-select: none !important;
+  transition: transform 0.25s ease, box-shadow 0.25s ease !important;
+}
+
+.lwaSsTrack img:hover {
+  transform: translateY(-4px) scale(1.02) !important;
+  box-shadow: 0 12px 28px rgba(0, 160, 223, 0.25) !important;
 }
 
 .lwaSsViewport:hover .lwaSsTrack {
@@ -960,8 +975,12 @@ input[type="submit"] {
 }
 
 @media (max-width: 600px) {
+  .lwaSsViewport {
+    min-height: 380px !important;
+  }
   .lwaSsTrack img {
     width: 200px !important;
+    height: 355px !important;
   }
   .lwaSsTrack {
     animation-duration: 90s !important;
