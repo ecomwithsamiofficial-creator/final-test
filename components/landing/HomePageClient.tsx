@@ -488,17 +488,34 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
+  // Helper to extract clean video URL from raw CMS data (handling raw <iframe> tags, bunny /play/ urls, etc.)
+  const getCleanVideoUrl = (raw?: string) => {
+    if (!raw) return '';
+    let val = raw.trim();
+    const iframeMatch = val.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch && iframeMatch[1]) {
+      val = iframeMatch[1].trim();
+    }
+    if (val.includes('mediadelivery.net/play/')) {
+      val = val.replace('/play/', '/embed/');
+    }
+    return val;
+  };
+
+  const cleanHeroVideoUrl = getCleanVideoUrl(hero.video_url);
+
   const isYouTubeVideo = Boolean(
-    hero.video_url?.includes('youtube.com') || hero.video_url?.includes('youtu.be')
+    cleanHeroVideoUrl?.includes('youtube.com') || cleanHeroVideoUrl?.includes('youtu.be')
   );
   const isBunnyVideo = Boolean(
-    hero.video_url?.includes('mediadelivery.net') || hero.video_url?.includes('bunny')
+    cleanHeroVideoUrl?.includes('mediadelivery.net') || cleanHeroVideoUrl?.includes('bunny')
   );
-  const isDirectVideo = !isYouTubeVideo && !isBunnyVideo;
+  const isDirectVideo = !isYouTubeVideo && !isBunnyVideo && Boolean(cleanHeroVideoUrl);
 
   const getYouTubeId = (url?: string) => {
-    if (!url) return 'dQw4w9WgXcQ';
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    const target = getCleanVideoUrl(url) || url;
+    if (!target) return 'dQw4w9WgXcQ';
+    const match = target.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
     return match && match[1] ? match[1] : 'dQw4w9WgXcQ';
   };
 
@@ -516,7 +533,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
           .catch(() => {});
       }
     }
-  }, [isDirectVideo, hero.video_url]);
+  }, [isDirectVideo, cleanHeroVideoUrl]);
 
   // Derive duration from video header text if available (e.g. "Watch this 128 seconds...")
   useEffect(() => {
@@ -560,8 +577,9 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   };
 
   const getBunnyEmbedUrl = (url: string) => {
-    const base = url.split('?')[0];
-    return `${base}?autoplay=true&muted=true&loop=true&playsinline=true`;
+    const clean = getCleanVideoUrl(url) || url;
+    const base = clean.split('?')[0];
+    return `${base}?autoplay=true&loop=true&muted=true&preload=true&responsive=true`;
   };
 
   const videoReviews = [
@@ -833,13 +851,17 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       />
                     </div>
                   ) : (
-                    <iframe
-                      ref={heroIframeRef}
-                      src={getBunnyEmbedUrl(hero.video_url)}
-                      title="Hero Overview Video"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      className="w-full h-full scale-[1.02] pointer-events-none select-none"
-                    />
+                    <div className="absolute inset-0 pointer-events-none select-none">
+                      <iframe
+                        ref={heroIframeRef}
+                        src={getBunnyEmbedUrl(hero.video_url)}
+                        title="Hero Overview Video"
+                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                        allowFullScreen
+                        tabIndex={-1}
+                        className="w-full h-full pointer-events-none select-none border-0"
+                      />
+                    </div>
                   )}
 
                   {/* Transparent Click Shield (Physically intercepts all taps and prevents YouTube redirect) */}

@@ -3131,7 +3131,16 @@ export default function AdminCmsPage() {
                       value={cmsData.hero?.video_url ?? ''}
                       onChange={(e) => {
                         let val = e.target.value.trim();
-                        // Auto-convert standard YouTube watch URLs to embed URLs for instant preview
+                        // 1. If user pasted raw iframe code like <iframe src="..." ...></iframe>
+                        const iframeSrcMatch = val.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+                        if (iframeSrcMatch && iframeSrcMatch[1]) {
+                          val = iframeSrcMatch[1].trim();
+                        }
+                        // 2. Bunny Stream /play/ URL auto-convert to /embed/
+                        if (val.includes('mediadelivery.net/play/')) {
+                          val = val.replace('/play/', '/embed/');
+                        }
+                        // 3. YouTube standard watch/short URLs to embed URLs
                         if (val.includes('youtube.com/watch?v=')) {
                           const vId = val.split('v=')[1]?.split('&')[0];
                           if (vId) val = `https://www.youtube.com/embed/${vId}`;
@@ -3141,7 +3150,7 @@ export default function AdminCmsPage() {
                         }
                         setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_url: val } });
                       }}
-                      placeholder="e.g. https://www.youtube.com/embed/... or https://youtu.be/..."
+                      placeholder="e.g. Bunny iframe URL, Bunny embed code, or YouTube embed link"
                       className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
                     />
                   </div>
@@ -3168,21 +3177,49 @@ export default function AdminCmsPage() {
                       <span className="font-mono text-[10px] truncate max-w-[200px] sm:max-w-xs">{cmsData.hero.video_url}</span>
                     </div>
                     <div className="max-w-md mx-auto aspect-video rounded-xl overflow-hidden bg-black border border-white/10 shadow-md">
-                      {cmsData.hero.video_url.includes('youtube.com') || cmsData.hero.video_url.includes('youtu.be') ? (
-                        <iframe
-                          src={cmsData.hero.video_url.includes('embed') ? cmsData.hero.video_url : `https://www.youtube.com/embed/${cmsData.hero.video_url.split('v=')[1]?.split('&')[0] || ''}`}
-                          title="Preview"
-                          className="w-full h-full"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        />
-                      ) : (
-                        <video
-                          src={cmsData.hero.video_url}
-                          controls
-                          playsInline
-                          className="w-full h-full object-cover"
-                        />
-                      )}
+                      {(() => {
+                        let cleanUrl = cmsData.hero.video_url.trim();
+                        const matchIframe = cleanUrl.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+                        if (matchIframe && matchIframe[1]) cleanUrl = matchIframe[1].trim();
+                        if (cleanUrl.includes('mediadelivery.net/play/')) cleanUrl = cleanUrl.replace('/play/', '/embed/');
+
+                        const isYt = cleanUrl.includes('youtube.com') || cleanUrl.includes('youtu.be');
+                        const isBunnyEmbed = cleanUrl.includes('mediadelivery.net') || cleanUrl.includes('bunny');
+
+                        if (isYt) {
+                          const ytSrc = cleanUrl.includes('embed') ? cleanUrl : `https://www.youtube.com/embed/${cleanUrl.split('v=')[1]?.split('&')[0] || ''}`;
+                          return (
+                            <iframe
+                              src={ytSrc}
+                              title="YouTube Preview"
+                              className="w-full h-full"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            />
+                          );
+                        }
+
+                        if (isBunnyEmbed) {
+                          const bunnySrc = cleanUrl.includes('?') ? cleanUrl : `${cleanUrl}?autoplay=false&loop=false&muted=false&preload=true`;
+                          return (
+                            <iframe
+                              src={bunnySrc}
+                              title="Bunny Stream Preview"
+                              className="w-full h-full border-0"
+                              allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                              allowFullScreen
+                            />
+                          );
+                        }
+
+                        return (
+                          <video
+                            src={cleanUrl}
+                            controls
+                            playsInline
+                            className="w-full h-full object-cover"
+                          />
+                        );
+                      })()}
                     </div>
                   </div>
                 )}

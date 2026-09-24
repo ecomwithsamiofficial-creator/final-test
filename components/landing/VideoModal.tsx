@@ -18,7 +18,12 @@ export function VideoModal({
 }: VideoModalProps) {
   if (!isOpen) return null;
 
-  const url = videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ";
+  let rawUrl = (videoUrl || "https://www.youtube.com/embed/dQw4w9WgXcQ").trim();
+  const iframeMatch = rawUrl.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+  if (iframeMatch && iframeMatch[1]) rawUrl = iframeMatch[1].trim();
+  if (rawUrl.includes('mediadelivery.net/play/')) rawUrl = rawUrl.replace('/play/', '/embed/');
+
+  const url = rawUrl;
 
   const isDirectVideo = Boolean(
     url.startsWith('blob:') ||
@@ -29,10 +34,13 @@ export function VideoModal({
   if (!isDirectVideo) {
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
-      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
     } else if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}`;
+      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+    } else if (url.includes('mediadelivery.net')) {
+      const base = url.split('?')[0];
+      embedUrl = `${base}?autoplay=true&preload=true&responsive=true`;
     }
   }
 
