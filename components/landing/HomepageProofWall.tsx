@@ -107,7 +107,7 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
                 role="button"
                 tabIndex={0}
                 onClick={() => setSelectedImage(finalUrl)}
-                className="relative group flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200 shadow-md hover:shadow-xl transition-transform hover:-translate-y-1 bg-slate-900/5 aspect-[9/16] w-[200px] sm:w-[260px] h-[355px] sm:h-[462px]"
+                className="relative group flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200/90 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 bg-[#070B14] w-[210px] sm:w-[260px] h-[400px] sm:h-[500px] flex items-center justify-center p-1"
                 title="Click to view full screenshot proof"
               >
                 <img
@@ -119,9 +119,9 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
                     const img = e.target as HTMLImageElement;
                     img.style.opacity = '0.7';
                   }}
-                  className="w-full h-full object-cover rounded-2xl block"
+                  className="w-full h-full object-contain rounded-xl block pointer-events-none"
                 />
-                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold pointer-events-none rounded-2xl">
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold pointer-events-none rounded-xl">
                   <ZoomIn size={18} className="text-[#00A0DF]" />
                   <span>Click to Zoom</span>
                 </div>

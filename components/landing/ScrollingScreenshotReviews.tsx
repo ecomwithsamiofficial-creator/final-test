@@ -148,7 +148,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none aspect-[9/16] min-h-[260px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[300px] sm:min-h-[380px] max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
                       <img
@@ -160,9 +160,9 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                           const img = e.target as HTMLImageElement;
                           img.style.opacity = '0.7';
                         }}
-                        className="w-full h-full object-cover rounded-2xl block pointer-events-none"
+                        className="w-full h-auto max-h-[450px] object-contain rounded-xl block pointer-events-none"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
                         <span>Click to Zoom</span>
                       </div>
@@ -192,7 +192,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/10 hover:border-[#00A0DF]/60 bg-[#111827] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none aspect-[9/16] min-h-[260px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[300px] sm:min-h-[380px] max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
                       <img
@@ -204,9 +204,9 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                           const img = e.target as HTMLImageElement;
                           img.style.opacity = '0.7';
                         }}
-                        className="w-full h-full object-cover rounded-2xl block pointer-events-none"
+                        className="w-full h-auto max-h-[450px] object-contain rounded-xl block pointer-events-none"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none">
+                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
                         <span>Click to Zoom</span>
                       </div>
