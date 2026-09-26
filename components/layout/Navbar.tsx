@@ -39,23 +39,20 @@ export function Navbar() {
         <div className="flex items-center justify-between h-11 sm:h-14">
           
           {/* Brand Logo */}
-          <Link href="/" className="flex items-center gap-1.5 xs:gap-2 sm:gap-2.5 group flex-shrink-0 min-w-0">
-            <div className="w-7 h-7 xs:w-8 xs:h-8 sm:w-9 sm:h-9 rounded-full overflow-hidden shadow-sm group-hover:scale-105 transition-transform flex-shrink-0 bg-slate-950 border border-amber-400/50">
+          <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group flex-shrink-0 min-w-0">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-md group-hover:scale-105 transition-transform flex-shrink-0 bg-slate-950 border-2 border-[#00A0DF]/60 shadow-[0_0_12px_rgba(0,160,223,0.3)]">
               <Image
-                src="/sami-logo.jpg"
+                src="/mentor-profile.png"
                 alt="Ecom With Sami"
-                width={36}
-                height={36}
+                width={40}
+                height={40}
                 className="w-full h-full object-cover"
                 priority
               />
             </div>
-            <div className="flex flex-col min-w-0">
-              <span className="text-[12px] xs:text-[13px] sm:text-base font-black text-slate-900 tracking-tight leading-none truncate">
+            <div className="flex items-center min-w-0">
+              <span className="text-sm sm:text-lg font-black text-slate-900 tracking-tight leading-none truncate">
                 Ecom <span className="text-[#00A0DF]">With Sami</span>
-              </span>
-              <span className="text-[8px] xs:text-[9px] font-bold text-slate-400 uppercase tracking-wider mt-0.5 hidden sm:block truncate">
-                GCC Dropshipping Academy
               </span>
             </div>
           </Link>

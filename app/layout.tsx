@@ -70,14 +70,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon-32x32.png?v=sami2026', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png?v=sami2026', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon.ico?v=sami2026', sizes: 'any' },
-      { url: '/icon.png?v=sami2026', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png?v=mentor_profile_2026', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=mentor_profile_2026', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico?v=mentor_profile_2026', sizes: 'any' },
+      { url: '/icon.png?v=mentor_profile_2026', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: '/favicon.ico?v=sami2026',
+    shortcut: '/favicon.ico?v=mentor_profile_2026',
     apple: [
-      { url: '/apple-icon.png?v=sami2026', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=mentor_profile_2026', sizes: '180x180', type: 'image/png' },
     ],
   },
   category: 'education',
