@@ -857,9 +857,9 @@ export const defaultCmsContent: CmsContentSchema = {
     },
     {
       id: 'sadapay',
-      name: 'SadaPay / NayaPay',
-      accountTitle: 'SARDAR SAMIULLAH',
-      accountNumber: '03158960026',
+      name: 'SadaPay',
+      accountTitle: 'SHAFAQ IJAZ',
+      accountNumber: '03019492803',
       badge: 'Fast & Zero Fees'
     }
   ],

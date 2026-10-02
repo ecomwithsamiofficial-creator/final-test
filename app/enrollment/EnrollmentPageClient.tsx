@@ -72,15 +72,18 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
       trust_badge3: '1,200+ Students'
     }
   );
+  const sanitizeMethod = (pm: any) => ({
+    ...pm,
+    name: pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name)) ? 'SadaPay' : pm.name,
+    themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+      : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
+      : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
+      : 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
+  });
+
   const [paymentMethods, setPaymentMethods] = useState(() => {
     const rawMethods = initialContent?.payment_methods || defaultCmsContent.payment_methods;
-    return rawMethods.map(pm => ({
-      ...pm,
-      themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-        : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-        : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-        : 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-    }));
+    return rawMethods.map(sanitizeMethod);
   });
 
   useEffect(() => {
@@ -98,13 +101,7 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
         if (cachedMethods) {
           const parsed = JSON.parse(cachedMethods);
           if (Array.isArray(parsed) && parsed.length > 0) {
-            setPaymentMethods(parsed.map((pm: any) => ({
-              ...pm,
-              themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-                : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                : 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-            })));
+            setPaymentMethods(parsed.map(sanitizeMethod));
           }
         }
       } catch (e) {}
@@ -128,14 +125,8 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
               setScreenshotReviews(data.sections.screenshot_reviews);
             }
             if (data.sections.payment_methods && Array.isArray(data.sections.payment_methods)) {
-              const methods = data.sections.payment_methods;
-              setPaymentMethods(methods.map((pm: any) => ({
-                ...pm,
-                themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
-                  : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
-                  : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
-                  : 'border-cyan-500 bg-cyan-500/10 text-cyan-400'
-              })));
+              const methods = data.sections.payment_methods.map(sanitizeMethod);
+              setPaymentMethods(methods);
               try {
                 localStorage.setItem('sami_cms_payment_methods', JSON.stringify(methods));
               } catch (e) {}

@@ -6511,7 +6511,9 @@ export default function AdminCmsPage() {
               {cmsData.payment_methods.map((pm, idx) => (
                 <div key={pm.id} className="bg-[#0B0F19] border border-white/10 rounded-2xl p-4 space-y-2.5">
                   <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-bold text-white">{pm.name}</span>
+                    <span className="text-xs sm:text-sm font-bold text-white">
+                      {pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name)) ? 'SadaPay' : pm.name}
+                    </span>
                     <span className="text-[10px] text-[#00A0DF] font-bold bg-[#00A0DF]/10 px-2 py-0.5 rounded-full border border-[#00A0DF]/20">
                       {pm.badge || 'Active'}
                     </span>

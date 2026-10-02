@@ -87,7 +87,12 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
     footer: { ...defaultCmsContent.footer, ...(parsed.footer || {}) },
     testimonials: Array.isArray(parsed.testimonials) ? parsed.testimonials : defaultCmsContent.testimonials,
     faqs: Array.isArray(parsed.faqs) ? parsed.faqs : defaultCmsContent.faqs,
-    payment_methods: Array.isArray(parsed.payment_methods) ? parsed.payment_methods : defaultCmsContent.payment_methods,
+    payment_methods: (Array.isArray(parsed.payment_methods) ? parsed.payment_methods : defaultCmsContent.payment_methods).map((pm: any) => {
+      if (pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name))) {
+        return { ...pm, name: 'SadaPay' };
+      }
+      return pm;
+    }),
     theme: parsed.theme 
       ? { 
           ...defaultCmsContent.theme, 
