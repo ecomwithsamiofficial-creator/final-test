@@ -19,6 +19,7 @@ import {
   Plus, 
   ArrowLeft,
   Eye,
+  EyeOff,
   Settings,
   ShieldCheck,
   BookOpen,
@@ -1657,6 +1658,11 @@ export default function AdminCmsPage() {
               >
                 <Icon size={14} />
                 <span>{t.label}</span>
+                {t.id === 'video_reviews' && cmsData.video_reviews?.enabled === false && (
+                  <span className="ml-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                    HIDDEN
+                  </span>
+                )}
               </button>
             );
           })}
@@ -4315,6 +4321,83 @@ export default function AdminCmsPage() {
         {/* ========================================================================= */}
         {activeTab === 'video_reviews' && (
           <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 space-y-6 shadow-xl">
+            {/* Section Visibility Control Box */}
+            <div className={`p-4 sm:p-5 rounded-2xl border transition-all ${
+              cmsData.video_reviews?.enabled === false 
+                ? 'bg-rose-950/30 border-rose-500/40 shadow-lg shadow-rose-950/20' 
+                : 'bg-emerald-950/20 border-emerald-500/30 shadow-lg shadow-emerald-950/10'
+            }`}>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="flex items-start sm:items-center gap-3">
+                  <div className={`p-2.5 rounded-xl flex-shrink-0 ${
+                    cmsData.video_reviews?.enabled === false ? 'bg-rose-500/20 text-rose-400' : 'bg-emerald-500/20 text-emerald-400'
+                  }`}>
+                    {cmsData.video_reviews?.enabled === false ? <EyeOff size={22} /> : <Eye size={22} />}
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs sm:text-sm font-black text-white">Section Visibility:</span>
+                      <span className={`text-[10px] sm:text-xs font-black uppercase px-2 py-0.5 rounded-full border ${
+                        cmsData.video_reviews?.enabled === false
+                          ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                          : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+                      }`}>
+                        {cmsData.video_reviews?.enabled === false ? '🔴 Currently Hidden on Website' : '🟢 Live & Visible on Website'}
+                      </span>
+                    </div>
+                    <p className="text-[11px] sm:text-xs text-slate-400 mt-1">
+                      {cmsData.video_reviews?.enabled === false 
+                        ? 'This section is currently hidden from visitors. There is zero blank space or gaps on the landing page.'
+                        : 'This section is currently live and playing student video review cards on the landing page.'}
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-2 self-end sm:self-center flex-wrap">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const currentVal = cmsData.video_reviews?.enabled !== false;
+                      setCmsData({
+                        ...cmsData,
+                        video_reviews: {
+                          ...(cmsData.video_reviews || defaultCmsContent.video_reviews),
+                          enabled: !currentVal
+                        }
+                      });
+                    }}
+                    className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-black transition-all shadow-md active:scale-95 ${
+                      cmsData.video_reviews?.enabled === false
+                        ? 'bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/25'
+                        : 'bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/25'
+                    }`}
+                  >
+                    {cmsData.video_reviews?.enabled === false ? (
+                      <>
+                        <Eye size={15} />
+                        <span>Show / Unhide Section</span>
+                      </>
+                    ) : (
+                      <>
+                        <EyeOff size={15} />
+                        <span>Hide Section From Website</span>
+                      </>
+                    )}
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveAll}
+                    disabled={loading}
+                    className="inline-flex items-center gap-1.5 px-4 py-2 bg-[#00A0DF] hover:bg-[#008ec7] text-white rounded-xl text-xs font-black transition-all shadow-md active:scale-95 disabled:opacity-50"
+                  >
+                    <Save size={15} />
+                    <span>{loading ? 'Saving...' : 'Save Visibility'}</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
@@ -4502,6 +4585,22 @@ export default function AdminCmsPage() {
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Bottom Save Button */}
+            <div className="pt-6 border-t border-white/10 flex items-center justify-between">
+              <span className="text-xs text-slate-400">
+                {cmsData.video_reviews?.enabled === false ? 'Status: 🔴 Hidden from website' : 'Status: 🟢 Live on website'}
+              </span>
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={loading}
+                className="inline-flex items-center gap-2 px-6 py-2.5 bg-[#00A0DF] hover:bg-[#008ec7] text-white rounded-xl text-xs sm:text-sm font-black transition-all shadow-lg shadow-[#00A0DF]/20 active:scale-95 disabled:opacity-50"
+              >
+                <Save size={16} />
+                <span>{loading ? 'Saving...' : 'Save Video Reviews'}</span>
+              </button>
             </div>
           </div>
         )}

@@ -87,6 +87,7 @@ export interface CmsContentSchema {
     }[];
   };
   video_reviews: {
+    enabled?: boolean;
     badge: string;
     title: string;
     subtitle: string;
@@ -644,6 +645,7 @@ export const defaultCmsContent: CmsContentSchema = {
     ]
   },
   video_reviews: {
+    enabled: true,
     badge: 'REAL STUDENT RESULTS',
     title: 'Hear What Our Students Are Saying',
     subtitle: 'Real student video reviews sharing their experience, support, and results after joining Ecom With Sami.',

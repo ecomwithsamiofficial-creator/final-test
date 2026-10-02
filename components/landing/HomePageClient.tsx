@@ -1309,6 +1309,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       {/* ========================================================================= */}
       {/* 6. REAL STUDENT VIDEO REVIEWS WITH CONTINUOUS MOVING STREAM */}
       {/* ========================================================================= */}
+      {content.video_reviews?.enabled !== false && (
       <section className="py-12 sm:py-20 bg-white overflow-hidden">
         <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
           
@@ -1408,6 +1409,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
         </div>
       </section>
+      )}
 
       {/* ========================================================================= */}
       {/* 7. WHO IS THIS FOR? (6-PASTEL CARD GRID) */}

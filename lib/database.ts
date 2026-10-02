@@ -75,6 +75,7 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
       ? {
           ...defaultCmsContent.video_reviews,
           ...parsed.video_reviews,
+          enabled: parsed.video_reviews.enabled !== undefined ? Boolean(parsed.video_reviews.enabled) : true,
           items: Array.isArray(parsed.video_reviews.items) && parsed.video_reviews.items.length > 0
             ? parsed.video_reviews.items
             : defaultCmsContent.video_reviews.items
