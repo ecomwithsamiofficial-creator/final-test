@@ -1659,7 +1659,7 @@ export default function AdminCmsPage() {
                 <Icon size={14} />
                 <span>{t.label}</span>
                 {t.id === 'video_reviews' && cmsData.video_reviews?.enabled === false && (
-                  <span className="ml-1 text-[9px] font-black uppercase px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
+                  <span className="ml-1 text-[9px] font-black uppercase px-1.5 py-0.5 rounded bg-rose-500/20 text-rose-300 border border-rose-500/30">
                     HIDDEN
                   </span>
                 )}
