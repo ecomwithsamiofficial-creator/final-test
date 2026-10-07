@@ -27,6 +27,8 @@ import {
   MessageSquare,
   Copy,
   ExternalLink,
+  Download,
+  ZoomIn,
   Send,
   Lock,
   RefreshCw,
@@ -1284,9 +1286,15 @@ export default function AdminDashboardPage() {
                           {r.receiptUrl ? (
                             <button
                               onClick={() => setPreviewReceipt(r)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00A0DF] hover:underline"
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#00A0DF]/10 hover:bg-[#00A0DF]/20 border border-[#00A0DF]/30 text-[11px] font-bold text-[#00A0DF] transition-all hover:scale-105"
+                              title="Click to view full payment slip"
                             >
-                              <ImageIcon size={13} /> View Slip
+                              <img 
+                                src={r.receiptUrl} 
+                                alt="Slip thumbnail" 
+                                className="w-4 h-5 object-cover rounded shadow-sm border border-white/20" 
+                              />
+                              <span>View Slip</span>
                             </button>
                           ) : (
                             <span className="text-[11px] text-slate-500">No Slip</span>
@@ -1491,9 +1499,15 @@ export default function AdminDashboardPage() {
                           {r.receiptUrl ? (
                             <button
                               onClick={() => setPreviewReceipt(r)}
-                              className="inline-flex items-center gap-1 text-[11px] font-bold text-[#00A0DF] hover:underline"
+                              className="inline-flex items-center gap-1.5 px-2 py-1 rounded-lg bg-[#00A0DF]/10 hover:bg-[#00A0DF]/20 border border-[#00A0DF]/30 text-[11px] font-bold text-[#00A0DF] transition-all hover:scale-105"
+                              title="Click to view full payment slip"
                             >
-                              <ImageIcon size={13} /> View Slip
+                              <img 
+                                src={r.receiptUrl} 
+                                alt="Slip thumbnail" 
+                                className="w-4 h-5 object-cover rounded shadow-sm border border-white/20" 
+                              />
+                              <span>View Slip</span>
                             </button>
                           ) : (
                             <span className="text-[11px] text-slate-500">No Slip</span>
@@ -1780,35 +1794,78 @@ export default function AdminDashboardPage() {
 
       {/* Payment Receipt Image Preview Modal */}
       {previewReceipt && (
-        <div className="fixed inset-0 z-50 bg-black/85 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
-          <div className="w-full max-w-lg bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3 sm:space-y-4 max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between">
+        <div className="fixed inset-0 z-50 bg-black/90 backdrop-blur-md flex items-center justify-center p-2 sm:p-4">
+          <div className="w-full max-w-2xl bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3 sm:space-y-4 max-h-[96vh] flex flex-col">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
               <div>
-                <h3 className="text-sm sm:text-base font-bold text-white">Payment Screenshot Proof</h3>
-                <p className="text-[11px] sm:text-xs text-slate-400">{previewReceipt.name} &bull; {previewReceipt.trackingCode}</p>
+                <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                  <ImageIcon className="text-[#00A0DF]" size={18} />
+                  <span>Payment Screenshot Proof</span>
+                </h3>
+                <p className="text-xs text-slate-400 mt-0.5">
+                  <strong className="text-white">{previewReceipt.name}</strong> &bull; {previewReceipt.trackingCode} &bull; {previewReceipt.amount || 'PKR 3,799'}
+                </p>
               </div>
-              <button onClick={() => setPreviewReceipt(null)} className="text-slate-400 hover:text-white p-1">
-                <X size={18} />
-              </button>
+              <div className="flex items-center gap-2">
+                {previewReceipt.receiptUrl && (
+                  <>
+                    <button
+                      onClick={() => window.open(previewReceipt.receiptUrl, '_blank')}
+                      className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-medium flex items-center gap-1.5 border border-white/10 transition-colors"
+                      title="Open full image in new tab"
+                    >
+                      <ExternalLink size={13} />
+                      <span className="hidden sm:inline">Open Full Size</span>
+                    </button>
+                    <a
+                      href={previewReceipt.receiptUrl}
+                      download={`receipt_${previewReceipt.trackingCode || previewReceipt.id}.jpg`}
+                      className="px-2.5 py-1.5 rounded-lg bg-[#00A0DF]/20 hover:bg-[#00A0DF]/30 text-xs text-[#00A0DF] font-medium flex items-center gap-1.5 border border-[#00A0DF]/30 transition-colors"
+                      title="Download receipt"
+                    >
+                      <Download size={13} />
+                      <span className="hidden sm:inline">Download</span>
+                    </a>
+                  </>
+                )}
+                <button 
+                  onClick={() => setPreviewReceipt(null)} 
+                  className="text-slate-400 hover:text-white p-1.5 rounded-lg hover:bg-white/5 transition-colors"
+                >
+                  <X size={20} />
+                </button>
+              </div>
             </div>
 
-            <div className="bg-[#0B0F19] rounded-2xl p-2 border border-white/10 max-h-72 sm:max-h-80 overflow-auto flex items-center justify-center">
+            {/* Main Image Container: full height, clean dark background, click-to-open */}
+            <div className="bg-[#070B14] rounded-2xl p-2 sm:p-3 border border-white/10 flex-1 min-h-[300px] max-h-[62vh] sm:max-h-[68vh] overflow-auto flex items-center justify-center relative group">
               {previewReceipt.receiptUrl ? (
-                <img
-                  src={previewReceipt.receiptUrl}
-                  alt="Payment Receipt"
-                  className="max-h-64 sm:max-h-72 w-auto rounded-xl object-contain shadow-md"
-                />
+                <div className="relative flex items-center justify-center w-full h-full">
+                  <img
+                    src={previewReceipt.receiptUrl}
+                    alt="Payment Receipt"
+                    className="max-h-[60vh] sm:max-h-[65vh] max-w-full w-auto rounded-xl object-contain shadow-2xl cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.01]"
+                    onClick={() => window.open(previewReceipt.receiptUrl, '_blank')}
+                    title="Click to view original high-resolution in new tab"
+                  />
+                  <div className="absolute bottom-2 right-2 px-2 py-1 rounded bg-black/70 backdrop-blur-sm text-[10px] text-slate-300 pointer-events-none flex items-center gap-1 border border-white/10">
+                    <ZoomIn size={11} />
+                    <span>Click image to zoom full screen</span>
+                  </div>
+                </div>
               ) : (
-                <div className="py-8 text-slate-500 text-xs">No screenshot image attached</div>
+                <div className="py-16 text-slate-500 text-xs flex flex-col items-center gap-2">
+                  <ImageIcon size={32} className="opacity-30" />
+                  <span>No screenshot image attached</span>
+                </div>
               )}
             </div>
 
-            <div className="grid grid-cols-2 gap-2 text-xs bg-[#0B0F19] p-3 rounded-xl border border-white/5">
-              <div><span className="text-slate-400">Method:</span> <strong>{previewReceipt.paymentMethod}</strong></div>
-              <div><span className="text-slate-400">TID:</span> <strong className="font-mono">{previewReceipt.transactionId}</strong></div>
-              <div><span className="text-slate-400">Phone:</span> <strong>{previewReceipt.phone}</strong></div>
-              <div><span className="text-slate-400">City:</span> <strong>{previewReceipt.city}</strong></div>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs bg-[#0B0F19] p-3 rounded-xl border border-white/5">
+              <div><span className="text-slate-400">Method:</span> <strong className="text-white block truncate">{previewReceipt.paymentMethod}</strong></div>
+              <div><span className="text-slate-400">TID:</span> <strong className="font-mono text-white block truncate">{previewReceipt.transactionId}</strong></div>
+              <div><span className="text-slate-400">Phone:</span> <strong className="text-white block truncate">{previewReceipt.phone}</strong></div>
+              <div><span className="text-slate-400">City:</span> <strong className="text-white block truncate">{previewReceipt.city || 'Pakistan'}</strong></div>
             </div>
 
             <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 justify-between pt-2 border-t border-white/5">

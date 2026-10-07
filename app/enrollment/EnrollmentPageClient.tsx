@@ -159,12 +159,12 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
     setTimeout(() => setCopiedId(null), 2500);
   };
 
-  // Client-side image compression: reduces 2-5MB raw mobile screenshots to ~40-60KB
+  // Client-side image compression: maintains sharp receipt readability while keeping file size under ~100KB
   const compressReceiptImage = (file: File): Promise<string> => {
     return new Promise((resolve) => {
       if (!file.type.startsWith('image/')) {
         const reader = new FileReader();
-        reader.onloadend = () => resolve(reader.result as string || '');
+        reader.onloadend = () => resolve((reader.result as string) || '');
         reader.onerror = () => resolve('');
         reader.readAsDataURL(file);
         return;
@@ -176,8 +176,9 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
         const img = new Image();
         img.src = event.target?.result as string;
         img.onload = () => {
-          const maxWidth = 800;
-          const maxHeight = 800;
+          // Allow up to 1080 width and 1600 height for crystal-clear mobile bank slips
+          const maxWidth = 1080;
+          const maxHeight = 1600;
           let width = img.width;
           let height = img.height;
 
@@ -198,16 +199,18 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve(event.target?.result as string || '');
+            resolve((event.target?.result as string) || '');
             return;
           }
 
-          // Render scaled image to canvas and export with 0.65 JPEG compression (crisp & compact ~80KB)
+          // Crisp image rendering with 0.72 quality (~80-120KB) - never cuts or corrupts
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.65);
+          const compressed = canvas.toDataURL('image/jpeg', 0.72);
           resolve(compressed);
         };
-        img.onerror = () => resolve(event.target?.result as string || '');
+        img.onerror = () => resolve((event.target?.result as string) || '');
       };
       reader.onerror = () => resolve('');
     });

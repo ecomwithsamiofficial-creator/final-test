@@ -886,11 +886,8 @@ export async function mysqlAddEnrollment(enr: Enrollment): Promise<Enrollment> {
   const createdAt = enr.createdAt || new Date().toISOString();
   const password = enr.password || '';
 
-  // Cap receipt URL to ~400KB to ensure it never exceeds MySQL max_allowed_packet
-  let safeReceipt = enr.receiptUrl || '';
-  if (safeReceipt.length > 400000) {
-    safeReceipt = safeReceipt.slice(0, 400000);
-  }
+  // Preserve complete receipt image data intact without truncation (stored in LONGTEXT)
+  const safeReceipt = enr.receiptUrl || '';
 
   try {
     await p.query(
