@@ -201,6 +201,15 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
       for (const colQuery of enrCols) {
         try { await p.query(colQuery); } catch {}
       }
+
+      // Self-heal legacy 0.00 or missing amounts to the official course fee PKR 3,799
+      try {
+        await p.query(
+          `UPDATE \`enrollments\` 
+           SET \`amount\` = 'PKR 3,799' 
+           WHERE \`amount\` IS NULL OR \`amount\` = '' OR \`amount\` = '0.00' OR \`amount\` = '0' OR \`amount\` = '0.0'`
+        );
+      } catch {}
     } catch (err) {
       console.error('ensureAnalyticsTables enrollments table error:', err);
     }
@@ -1002,9 +1011,14 @@ export async function mysqlUpdateEnrollmentStatus(
         pass = Math.floor(10000000 + Math.random() * 90000000).toString();
       }
 
+      let finalAmount = enr.amount;
+      if (status === 'approved' && (!finalAmount || finalAmount === '0.00' || finalAmount === '0' || finalAmount === '0.0')) {
+        finalAmount = 'PKR 3,799';
+      }
+
       await p.query(
-        `UPDATE enrollments SET status = ?, password = ? WHERE id = ?`,
-        [status, pass, enr.id]
+        `UPDATE enrollments SET status = ?, password = ?, amount = ? WHERE id = ?`,
+        [status, pass, finalAmount || 'PKR 3,799', enr.id]
       );
 
       // If approved, activate or create student in Hostinger MySQL

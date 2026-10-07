@@ -90,6 +90,7 @@ export default function AdminDashboardPage() {
     totalStudents: 0,
     pendingApprovals: 0,
     approvedEnrollments: 0,
+    rejectedEnrollments: 0,
     totalRevenueFormatted: 'PKR 0'
   });
   const [enrollments, setEnrollments] = useState<Enrollment[]>([]);
@@ -1037,7 +1038,9 @@ export default function AdminDashboardPage() {
                 <Clock size={15} className="text-amber-400" />
               </div>
               <div className="text-lg sm:text-2xl font-black text-amber-400">{stats.pendingApprovals}</div>
-              <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold mt-1 block">1-click LMS activation</span>
+              <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold mt-1 block">
+                {stats.rejectedEnrollments > 0 ? `${stats.rejectedEnrollments} Rejected &bull; ` : ''}1-click LMS activation
+              </span>
             </div>
 
             <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -1046,7 +1049,7 @@ export default function AdminDashboardPage() {
                 <CheckCircle2 size={15} className="text-emerald-400" />
               </div>
               <div className="text-lg sm:text-2xl font-black text-emerald-400">{stats.approvedEnrollments}</div>
-              <span className="text-[9px] sm:text-[10px] text-slate-400 font-bold mt-1 block">Access Enabled</span>
+              <span className="text-[9px] sm:text-[10px] text-emerald-400/90 font-bold mt-1 block">Access Enabled</span>
             </div>
 
             <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -1055,7 +1058,9 @@ export default function AdminDashboardPage() {
                 <TrendingUp size={15} className="text-indigo-400" />
               </div>
               <div className="text-base sm:text-2xl font-black text-white">{stats.totalRevenueFormatted}</div>
-              <span className="text-[9px] sm:text-[10px] text-indigo-400 font-bold mt-1 block">Fee: PKR 3,799</span>
+              <span className="text-[9px] sm:text-[10px] text-indigo-400 font-bold mt-1 block">
+                {stats.approvedEnrollments} Enrolled &bull; PKR 3,799 / std
+              </span>
             </div>
 
             {/* Read-Only Google Analytics Live Visitors Card */}

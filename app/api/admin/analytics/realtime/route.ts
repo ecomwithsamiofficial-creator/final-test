@@ -23,10 +23,12 @@ export async function GET() {
       const todayStr = new Date().toISOString().slice(0, 10);
       const thirtyDaysAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
 
+      const now = Date.now();
       for (const e of enrollments) {
         const time = e.createdAt ? new Date(e.createdAt).getTime() : 0;
         const dateStr = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
-        if (dateStr === todayStr) {
+        const isRecent24h = time > 0 && (now - time) <= 24 * 60 * 60 * 1000;
+        if (dateStr === todayStr || isRecent24h) {
           todayPurchases++;
         }
         if (time >= thirtyDaysAgo || !e.createdAt) {
