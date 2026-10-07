@@ -34,25 +34,42 @@ export async function POST(request: NextRequest) {
     let savedReceiptUrl = receiptUrl || '';
     if (receiptUrl && typeof receiptUrl === 'string' && receiptUrl.startsWith('data:image/')) {
       try {
-        const matches = receiptUrl.match(/^data:([A-Za-z0-9-+\/]+);base64,(.+)$/);
-        if (matches && matches.length === 3) {
-          const mime = matches[1];
-          const base64Data = matches[2];
-          const buffer = Buffer.from(base64Data, 'base64');
-          const ext = mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : '.jpg';
+        const parts = receiptUrl.split(';base64,');
+        if (parts.length === 2 && parts[1]) {
+          const rawBuffer = Buffer.from(parts[1].trim(), 'base64');
+          let processedBuffer = rawBuffer;
+          let ext = '.jpg';
+          let mime = 'image/jpeg';
+
+          try {
+            const sharp = (await import('sharp')).default;
+            processedBuffer = await sharp(rawBuffer)
+              .rotate()
+              .resize({
+                width: 1400,
+                height: 2200,
+                fit: 'inside',
+                withoutEnlargement: true,
+              })
+              .jpeg({ quality: 82, progressive: false })
+              .toBuffer();
+          } catch (sharpErr) {
+            console.warn('Sharp processing fallback to raw buffer:', sharpErr);
+          }
+
           const filename = `receipt_${trackingCode}_${Date.now()}${ext}`;
           const dir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
           if (!fs.existsSync(dir)) {
             fs.mkdirSync(dir, { recursive: true });
           }
           const filePath = path.join(dir, filename);
-          fs.writeFileSync(filePath, buffer);
+          fs.writeFileSync(filePath, processedBuffer);
           savedReceiptUrl = `/uploads/receipts/${filename}`;
 
           // Also save in MySQL media_uploads for permanent persistence
           try {
             const { mysqlSaveMediaUpload } = await import('@/lib/mysql');
-            await mysqlSaveMediaUpload(filename, 'receipts', filename, mime, buffer);
+            await mysqlSaveMediaUpload(filename, 'receipts', filename, mime, processedBuffer);
           } catch (mErr) {
             console.warn('Backup receipt to MySQL media error:', mErr);
           }

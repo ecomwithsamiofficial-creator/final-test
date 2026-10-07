@@ -170,6 +170,16 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
         return;
       }
 
+      // If the file is already under 2MB, pass the clean original Data URL directly.
+      // Server-side sharp will auto-orient, optimize, and save the complete file cleanly!
+      if (file.size <= 2 * 1024 * 1024) {
+        const reader = new FileReader();
+        reader.onloadend = () => resolve((reader.result as string) || '');
+        reader.onerror = () => resolve('');
+        reader.readAsDataURL(file);
+        return;
+      }
+
       const img = new Image();
       const objectUrl = URL.createObjectURL(file);
       img.src = objectUrl;

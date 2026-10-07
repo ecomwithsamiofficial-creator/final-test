@@ -1805,6 +1805,11 @@ export default function AdminDashboardPage() {
                 <p className="text-xs text-slate-400 mt-0.5">
                   <strong className="text-white">{previewReceipt.name}</strong> &bull; {previewReceipt.trackingCode} &bull; {previewReceipt.amount || 'PKR 3,799'}
                 </p>
+                {previewReceipt.receiptUrl && previewReceipt.receiptUrl.length === 65535 && (
+                  <p className="text-[11px] text-amber-400 mt-1 bg-amber-500/10 px-2 py-0.5 rounded border border-amber-500/20 inline-block">
+                    ⚠️ Note: This receipt was submitted before the server update and was truncated by MySQL's 64KB TEXT limit. New enrollments are saved completely.
+                  </p>
+                )}
               </div>
               <div className="flex items-center gap-2">
                 {previewReceipt.receiptUrl && (
