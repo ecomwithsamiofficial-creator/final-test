@@ -35,7 +35,7 @@ export async function POST(request: NextRequest) {
         admin: {
           email: expectedEmail,
           role: 'SUPER_ADMIN',
-          name: 'Muhammad Sami'
+          name: 'Sardar Samiullah'
         },
         redirectTo: '/admin'
       });

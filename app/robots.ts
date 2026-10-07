@@ -21,6 +21,24 @@ export default function robots(): MetadataRoute.Robots {
         ],
       },
       {
+        userAgent: [
+          'GPTBot',
+          'ChatGPT-User',
+          'ClaudeBot',
+          'PerplexityBot',
+          'Google-Extended',
+          'Meta-ExternalAgent',
+          'Bingbot',
+        ],
+        allow: ['/', '/llms.txt', '/about', '/enrollment', '/lms'],
+        disallow: [
+          '/admin',
+          '/admin/',
+          '/api/admin/',
+          '/api/auth/',
+        ],
+      },
+      {
         userAgent: 'Googlebot',
         allow: '/',
         disallow: [

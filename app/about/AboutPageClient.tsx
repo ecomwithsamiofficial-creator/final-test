@@ -106,7 +106,7 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
                     unoptimized={true}
                   />
                 </div>
-                <h2 className="text-2xl font-black text-white mb-1">{mentor.name || 'Muhammad Sami'}</h2>
+                <h2 className="text-2xl font-black text-white mb-1">{mentor.name || 'Sardar Samiullah'}</h2>
                 <p className="text-xs font-bold text-[#00A0DF] uppercase tracking-wider mb-4">
                   {mentor.badge || mentor.title || 'Founder • Lead eCommerce Mentor'}
                 </p>

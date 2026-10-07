@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
         role: 'ADMIN',
         user: {
           id: adminSession.id,
-          name: 'Muhammad Sami',
+          name: 'Sardar Samiullah',
           email: adminSession.email || 'admin@samiecom.com',
           role: 'SUPER_ADMIN',
           completedLessons: adminCompletedLessons

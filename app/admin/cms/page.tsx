@@ -3332,7 +3332,7 @@ export default function AdminCmsPage() {
                     <span>{cmsData.mentor?.badge || 'Digital Marketing Expert'}</span>
                   </span>
                   <h4 className="text-base font-black text-white">
-                    {cmsData.mentor?.name || 'Muhammad Sami'}
+                    {cmsData.mentor?.name || 'Sardar Samiullah'}
                   </h4>
                   <p className="text-xs text-slate-400 mt-1 line-clamp-2">
                     {cmsData.mentor?.title || 'Top E-Commerce Mentor & GCC Dropshipping Expert'}
@@ -3459,7 +3459,7 @@ export default function AdminCmsPage() {
                       <label className="block text-xs font-bold text-slate-400 mb-1">Mentor Full Name</label>
                       <input
                         type="text"
-                        placeholder="e.g. Muhammad Sami"
+                        placeholder="e.g. Sardar Samiullah"
                         value={cmsData.mentor?.name ?? ''}
                         onChange={(e) => setCmsData({
                           ...cmsData,

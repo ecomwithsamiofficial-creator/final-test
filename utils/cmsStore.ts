@@ -462,12 +462,12 @@ export const defaultCmsContent: CmsContentSchema = {
     mentorship_type: 'Direct WhatsApp Support'
   },
   mentor: {
-    name: 'Muhammad Sami',
-    title: 'Top E-Commerce Mentor & GCC Dropshipping Expert',
+    name: 'Sardar Samiullah',
+    title: 'Founder & E-Commerce Agency Director',
     image: '/sami-logo.jpg',
     tag: 'YOUR MENTOR',
-    badge: 'Digital Marketing Expert',
-    bio: 'You don’t just need the right mentor — you need the right community too. Both are included in your purchase today.',
+    badge: 'E-Commerce Agency Director',
+    bio: 'Founder of Ecom With Sami. Active e-commerce business operator and agency director with over 1,200+ students mentored.',
     benefits: [
       'Lifetime WhatsApp support',
       'Private Facebook community',
@@ -476,14 +476,14 @@ export const defaultCmsContent: CmsContentSchema = {
     ],
     stat1_value: '1,200+',
     stat1_label: 'Students mentored',
-    stat2_value: 'UAE & KSA',
-    stat2_label: 'Market focus',
+    stat2_value: 'Abbottabad / Global',
+    stat2_label: 'Agency Base',
     stat3_value: 'Lifetime',
     stat3_label: 'Access & support',
-    quote: 'You Don’t Need Millions To Start. You Just Need A Proven Step-by-Step Blueprint.',
-    story: 'When I started dropshipping, the biggest hurdle wasn’t the technical setup — it was the lack of reliable local supplier contacts in the GCC and constant trial-and-error wasting hard-earned ad spend.\n\nAfter years of testing, scaling, and establishing direct relationships with verified warehouses across Dubai, Sharjah, and Riyadh, I designed this training specifically for beginners in Pakistan who want to earn in Dirhams and Riyals from home.\n\nOur goal is simple: eliminate the guesswork, give you direct phone numbers to real suppliers, teach you high-converting TikTok & Facebook media buying, and provide live mentorship whenever you get stuck.',
+    quote: 'Start with Low-Risk Dropshipping, Master White Label, and Build Long-Term Private Label Equity.',
+    story: 'When I started in e-commerce, the real turning point was realizing that dropshipping is just the testing ground — the real long-term wealth is built by converting winning products into white label and scaling sustainable private label brands.\n\nFrom Abbottabad, Pakistan, I built a dedicated e-commerce agency with a professional team managing media buying, supply chains, and store conversions. I designed this mentorship specifically so beginners can start with low risk, validate winners with dropshipping, transition to custom white label packaging, and eventually scale into private label brands across Pakistan, UAE, Saudi Arabia, and global markets.\n\nOur mission is straightforward: provide real-world screen walkthroughs, tested ad blueprints, verified supplier contacts, and direct 1-on-1 mentorship whenever you get stuck.',
     students_count: '1,200+',
-    primary_markets: 'UAE & Saudi Arabia (KSA)',
+    primary_markets: 'Pakistan, UAE & Saudi Arabia (KSA)',
     access_badge: 'Verified Mentor & Coach'
   },
   bonuses: {
@@ -914,8 +914,8 @@ export const defaultCmsContent: CmsContentSchema = {
   },
   checkout_page: {
     badge: 'OFFICIAL ENROLLMENT • 88% DISCOUNT APPLIED',
-    title: 'UAE & KSA Shopify Dropshipping Mentorship',
-    subtitle: 'Get lifetime access to 11 video modules, verified GCC suppliers directory & WhatsApp ad mentorship.',
+    title: 'E-Commerce Brand Mentorship by Sardar Samiullah',
+    subtitle: 'Get lifetime access to 9 comprehensive video modules, verified suppliers directory & WhatsApp mentorship.',
     timer_heading: 'Discount Offer Ends In:',
     timer_hours: 2,
     timer_minutes: 27,
@@ -930,123 +930,105 @@ export const defaultCmsContent: CmsContentSchema = {
   homepage_curriculum: {
     tag: 'COMPLETE COURSE CURRICULUM',
     title: 'Everything You Get Inside the Course',
-    subtitle: 'Start from zero and build your own UAE & KSA store, step by step.',
+    subtitle: 'From beginner dropshipping to white label and private label scaling, step by step.',
     modules: [
       {
         id: 'mod_1',
-        title: 'Module 1: GCC Dropshipping Fundamentals & Opportunity',
+        title: 'Module 1: E-Commerce Business Fundamentals & The 4-Stage Scaling Roadmap',
         lessons: [
-          '1.1 GCC Dropshipping Overview & Market Arbitrage',
-          '1.2 Mindset, Capital Requirements & Legal Structure',
-          '1.3 Selecting Between UAE (AED) vs Saudi Arabia (SAR)'
+          '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences',
+          '1.2 Mindset, Capital Requirements & Operating Remotely from Pakistan',
+          '1.3 Market Selection: Pakistan Domestic vs UAE (AED) vs Saudi Arabia (SAR)'
         ]
       },
       {
         id: 'mod_2',
         title: 'Module 2: High-Converting Shopify Store Architecture',
         lessons: [
-          '2.1 Shopify Account Creation & Partner Plan Setup',
+          '2.1 Shopify Account Creation & Partner Store Architecture',
           '2.2 Installing the Free High-Converting Custom Theme',
-          '2.3 Setting Up Fast COD Form & WhatsApp Floating Chat',
-          '2.4 Currency Converters & Arabic Multi-language Integration'
+          '2.3 1-Click Fast COD Form & WhatsApp Confirmation Funnel',
+          '2.4 Currency Converters & Multi-Language Optimization'
         ]
       },
       {
         id: 'mod_3',
-        title: 'Module 3: Winning Product Research & Validation Criteria',
+        title: 'Module 3: Winning Product Hunting & Validation Criteria',
         lessons: [
-          '3.1 The 15-Point Winning Product Matrix for GCC',
-          '3.2 Spying on Top Dubai Competitors via TikTok Ads Library',
-          '3.3 Product Margin & Break-Even ROAS Calculation'
+          '3.1 The 15-Point Winning Product Matrix for High Profit Margins',
+          '3.2 Spying on Competitors via TikTok Ads Library & Ad Spy Tools',
+          '3.3 Product Margin & Break-Even ROAS Calculation Formula'
         ]
       },
       {
         id: 'mod_4',
-        title: 'Module 4: Sourcing from Verified Wholesale UAE & KSA Suppliers',
+        title: 'Module 4: Verified Suppliers & Sourcing Framework',
         lessons: [
-          '4.1 How to Negotiate with Deira & Riyadh Warehouse Managers',
-          '4.2 Utilizing the Private Supplier Directory Included in Course',
-          '4.3 Handling Stock Availability, Packaging & QA Inspections'
+          '4.1 How to Source Winning Products from Verified Local & Global Suppliers',
+          '4.2 Utilizing the Private Verified Suppliers Directory Included in Course',
+          '4.3 Handling Stock Availability, Quality Checks & Packaging Standards'
         ]
       },
       {
         id: 'mod_5',
-        title: 'Module 5: TikTok Ads Mastery & Pixel Integration',
+        title: 'Module 5: TikTok Ads Mastery & Creative Hook Framework',
         lessons: [
           '5.1 Creating TikTok Agency Ad Accounts Without Bans',
           '5.2 TikTok Pixel & Events API Setup via Google Tag Manager',
-          '5.3 The CBO Testing Framework (Rs 5,000 to 50 Orders)',
-          '5.4 UGC Video Creation & Hook Formulas That Print Dirhams'
+          '5.3 The CBO Testing Framework (Low Budget to Consistent Daily Orders)',
+          '5.4 High-Converting UGC Video Ad Scripts & Hook Formulas'
         ]
       },
       {
         id: 'mod_6',
-        title: 'Module 6: Facebook & Instagram Ads Scaling Engine',
+        title: 'Module 6: Meta (Facebook & Instagram) Ads Scaling Engine',
         lessons: [
           '6.1 Meta Business Manager Verification & Pixel Setup',
-          '6.2 Advantage+ Campaigns vs Manual Broad Targeting',
+          '6.2 Advantage+ Shopping Campaigns vs Manual Broad Targeting',
           '6.3 Retargeting Sequences & Dynamic Product Ads (DPA)',
-          '6.4 Scaling Winning Ad Sets to AED 5,000/Day Safely'
+          '6.4 Scaling Winning Ad Sets to 5-Figure Daily Revenue Safely'
         ]
       },
       {
         id: 'mod_7',
-        title: 'Module 7: WhatsApp Automation & Order Confirmation Funnel',
+        title: 'Module 7: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
         lessons: [
-          '7.1 Setting Up Automated WhatsApp Confirmation Flows',
-          '7.2 Gulf Arabic Voice Note Scripts That Reduce Cancellations',
-          '7.3 Address Verification Hacks (Dubai Al-Barsha, Riyadh Olaya)'
+          '7.1 Courier Onboarding & Setup with Verified Delivery Partners',
+          '7.2 Tracking COD Remittances & Withdrawing PKR to Pakistani Banks',
+          '7.3 WhatsApp Order Confirmation Flows to Slash Cancellations & RTO'
         ]
       },
       {
         id: 'mod_8',
-        title: 'Module 8: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
+        title: 'Module 8: Transitioning to White Label & Private Label (PL)',
         lessons: [
-          '8.1 Courier Onboarding (SMSA, Aramex, Zajil, Local Couriers)',
-          '8.2 Tracking Remittances & Withdrawing PKR to Pakistani Banks',
-          '8.3 RTO Minimization Strategies & Re-delivery Automation'
+          '8.1 When and How to Transition from Dropshipping into White Label',
+          '8.2 Custom Branded Packaging, Unboxing Experience & Local Warehousing',
+          '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation'
         ]
       },
       {
         id: 'mod_9',
-        title: 'Module 9: Financial Management, P&L Tracking & Currency Transfers',
+        title: 'Module 9: Financial Management, P&L Mastery & International Expansion',
         lessons: [
-          '9.1 E-Commerce Profit & Loss Spreadsheet Walkthrough',
-          '9.2 Managing Credit Limits for Ads & Working Capital',
-          '9.3 Tax Considerations & Long-Term Wealth Planning'
-        ]
-      },
-      {
-        id: 'mod_10',
-        title: 'Module 10: Building a Private Label Brand in UAE & Saudi Arabia',
-        lessons: [
-          '10.1 When and How to Transition into Private Label',
-          '10.2 Custom Packaging & Arabic Labeling Regulations',
-          '10.3 Trademark Registration in UAE & Saudi Arabia (MOC)'
-        ]
-      },
-      {
-        id: 'mod_11',
-        title: 'Module 11: Scaling to 7-Figures & Team Hiring Blueprint',
-        lessons: [
-          '11.1 Hiring & Training Customer Support VAs on Upwork',
-          '11.2 Standard Operating Procedures (SOPs) for Daily Store Ops',
-          '11.3 Final Words of Wisdom from Mentor Sardar Samiullah'
+          '9.1 E-Commerce Profit & Loss Spreadsheet & Margin Tracking',
+          '9.2 Hiring & Managing Virtual Assistants (VAs) for Store Ops',
+          '9.3 Expanding Tested Brands into UAE, Saudi Arabia & Global Markets'
         ]
       }
     ]
   },
   about_page: {
     tag: 'YOUR MENTOR',
-    hero_title: 'Empowering 1,200+ Students to Build Real Online Stores',
-    hero_subtitle: 'From absolute zero to multi-million revenue in UAE & Saudi Arabia markets. Learn the exact framework from someone who does it daily.',
+    hero_title: 'Empowering 1,200+ Students to Build Real E-Commerce Brands',
+    hero_subtitle: 'From beginner dropshipping to white label and private label scaling. Learn the proven framework from active agency operators.',
     story_tag: 'MY STORY & PHILOSOPHY',
-    story_quote: "You Don't Need Millions To Start. You Just Need A Proven Step-by-Step Blueprint.",
-    story_text: "When I started dropshipping, the biggest hurdle wasn't the technical setup — it was the lack of reliable local supplier contacts in the GCC and constant trial-and-error wasting hard-earned ad spend.\n\nAfter years of testing, scaling, and establishing direct relationships with verified warehouses across Dubai, Sharjah, and Riyadh, I designed this training specifically for beginners in Pakistan who want to earn in Dirhams and Riyals from home.\n\nOur goal is simple: eliminate the guesswork, give you direct phone numbers to real suppliers, teach you high-converting TikTok & Facebook media buying, and provide live mentorship whenever you get stuck.",
+    story_quote: "Start with Low-Risk Dropshipping, Master White Label, and Build Long-Term Private Label Equity.",
+    story_text: "When I started in e-commerce, the real turning point was realizing that dropshipping is just the testing ground — the real long-term wealth is built by converting winning products into white label and scaling sustainable private label brands.\n\nFrom Abbottabad, Pakistan, I built a dedicated e-commerce agency with a professional team managing media buying, supply chains, and store conversions. I designed this mentorship specifically so beginners can start with low risk, validate winners with dropshipping, transition to custom white label packaging, and eventually scale into private label brands across Pakistan, UAE, Saudi Arabia, and global markets.\n\nOur mission is straightforward: provide real-world screen walkthroughs, tested ad blueprints, verified supplier contacts, and direct 1-on-1 mentorship whenever you get stuck.",
     benefits: [
       'Dropshipping to Private Label Scaling Formula',
       '100% Practical Screen Walkthroughs',
-      'Direct Verified GCC Warehouse Lists',
+      'Verified Local & International Suppliers Lists',
       'Lifetime WhatsApp Mentorship (9AM-5PM)',
       'Weekly Live Campaign & Pixel Audits'
     ],
@@ -1061,14 +1043,14 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         id: 'card_2',
-        title: 'Local & GCC Market Focus',
-        desc: 'Unlike US dropshipping which takes 20-day shipping, UAE & KSA offers 2-day delivery with cash on delivery payouts.',
+        title: 'Complete 4-Stage Brand Roadmap',
+        desc: 'Learn how to start with zero-inventory dropshipping, advance into white label, and build durable private label brands.',
         icon: 'globe'
       },
       {
         id: 'card_3',
-        title: 'Dedicated Student Community',
-        desc: 'Connect with thousands of students, share winning creatives, and solve challenges together in real-time.',
+        title: 'Dedicated Agency & Student Support',
+        desc: 'Direct 1-on-1 access to Sardar Samiullah and our professional agency team for store reviews and ad guidance.',
         icon: 'users'
       }
     ]

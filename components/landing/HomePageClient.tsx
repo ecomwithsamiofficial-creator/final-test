@@ -879,24 +879,41 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     title={isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
                   />
 
-                  {/* Frosted Glassmorphic "Click To Unmute" Center Overlay (Native button with instant touch for iOS 15) */}
+                  {/* High-Converting Afaq/VSL Animated "Click To Unmute / Tap For Sound" Center Overlay */}
                   {isHeroMuted && (
                     <button 
                       type="button"
                       aria-label="Click to unmute video"
                       onClick={handleHeroUnmute}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/25 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-300 border-none outline-none select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/35 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-300 border-none outline-none select-none"
                     >
-                      <div className="bg-white/20 hover:bg-white/30 border-2 border-white/60 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center text-white shadow-2xl transition-transform active:scale-95 max-w-[260px] sm:max-w-[290px] group/card pointer-events-none">
-                        <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-2 sm:mb-2.5 rounded-full bg-white/25 flex items-center justify-center border border-white/60 shadow-inner group-hover/card:scale-110 transition-transform">
-                          <Volume2 size={28} className="text-white animate-pulse" />
+                      <div className="relative bg-slate-950/85 hover:bg-slate-900/95 border-2 border-[#00A0DF]/70 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center text-white shadow-[0_0_40px_rgba(0,160,223,0.35)] transition-transform active:scale-95 max-w-[270px] sm:max-w-[310px] group/card pointer-events-none">
+                        
+                        {/* Glowing Outer Ripple Rings */}
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2.5 flex items-center justify-center">
+                          <span className="absolute -inset-2 rounded-full bg-[#00A0DF]/30 animate-ping" />
+                          <span className="absolute -inset-1 rounded-full bg-[#00A0DF]/40 animate-pulse" />
+                          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] flex items-center justify-center border border-white/40 shadow-xl group-hover/card:scale-105 transition-transform">
+                            <VolumeX size={26} className="text-white" />
+                          </div>
                         </div>
-                        <h4 className="text-sm sm:text-base font-extrabold text-white tracking-tight drop-shadow-sm">
-                          Your Video Is Playing
+
+                        {/* Animated Equalizer Wave Bars */}
+                        <div className="flex items-end justify-center gap-1.5 h-5 mb-2">
+                          <span className="w-1 bg-[#00A0DF] rounded-full audio-bar-1" />
+                          <span className="w-1 bg-cyan-400 rounded-full audio-bar-2" />
+                          <span className="w-1 bg-white rounded-full audio-bar-3" />
+                          <span className="w-1 bg-[#00A0DF] rounded-full audio-bar-4" />
+                        </div>
+
+                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-tight mb-2.5 drop-shadow-sm">
+                          Video Is Playing Muted
                         </h4>
-                        <div className="mt-1.5 sm:mt-2 text-xs sm:text-sm font-black text-white bg-[#00A0DF] hover:bg-[#008ac2] px-3.5 py-1 sm:py-1.5 rounded-full shadow-md inline-block uppercase tracking-wider">
-                          Click To Unmute
+
+                        <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black text-white bg-gradient-to-r from-[#00A0DF] to-[#008ac2] px-4 py-2 rounded-full shadow-lg shadow-[#00A0DF]/40 uppercase tracking-wider animate-pulse">
+                          <Volume2 size={16} />
+                          <span>Tap For Sound</span>
                         </div>
                       </div>
                     </button>
@@ -1258,7 +1275,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               <div className="lg:col-span-7">
                 <span className="section-tag-pill">{mentor.tag || 'YOUR MENTOR'}</span>
                 <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight mt-2 mb-3">
-                  {mentor.name || 'Muhammad Sami'}
+                  {mentor.name || 'Sardar Samiullah'}
                 </h2>
                 <p className="text-xs sm:text-sm md:text-base text-slate-300 font-medium leading-relaxed mb-6">
                   {mentor.bio || (
