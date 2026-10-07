@@ -1637,7 +1637,7 @@ export default function AdminCmsPage() {
             { id: 'cost', label: '13. ⏳ Cost of Waiting', icon: Clock },
             { id: 'faqs', label: '14. ❓ FAQs', icon: HelpCircle },
             { id: 'cta', label: '15. 🚀 Final CTA', icon: Sparkles },
-            { id: 'contact', label: '16. 📱 Contact & Footer', icon: Globe2 },
+            { id: 'contact', label: '16. 💬 WhatsApp & Contact', icon: Globe2 },
             { id: 'payments', label: '17. 💳 Bank Accounts', icon: CreditCard },
             { id: 'themes', label: '18. 🎨 Theme Colors', icon: Palette },
             { id: 'pixels', label: '19. 🎯 Pixels & Code', icon: Settings },
@@ -6655,49 +6655,128 @@ export default function AdminCmsPage() {
             <div>
               <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
                 <Globe2 size={18} className="text-[#00A0DF]" />
-                <span>Contact Details, Offices &amp; Footer Disclaimer</span>
+                <span>Contact Details, Floating WhatsApp Button &amp; Footer</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
-                Manage contact WhatsApp numbers, offices, WhatsApp greeting, and bottom footer legal disclaimers.
+                Website ke floating WhatsApp icon ka automated message, phone number, office location aur footer disclaimer manage karein.
               </p>
             </div>
 
-            <div className="space-y-4">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Contact &amp; WhatsApp Support</h4>
+            {/* SECTION 1: FLOATING WHATSAPP BUTTON SETTINGS */}
+            <div className="bg-[#0B0F19] border border-emerald-500/30 rounded-2xl p-4 sm:p-6 space-y-5 shadow-inner">
+              <div className="flex flex-wrap items-center justify-between gap-2 border-b border-white/5 pb-3">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#128C7E] to-[#25D366] flex items-center justify-center text-white shadow-md shadow-emerald-500/30">
+                    <svg viewBox="0 0 32 32" className="w-4 h-4 fill-current">
+                      <path d="M16 0.5C7.44 0.5 0.5 7.44 0.5 16C0.5 18.736 1.213 21.31 2.457 23.54L0.6 30.4L7.65 28.58C9.79 29.74 12.24 30.5 16 30.5C24.56 30.5 31.5 23.56 31.5 16C31.5 7.44 24.56 0.5 16 0.5ZM16 27.95C12.65 27.95 10.45 27.16 8.52 26.02L8.06 25.75L3.88 26.84L4.99 22.77L4.7 22.31C3.45 20.32 2.79 18.21 2.79 16C2.79 8.7 8.7 2.79 16 2.79C23.3 2.79 29.21 8.7 29.21 16C29.21 23.3 23.3 27.95 16 27.95ZM22.74 19.38C22.37 19.2 20.55 18.3 20.21 18.18C19.87 18.06 19.63 18 19.38 18.37C19.14 18.74 18.45 19.55 18.24 19.79C18.03 20.03 17.82 20.06 17.45 19.88C17.08 19.7 15.89 19.31 14.48 18.05C13.38 17.07 12.64 15.86 12.43 15.49C12.22 15.12 12.41 14.92 12.59 14.74C12.76 14.57 12.96 14.31 13.14 14.1C13.32 13.89 13.38 13.74 13.5 13.5C13.62 13.26 13.56 13.05 13.47 12.87C13.38 12.69 12.65 10.89 12.35 10.16C12.06 9.45 11.76 9.55 11.54 9.54C11.33 9.53 11.09 9.53 10.85 9.53C10.61 9.53 10.22 9.62 9.89 9.98C9.56 10.34 8.62 11.22 8.62 13.02C8.62 14.82 9.93 16.56 10.11 16.8C10.29 17.04 12.68 20.73 16.34 22.31C17.21 22.69 17.89 22.91 18.42 23.08C19.29 23.36 20.08 23.32 20.71 23.23C21.41 23.13 22.87 22.35 23.17 21.5C23.47 20.65 23.47 19.92 23.38 19.77C23.29 19.62 23.08 19.53 22.74 19.38Z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <h4 className="text-xs sm:text-sm font-black text-white">Floating WhatsApp Widget (Side Button)</h4>
+                    <p className="text-[11px] text-slate-400">Jab visitor button dabaye ga toh yeh automated message open hoga.</p>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 px-2.5 py-1 rounded-full flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                  Live on Homepage
+                </span>
+              </div>
+
+              {/* Phone & Email Inputs */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">WhatsApp Phone (International Format)</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    WhatsApp Phone Number <span className="text-emerald-400 font-normal">(With Country Code)</span>
+                  </label>
                   <input
                     type="text"
                     value={cmsData.contact?.phone ?? ''}
                     onChange={(e) => setCmsData({ ...cmsData, contact: { ...cmsData.contact, phone: e.target.value } })}
-                    placeholder="+92 300 1234567"
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-emerald-400 font-bold focus:outline-none focus:border-[#00A0DF]"
+                    placeholder="+92 333 0093269"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#111827] border border-emerald-500/30 text-xs sm:text-sm text-emerald-400 font-bold focus:outline-none focus:border-emerald-400"
                   />
+                  <span className="text-[10px] text-slate-500 block mt-1">Example: +92 333 0093269 ya 03330093269</span>
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-400 mb-1">Official Support Email</label>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Official Support Email</label>
                   <input
                     type="email"
                     value={cmsData.contact?.email ?? ''}
                     onChange={(e) => setCmsData({ ...cmsData, contact: { ...cmsData.contact, email: e.target.value } })}
-                    placeholder="support@ecomwithsami.com"
-                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
+                    placeholder="ecomwithsamiofficial@gmail.com"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#111827] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
                   />
+                  <span className="text-[10px] text-slate-500 block mt-1">Footer &amp; Support page par show hota hai</span>
                 </div>
               </div>
 
+              {/* Pre-filled Message Textarea */}
               <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">WhatsApp Pre-filled Greeting Message</label>
-                <input
-                  type="text"
-                  value={cmsData.contact?.whatsappGreeting ?? 'Salam Sami! I am interested in joining the 2026 Dropshipping Masterclass. Please share details.'}
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Automated Pre-filled Message <span className="text-emerald-400 font-normal">(Aap yahan apni marzi ka message likh sakte hain)</span>
+                </label>
+                <textarea
+                  rows={3}
+                  value={cmsData.contact?.whatsappGreeting ?? 'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.'}
                   onChange={(e) => setCmsData({ ...cmsData, contact: { ...cmsData.contact, whatsappGreeting: e.target.value } })}
-                  placeholder="Salam Sami! I am interested in joining the 2026 Dropshipping Masterclass..."
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
+                  placeholder="Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass."
+                  className="w-full px-3 py-2.5 rounded-xl bg-[#111827] border border-emerald-500/30 text-xs sm:text-sm text-white focus:outline-none focus:border-emerald-400 leading-relaxed resize-none"
                 />
               </div>
 
+              {/* Quick Pick Presets */}
+              <div className="space-y-1.5">
+                <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider block">Quick Pick Message Presets (1-Click Fill):</span>
+                <div className="flex flex-wrap gap-2">
+                  {[
+                    'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.',
+                    'Hi Sami! I want to enroll in the E-Commerce Masterclass. Please share the admission and fee details.',
+                    'Assalam-o-Alaikum Mentor Sami! Course admission open hai? Please guide me.',
+                    'Salam Sami! I want guidance on starting my Shopify store. Please share details.'
+                  ].map((presetMsg) => (
+                    <button
+                      key={presetMsg}
+                      type="button"
+                      onClick={() => setCmsData({ ...cmsData, contact: { ...cmsData.contact, whatsappGreeting: presetMsg } })}
+                      className={`text-[10px] sm:text-[11px] px-3 py-1.5 rounded-lg text-left transition-all border ${
+                        (cmsData.contact?.whatsappGreeting || '').trim() === presetMsg.trim()
+                          ? 'bg-emerald-600/30 border-emerald-500 text-emerald-300 font-bold'
+                          : 'bg-white/5 border-white/10 text-slate-300 hover:bg-white/10 hover:border-emerald-500/30'
+                      }`}
+                    >
+                      {presetMsg}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Live Preview Box */}
+              <div className="bg-[#051110] border border-emerald-500/30 rounded-xl p-3 sm:p-4 space-y-2">
+                <div className="flex items-center justify-between text-[11px]">
+                  <span className="text-emerald-400 font-bold flex items-center gap-1.5">
+                    <span>📱</span> Live WhatsApp Preview (Visitor Screen)
+                  </span>
+                  <span className="text-[10px] text-slate-400">
+                    To: <strong className="text-emerald-300">{cmsData.contact?.phone || '+92 333 0093269'}</strong>
+                  </span>
+                </div>
+
+                <div className="max-w-md ml-auto bg-[#005c4b] text-white p-3 rounded-2xl rounded-tr-none shadow-md space-y-1">
+                  <p className="text-xs sm:text-sm leading-relaxed whitespace-pre-wrap">
+                    {cmsData.contact?.whatsappGreeting || 'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.'}
+                  </p>
+                  <div className="flex items-center justify-end gap-1 text-[9px] text-emerald-200/70">
+                    <span>Just now</span>
+                    <span>✓✓</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* SECTION 2: OFFICE LOCATION & FOOTER LEGAL */}
+            <div className="space-y-4 pt-2">
+              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Office Location &amp; Footer Legal</h4>
+              
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">Office Location (Footer &amp; Support)</label>
                 <input
@@ -6716,10 +6795,7 @@ export default function AdminCmsPage() {
                   className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
                 />
               </div>
-            </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/10">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Footer Disclaimer &amp; Copyright</h4>
               <div>
                 <label className="block text-xs font-bold text-slate-400 mb-1">Legal Earnings Disclaimer</label>
                 <textarea
@@ -6745,6 +6821,19 @@ export default function AdminCmsPage() {
                   className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
                 />
               </div>
+            </div>
+
+            {/* Dedicated Save Button */}
+            <div className="pt-3 border-t border-white/10 flex justify-end">
+              <button
+                type="button"
+                onClick={handleSaveAll}
+                disabled={loading}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs sm:text-sm font-black shadow-lg shadow-emerald-600/30 transition-all active:scale-95"
+              >
+                <Save size={15} />
+                <span>{loading ? 'Saving Changes...' : 'Save Contact & WhatsApp Changes'}</span>
+              </button>
             </div>
           </div>
         )}

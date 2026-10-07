@@ -244,8 +244,9 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
       updated.cost_of_waiting = patch.cost_of_waiting;
     } else if (activeTab === 'final_cta' || activeTab === 'cta') {
       if (patch.final_cta !== undefined) updated.final_cta = { ...existing.final_cta, ...patch.final_cta };
-    } else if (activeTab === 'contact' && patch.contact !== undefined) {
-      updated.contact = { ...existing.contact, ...patch.contact };
+    } else if (activeTab === 'contact') {
+      if (patch.contact !== undefined) updated.contact = { ...existing.contact, ...patch.contact };
+      if (patch.footer !== undefined) updated.footer = { ...existing.footer, ...patch.footer };
     } else if (activeTab === 'payments' && patch.payment_methods !== undefined) {
       updated.payment_methods = patch.payment_methods;
     } else if (activeTab === 'themes' && patch.theme !== undefined) {

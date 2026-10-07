@@ -58,7 +58,7 @@ export function Footer({ customContact, customFooter }: FooterProps) {
   const displayPhone = contactData?.phone || dynamicConfig.displayPhone || '+92 333 0093269';
   const location = contactData?.location || contactData?.headOffice || dynamicConfig.location || dynamicConfig.headOffice || 'Abbottabad, Khyber Pakhtunkhwa, Pakistan';
   const whatsappUrl = dynamicConfig.getWhatsAppUrl(
-    contactData?.whatsappGreeting || 'Hi Sami! I want to enroll in the UAE & KSA Dropshipping Course (PKR 3,799). Can you help me?'
+    contactData?.whatsappGreeting || dynamicConfig.whatsappGreeting || 'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.'
   );
 
   const scrollToTop = () => {

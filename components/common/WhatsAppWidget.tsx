@@ -15,7 +15,7 @@ export function WhatsAppWidget() {
     return null;
   }
 
-  const whatsappUrl = getWhatsAppUrl('Hi Sami! I want to inquire about the UAE & KSA Dropshipping Course.');
+  const whatsappUrl = getWhatsAppUrl();
 
   return (
     <div
