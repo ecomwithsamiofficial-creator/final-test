@@ -6509,52 +6509,122 @@ export default function AdminCmsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {cmsData.payment_methods.map((pm, idx) => (
-                <div key={pm.id} className="bg-[#0B0F19] border border-white/10 rounded-2xl p-4 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs sm:text-sm font-bold text-white">
-                      {pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name)) ? 'SadaPay' : pm.name}
+                <div key={pm.id} className="bg-[#0B0F19] border border-white/10 rounded-2xl p-4 sm:p-5 space-y-3.5 shadow-lg">
+                  <div className="flex items-center justify-between pb-2 border-b border-white/5">
+                    <span className="text-xs sm:text-sm font-black text-white flex items-center gap-2">
+                      <span className="w-2 h-2 rounded-full bg-[#00A0DF]"></span>
+                      <span>{pm.name || (pm.id === 'sadapay' ? 'SadaPay' : pm.id)}</span>
                     </span>
-                    <span className="text-[10px] text-[#00A0DF] font-bold bg-[#00A0DF]/10 px-2 py-0.5 rounded-full border border-[#00A0DF]/20">
-                      {pm.badge || 'Active'}
+                    <span className="text-[10px] text-[#00A0DF] font-bold bg-[#00A0DF]/15 px-2.5 py-0.5 rounded-full border border-[#00A0DF]/30 flex items-center gap-1 shadow-sm">
+                      <span className="text-slate-400 font-normal">Website Badge:</span>
+                      <strong className="text-white">{pm.badge || 'Instant Transfer'}</strong>
                     </span>
                   </div>
+
+                  {/* 1. Method Name & Badge / Tagline Inputs */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        Bank / Method Name
+                      </label>
+                      <input
+                        type="text"
+                        value={pm.name}
+                        onChange={(e) => {
+                          const updated = [...cmsData.payment_methods];
+                          updated[idx] = { ...updated[idx], name: e.target.value };
+                          setCmsData({ ...cmsData, payment_methods: updated });
+                        }}
+                        placeholder="e.g. Easypaisa, SadaPay, Meezan Bank"
+                        className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1">
+                        Tagline / Badge Text <span className="text-[#00A0DF] font-normal">(Editable)</span>
+                      </label>
+                      <input
+                        type="text"
+                        value={pm.badge ?? ''}
+                        onChange={(e) => {
+                          const updated = [...cmsData.payment_methods];
+                          updated[idx] = { ...updated[idx], badge: e.target.value };
+                          setCmsData({ ...cmsData, payment_methods: updated });
+                        }}
+                        placeholder="e.g. Instant Transfer, Fast & Zero Fees"
+                        className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-[#00A0DF]/30 text-xs font-bold text-[#00A0DF] focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Quick Pick Presets for Badge */}
+                  <div className="flex flex-wrap items-center gap-1.5 pt-0.5">
+                    <span className="text-[10px] text-slate-400 font-medium">Quick Pick Tagline:</span>
+                    {['Instant Transfer', 'Fast & Zero Fees', 'Direct Bank Transfer', '24/7 Verified', 'Zero Charges'].map((preset) => (
+                      <button
+                        key={preset}
+                        type="button"
+                        onClick={() => {
+                          const updated = [...cmsData.payment_methods];
+                          updated[idx] = { ...updated[idx], badge: preset };
+                          setCmsData({ ...cmsData, payment_methods: updated });
+                        }}
+                        className={`text-[9px] px-2 py-0.5 rounded-md font-bold transition-all border ${
+                          (pm.badge || '') === preset
+                            ? 'bg-[#00A0DF] text-white border-[#00A0DF] shadow-sm'
+                            : 'bg-white/5 hover:bg-white/10 text-slate-300 border-white/10'
+                        }`}
+                      >
+                        {preset}
+                      </button>
+                    ))}
+                  </div>
+
+                  {/* 2. Account Title */}
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Account Title</label>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1">Account Title</label>
                     <input
                       type="text"
                       value={pm.accountTitle}
                       onChange={(e) => {
                         const updated = [...cmsData.payment_methods];
-                        updated[idx].accountTitle = e.target.value;
+                        updated[idx] = { ...updated[idx], accountTitle: e.target.value };
                         setCmsData({ ...cmsData, payment_methods: updated });
                       }}
+                      placeholder="e.g. SARDAR SAMIULLAH"
                       className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs font-bold text-white focus:outline-none focus:border-[#00A0DF]"
                     />
                   </div>
+
+                  {/* 3. Account Number */}
                   <div>
-                    <label className="block text-[11px] text-slate-400 mb-1">Account Number</label>
+                    <label className="block text-[11px] font-bold text-slate-300 mb-1">Account Number</label>
                     <input
                       type="text"
                       value={pm.accountNumber}
                       onChange={(e) => {
                         const updated = [...cmsData.payment_methods];
-                        updated[idx].accountNumber = e.target.value;
+                        updated[idx] = { ...updated[idx], accountNumber: e.target.value };
                         setCmsData({ ...cmsData, payment_methods: updated });
                       }}
+                      placeholder="e.g. 03481095933"
                       className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs font-mono font-black text-[#00A0DF] focus:outline-none"
                     />
                   </div>
-                  {pm.iban !== undefined && (
+
+                  {/* 4. Optional IBAN */}
+                  {(pm.iban !== undefined || pm.id === 'meezan') && (
                     <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">IBAN (Bank Transfer)</label>
+                      <label className="block text-[11px] font-bold text-slate-300 mb-1">IBAN (Bank Transfer)</label>
                       <input
                         type="text"
                         value={pm.iban || ''}
                         onChange={(e) => {
                           const updated = [...cmsData.payment_methods];
-                          updated[idx].iban = e.target.value;
+                          updated[idx] = { ...updated[idx], iban: e.target.value };
                           setCmsData({ ...cmsData, payment_methods: updated });
                         }}
+                        placeholder="e.g. PK94MEZN0015010112560119"
                         className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs font-mono text-slate-300 focus:outline-none focus:border-[#00A0DF]"
                       />
                     </div>

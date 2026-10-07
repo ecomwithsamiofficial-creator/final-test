@@ -74,7 +74,8 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
   );
   const sanitizeMethod = (pm: any) => ({
     ...pm,
-    name: pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name)) ? 'SadaPay' : pm.name,
+    name: pm.name || (pm.id === 'sadapay' || (pm.name && /nayapay/i.test(pm.name)) ? 'SadaPay' : pm.name),
+    badge: pm.badge || (pm.id === 'sadapay' ? 'Fast & Zero Fees' : pm.id === 'meezan' ? 'Direct Bank Transfer' : 'Instant Transfer'),
     themeColor: pm.id === 'easypaisa' ? 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
       : pm.id === 'jazzcash' ? 'border-amber-500 bg-amber-500/10 text-amber-400'
       : pm.id === 'meezan' ? 'border-blue-500 bg-blue-500/10 text-blue-400'
@@ -535,7 +536,14 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
               {/* Selected Payment Card Box */}
               <div className="bg-[#0B0F19] border-2 border-[#00A0DF]/40 rounded-2xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-inner">
                 <div className="space-y-1">
-                  <div className="text-[11px] font-bold text-[#00A0DF] uppercase">{currentPayment.name} Official Details</div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-[11px] font-bold text-[#00A0DF] uppercase">{currentPayment.name} Official Details</span>
+                    {currentPayment.badge && (
+                      <span className="text-[10px] text-[#00A0DF] font-bold bg-[#00A0DF]/15 px-2 py-0.5 rounded-full border border-[#00A0DF]/30">
+                        {currentPayment.badge}
+                      </span>
+                    )}
+                  </div>
                   <div className="text-xs text-slate-400">Account Title: <strong className="text-white">{currentPayment.accountTitle}</strong></div>
                   <div className="text-xs text-slate-400">Account Number: <strong className="text-lg sm:text-xl font-mono text-[#00A0DF] font-black block sm:inline sm:ml-1">{currentPayment.accountNumber}</strong></div>
                   {currentPayment.iban && (
