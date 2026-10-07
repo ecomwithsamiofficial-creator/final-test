@@ -164,126 +164,95 @@ export const initialEnrollments: Enrollment[] = [
 export const initialModules: Module[] = [
   {
     id: 1,
-    title: 'Module 1: GCC Dropshipping Fundamentals & Opportunity',
+    title: 'Module 1: E-Commerce Business Fundamentals & The 4-Stage Scaling Roadmap',
     duration: '45 mins',
-    description: 'Understand the business economics of UAE and Saudi markets, profit margin benchmarks, COD mechanics, and how to operate 100% remotely from Pakistan.',
+    description: 'Understand the core economics of e-commerce: starting with low-budget dropshipping, moving to white label, scaling to private label, and international market expansion.',
     lessons: [
-      { id: 'm1_l1', title: '1.1 GCC Dropshipping Overview & Market Arbitrage', duration: '12:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm1_l2', title: '1.2 Mindset, Capital Requirements & Legal Structure', duration: '15:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm1_l3', title: '1.3 Selecting Between UAE (AED) vs Saudi Arabia (SAR)', duration: '17:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm1_l1', title: '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences', duration: '12:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm1_l2', title: '1.2 Mindset, Capital Requirements & Operating Remotely from Pakistan', duration: '15:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm1_l3', title: '1.3 Market Selection: Pakistan Domestic vs UAE (AED) vs Saudi Arabia (SAR)', duration: '17:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 2,
     title: 'Module 2: High-Converting Shopify Store Architecture',
     duration: '60 mins',
-    description: 'Building an ultra-fast, mobile-first Shopify storefront optimized for GCC Arabic & English buyers with 1-click Cash on Delivery (COD) checkouts.',
+    description: 'Building an ultra-fast, mobile-first Shopify storefront optimized for local and international buyers with 1-click Cash on Delivery (COD) checkouts.',
     lessons: [
-      { id: 'm2_l1', title: '2.1 Shopify Account Creation & Partner Plan Setup', duration: '14:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm2_l1', title: '2.1 Shopify Account Creation & Partner Store Architecture', duration: '14:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
       { id: 'm2_l2', title: '2.2 Installing the Free High-Converting Custom Theme', duration: '18:50', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm2_l3', title: '2.3 Setting Up Fast COD Form & WhatsApp Floating Chat', duration: '16:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm2_l4', title: '2.4 Currency Converters & Arabic Multi-language Integration', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm2_l3', title: '2.3 1-Click Fast COD Form & WhatsApp Confirmation Funnel', duration: '16:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm2_l4', title: '2.4 Currency Converters & Multi-Language Optimization', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 3,
-    title: 'Module 3: Winning Product Research & Validation Criteria',
+    title: 'Module 3: Winning Product Hunting & Validation Criteria',
     duration: '55 mins',
     description: 'Master the 15-point criteria checklist to discover high-margin, viral winning products using TikTok Creative Center, PiPiADS, and Facebook Ad Library.',
     lessons: [
-      { id: 'm3_l1', title: '3.1 The 15-Point Winning Product Matrix for GCC', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm3_l2', title: '3.2 Spying on Top Dubai Competitors via TikTok Ads Library', duration: '20:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm3_l3', title: '3.3 Product Margin & Break-Even ROAS Calculation', duration: '15:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm3_l1', title: '3.1 The 15-Point Winning Product Matrix for High Profit Margins', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm3_l2', title: '3.2 Spying on Competitors via TikTok Ads Library & Ad Spy Tools', duration: '20:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm3_l3', title: '3.3 Product Margin & Break-Even ROAS Calculation Formula', duration: '15:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 4,
-    title: 'Module 4: Sourcing from Verified Wholesale UAE & KSA Suppliers',
+    title: 'Module 4: Verified Suppliers & Sourcing Framework',
     duration: '50 mins',
-    description: 'Connect directly with wholesale warehouses in Dubai (Deira, Naif) and Riyadh for 24-48 hours local COD shipping with zero upfront stock purchases.',
+    description: 'Connect directly with wholesale warehouses in Pakistan, UAE (Deira), and Saudi Arabia for fast COD delivery with zero upfront stock risk.',
     lessons: [
-      { id: 'm4_l1', title: '4.1 How to Negotiate with Deira & Riyadh Warehouse Managers', duration: '16:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm4_l2', title: '4.2 Utilizing the Private Supplier Directory Included in Course', duration: '18:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm4_l3', title: '4.3 Handling Stock Availability, Packaging & QA Inspections', duration: '15:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm4_l1', title: '4.1 How to Source Winning Products from Verified Local & Global Suppliers', duration: '16:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm4_l2', title: '4.2 Utilizing the Private Verified Suppliers Directory Included in Course', duration: '18:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm4_l3', title: '4.3 Handling Stock Availability, Quality Checks & Packaging Standards', duration: '15:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 5,
-    title: 'Module 5: TikTok Ads Mastery & Pixel Integration',
+    title: 'Module 5: TikTok Ads Mastery & The 3-Shift Scaling Formula™',
     duration: '75 mins',
-    description: 'Comprehensive guide to TikTok Business Center setup from Pakistan, agency ad accounts, custom conversions, and budget testing strategies.',
+    description: 'Master TikTok Business Center from Pakistan, agency ad accounts, custom conversions, and Sardar Samiullah’s proprietary 3-Shift Scaling Formula / Order Booster System.',
     lessons: [
       { id: 'm5_l1', title: '5.1 Creating TikTok Agency Ad Accounts Without Bans', duration: '22:15', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
       { id: 'm5_l2', title: '5.2 TikTok Pixel & Events API Setup via Google Tag Manager', duration: '20:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm5_l3', title: '5.3 The CBO Testing Framework (Rs 5,000 to 50 Orders)', duration: '18:15', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm5_l4', title: '5.4 UGC Video Creation & Hook Formulas That Print Dirhams', duration: '14:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm5_l3', title: '5.3 The CBO Testing Framework (The 3-Shift Scaling Formula™ & Order Booster System)', duration: '18:15', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm5_l4', title: '5.4 High-Converting UGC Video Ad Scripts & Hook Formulas', duration: '14:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 6,
-    title: 'Module 6: Facebook & Instagram Ads Scaling Engine',
+    title: 'Module 6: Meta (Facebook & Instagram) Ads Scaling Engine',
     duration: '65 mins',
-    description: 'Structuring Advantage+ shopping campaigns, custom audience lookalikes, Arabic copywriting hooks, and retargeting high-intent GCC visitors.',
+    description: 'Structuring Advantage+ shopping campaigns, custom audience lookalikes, Arabic and Urdu copywriting hooks, and retargeting high-intent visitors.',
     lessons: [
       { id: 'm6_l1', title: '6.1 Meta Business Manager Verification & Pixel Setup', duration: '18:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm6_l2', title: '6.2 Advantage+ Campaigns vs Manual Broad Targeting', duration: '21:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm6_l2', title: '6.2 Advantage+ Shopping Campaigns vs Manual Broad Targeting', duration: '21:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
       { id: 'm6_l3', title: '6.3 Retargeting Sequences & Dynamic Product Ads (DPA)', duration: '16:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm6_l4', title: '6.4 Scaling Winning Ad Sets to AED 5,000/Day Safely', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm6_l4', title: '6.4 Scaling Winning Ad Sets to 5-Figure Daily Revenue Safely', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 7,
-    title: 'Module 7: WhatsApp Automation & Order Confirmation Funnel',
-    duration: '40 mins',
-    description: 'Boost delivery success rates from 60% to 88%+ using automated WhatsApp confirmation bots, address validation, and audio note scripts in Gulf Arabic.',
+    title: 'Module 7: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
+    duration: '50 mins',
+    description: 'Partnering with courier delivery services, managing COD cash remittances to bank accounts, automated WhatsApp confirmation funnels, and slashing return rates.',
     lessons: [
-      { id: 'm7_l1', title: '7.1 Setting Up Automated WhatsApp Confirmation Flows', duration: '14:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm7_l2', title: '7.2 Gulf Arabic Voice Note Scripts That Reduce Cancellations', duration: '12:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm7_l3', title: '7.3 Address Verification Hacks (Dubai Al-Barsha, Riyadh Olaya)', duration: '13:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm7_l1', title: '7.1 Courier Onboarding & Setup with Verified Delivery Partners', duration: '16:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm7_l2', title: '7.2 Tracking Remittances & Withdrawing PKR to Pakistani Banks', duration: '18:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm7_l3', title: '7.3 WhatsApp Order Confirmation Flows to Slash Cancellations & RTO', duration: '15:50', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   },
   {
     id: 8,
-    title: 'Module 8: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
-    duration: '50 mins',
-    description: 'Partnering with GCC delivery couriers (SMSA, Aramex, Zajil, Quiqup), managing COD cash remittances to Pakistan, and slashing return rates.',
-    lessons: [
-      { id: 'm8_l1', title: '8.1 Courier Onboarding (SMSA, Aramex, Zajil, Local Couriers)', duration: '16:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l2', title: '8.2 Tracking Remittances & Withdrawing PKR to Pakistani Banks', duration: '18:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l3', title: '8.3 RTO Minimization Strategies & Re-delivery Automation', duration: '15:50', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
-    ]
-  },
-  {
-    id: 9,
-    title: 'Module 9: Financial Management, P&L Tracking & Currency Transfers',
-    duration: '45 mins',
-    description: 'Managing cash flow, calculating net margins, accounting for ad spend vs courier fees, and legal currency remittance into Pakistan bank accounts.',
-    lessons: [
-      { id: 'm9_l1', title: '9.1 E-Commerce Profit & Loss Spreadsheet Walkthrough', duration: '15:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm9_l2', title: '9.2 Managing Credit Limits for Ads & Working Capital', duration: '14:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm9_l3', title: '9.3 Tax Considerations & Long-Term Wealth Planning', duration: '15:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
-    ]
-  },
-  {
-    id: 10,
-    title: 'Module 10: Building a Private Label Brand in UAE & Saudi Arabia',
-    duration: '55 mins',
-    description: 'Transitioning from generic dropshipping to custom branded packaging, private label manufacturing in China/Dubai, and establishing long-term enterprise value.',
-    lessons: [
-      { id: 'm10_l1', title: '10.1 When and How to Transition into Private Label', duration: '17:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm10_l2', title: '10.2 Custom Packaging & Arabic Labeling Regulations', duration: '18:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm10_l3', title: '10.3 Trademark Registration in UAE & Saudi Arabia (MOC)', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
-    ]
-  },
-  {
-    id: 11,
-    title: 'Module 11: Scaling to 7-Figures & Team Hiring Blueprint',
+    title: 'Module 8: Transitioning to White Label, Private Label & International Scaling',
     duration: '60 mins',
-    description: 'Hiring virtual assistants (VAs) from Pakistan, delegating customer support and media buying, and building an automated e-commerce cash machine.',
+    description: 'Transitioning from beginner dropshipping to custom branded packaging, trademark registration, long-term brand equity, P&L margin management, and international expansion into UAE & Saudi Arabia.',
     lessons: [
-      { id: 'm11_l1', title: '11.1 Hiring & Training Customer Support VAs on Upwork', duration: '20:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm11_l2', title: '11.2 Standard Operating Procedures (SOPs) for Daily Store Ops', duration: '18:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm11_l3', title: '11.3 Final Words of Wisdom from Mentor Sardar Samiullah', duration: '21:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm8_l1', title: '8.1 When and How to Transition from Dropshipping into White Label', duration: '17:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm8_l2', title: '8.2 Custom Branded Packaging, Unboxing Experience & Local Warehousing', duration: '18:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm8_l3', title: '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm8_l4', title: '8.4 Financial Management, P&L Spreadsheet Mastery & VA Team Hiring', duration: '15:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
+      { id: 'm8_l5', title: '8.5 Scaling Tested Brands into UAE, Saudi Arabia & Global Markets', duration: '20:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
     ]
   }
 ];

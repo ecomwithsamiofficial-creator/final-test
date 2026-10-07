@@ -137,7 +137,7 @@ export default function BlogsPage() {
               WANT THE FULL STEP-BY-STEP SYSTEM?
             </span>
             <h3 className="text-2xl sm:text-3xl md:text-4xl font-black mb-4">
-              Get Lifetime Access to 11 HD Video Modules + Supplier Directory
+              Get Lifetime Access to 8 HD Video Modules + Supplier Directory
             </h3>
             <p className="text-slate-300 text-xs sm:text-base max-w-xl mx-auto mb-8">
               Join 1,200+ students and get everything you need from product hunting to live campaign scaling for just PKR 3,799.

@@ -80,10 +80,10 @@ export default function TermsPage() {
               </h2>
             </div>
             <div className="space-y-3 text-sm sm:text-base text-slate-600 leading-relaxed">
-              <p>Enrollment in the <strong>UAE &amp; KSA Dropshipping Mentorship Program</strong> includes:</p>
+              <p>Enrollment in the <strong>Ecom With Sami E-Commerce Mentorship Program</strong> includes:</p>
               <ul className="list-disc list-inside space-y-2 pl-2 text-slate-700 font-medium">
-                <li>Access to the 11 comprehensive step-by-step video training modules via our Student LMS Portal.</li>
-                <li>Direct contact lists for verified suppliers and private warehouses across Dubai, Sharjah, and Riyadh.</li>
+                <li>Access to the 8 comprehensive step-by-step video training modules via our Student LMS Portal.</li>
+                <li>Direct contact lists for verified suppliers and private warehouses across Pakistan, Dubai, Sharjah, and Riyadh.</li>
                 <li>Lifetime WhatsApp mentorship and guidance directly with Mentor Sardar Samiullah and the support desk during working hours (9:00 AM – 5:00 PM PKT, Mon – Sat).</li>
                 <li>Future curriculum updates, case studies, and winning product frameworks at no additional charge.</li>
               </ul>

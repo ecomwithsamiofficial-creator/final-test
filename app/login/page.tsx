@@ -81,7 +81,7 @@ export default function LoginPage() {
                 <GraduationCap size={28} />
               </div>
               <h1 className="text-xl sm:text-2xl font-black text-slate-900">Student LMS Login</h1>
-              <p className="text-xs text-slate-500 mt-1">Access your 11 video modules &amp; supplier directory</p>
+              <p className="text-xs text-slate-500 mt-1">Access your 8 video modules &amp; supplier directory</p>
             </div>
 
             {suspendedNotice && (

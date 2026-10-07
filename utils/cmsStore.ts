@@ -971,11 +971,11 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         id: 'mod_5',
-        title: 'Module 5: TikTok Ads Mastery & Creative Hook Framework',
+        title: 'Module 5: TikTok Ads Mastery & The 3-Shift Scaling Formula™',
         lessons: [
           '5.1 Creating TikTok Agency Ad Accounts Without Bans',
           '5.2 TikTok Pixel & Events API Setup via Google Tag Manager',
-          '5.3 The CBO Testing Framework (Low Budget to Consistent Daily Orders)',
+          '5.3 The CBO Testing Framework (The 3-Shift Scaling Formula™ & Order Booster System)',
           '5.4 High-Converting UGC Video Ad Scripts & Hook Formulas'
         ]
       },
@@ -1000,20 +1000,13 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         id: 'mod_8',
-        title: 'Module 8: Transitioning to White Label & Private Label (PL)',
+        title: 'Module 8: Transitioning to White Label, Private Label & International Scaling',
         lessons: [
           '8.1 When and How to Transition from Dropshipping into White Label',
           '8.2 Custom Branded Packaging, Unboxing Experience & Local Warehousing',
-          '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation'
-        ]
-      },
-      {
-        id: 'mod_9',
-        title: 'Module 9: Financial Management, P&L Mastery & International Expansion',
-        lessons: [
-          '9.1 E-Commerce Profit & Loss Spreadsheet & Margin Tracking',
-          '9.2 Hiring & Managing Virtual Assistants (VAs) for Store Ops',
-          '9.3 Expanding Tested Brands into UAE, Saudi Arabia & Global Markets'
+          '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation',
+          '8.4 Financial Management, P&L Spreadsheet Mastery & VA Team Hiring',
+          '8.5 Expanding Tested Brands into UAE, Saudi Arabia (GCC) & Global Markets'
         ]
       }
     ]

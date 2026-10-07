@@ -59,8 +59,8 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
   const [checkoutContent, setCheckoutContent] = useState<NonNullable<CmsContentSchema['checkout_page']>>(
     initialContent?.checkout_page || defaultCmsContent.checkout_page || {
       badge: 'OFFICIAL ENROLLMENT • 88% DISCOUNT APPLIED',
-      title: 'UAE & KSA Shopify Dropshipping Mentorship',
-      subtitle: 'Get lifetime access to 11 video modules, verified GCC suppliers directory & WhatsApp ad mentorship.',
+      title: 'Official E-Commerce Mentorship Program',
+      subtitle: 'Get lifetime access to 8 video modules, verified suppliers directory & WhatsApp mentorship.',
       timer_heading: 'Discount Offer Ends In:',
       timer_hours: 2,
       timer_minutes: 27,
@@ -230,11 +230,11 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
         }
       };
 
-      if ('decode' in img) {
+      if (typeof (img as any).decode === 'function') {
         img.decode().then(processImage).catch(processImage);
       } else {
-        img.onload = processImage;
-        img.onerror = () => {
+        (img as any).onload = processImage;
+        (img as any).onerror = () => {
           URL.revokeObjectURL(objectUrl);
           const fallbackReader = new FileReader();
           fallbackReader.onloadend = () => resolve((fallbackReader.result as string) || '');
@@ -319,10 +319,10 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
             {checkoutContent.badge || 'OFFICIAL ENROLLMENT • 88% DISCOUNT APPLIED'}
           </span>
           <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-tight mb-2">
-            {checkoutContent.title || 'UAE & KSA Shopify Dropshipping Mentorship'}
+            {checkoutContent.title || 'Official E-Commerce Mentorship Program'}
           </h1>
           <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto mb-6">
-            {checkoutContent.subtitle || 'Get lifetime access to 11 video modules, verified GCC suppliers directory & WhatsApp ad mentorship.'}
+            {checkoutContent.subtitle || 'Get lifetime access to 8 video modules, verified suppliers directory & WhatsApp mentorship.'}
           </p>
 
           {/* Moved Urgency Countdown Timer Here */}
@@ -378,7 +378,7 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
                 As soon as the Admin team approves your payment proof, your <strong>Official LMS Login Password will be sent directly to your WhatsApp number ({successData.phone})</strong>.
               </p>
               <p className="text-xs text-slate-300 leading-relaxed">
-                You will then log in with your email <strong className="text-white font-mono">({successData.email})</strong> and WhatsApp password to access all 11 Video Modules &amp; Suppliers Directory.
+                You will then log in with your email <strong className="text-white font-mono">({successData.email})</strong> and WhatsApp password to access all 8 Video Modules &amp; Suppliers Directory.
               </p>
             </div>
 

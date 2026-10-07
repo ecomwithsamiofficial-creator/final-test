@@ -800,7 +800,7 @@ export default function LmsClassroomPage() {
           />
         )}
 
-        {/* Left Side: 11 Modules Sidebar Drawer */}
+        {/* Left Side: 8 Modules Sidebar Drawer */}
         <aside
           className={`fixed lg:static inset-y-0 left-0 z-50 w-[85vw] max-w-sm sm:w-80 md:w-96 bg-[#111827] border-r border-white/10 flex flex-col transition-transform duration-300 transform ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
@@ -811,7 +811,7 @@ export default function LmsClassroomPage() {
             <div className="flex items-center justify-between">
               <h2 className="text-xs sm:text-sm font-black text-white flex items-center gap-2">
                 <BookOpen size={16} className="text-[#00A0DF]" />
-                <span>11 Modules Curriculum</span>
+                <span>8 Modules Curriculum</span>
               </h2>
               <div className="flex items-center gap-2">
                 <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">

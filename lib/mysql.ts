@@ -143,17 +143,27 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
 
     // Auto-seed initialModules once if lms_seeded flag is not set
     try {
-      const [seedFlag]: any = await p.query(`SELECT \`key\` FROM cms_settings WHERE \`key\` = 'lms_seeded' LIMIT 1`);
+      const [seedFlag]: any = await p.query(`SELECT \`key\` FROM cms_settings WHERE \`key\` = 'lms_seeded_v2_8mods' LIMIT 1`);
       if (!Array.isArray(seedFlag) || seedFlag.length === 0) {
+        // Clean out legacy modules 9, 10, 11 from old template if any exist
+        try {
+          await p.query(`DELETE FROM lms_modules WHERE id > 8`);
+        } catch {}
+
         for (const mod of initialModules) {
           await p.query(
             `INSERT INTO lms_modules (\`id\`, \`title\`, \`duration\`, \`description\`, \`lessons_json\`, \`updated_at\`)
              VALUES (?, ?, ?, ?, ?, NOW())
-             ON DUPLICATE KEY UPDATE \`updated_at\` = NOW()`,
+             ON DUPLICATE KEY UPDATE 
+               \`title\` = VALUES(\`title\`),
+               \`duration\` = VALUES(\`duration\`),
+               \`description\` = VALUES(\`description\`),
+               \`lessons_json\` = VALUES(\`lessons_json\`),
+               \`updated_at\` = NOW()`,
             [mod.id, mod.title, mod.duration, mod.description, JSON.stringify(mod.lessons || [])]
           );
         }
-        await p.query(`INSERT INTO cms_settings (\`key\`, \`value_json\`) VALUES ('lms_seeded', 'true')`);
+        await p.query(`INSERT INTO cms_settings (\`key\`, \`value_json\`) VALUES ('lms_seeded_v2_8mods', 'true') ON DUPLICATE KEY UPDATE \`value_json\` = 'true'`);
       }
     } catch {}
 

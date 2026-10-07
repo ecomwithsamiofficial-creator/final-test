@@ -29,8 +29,10 @@ export default function robots(): MetadataRoute.Robots {
           'Google-Extended',
           'Meta-ExternalAgent',
           'Bingbot',
+          'Applebot',
+          'cohere-ai',
         ],
-        allow: ['/', '/llms.txt', '/about', '/enrollment', '/lms'],
+        allow: ['/', '/llms.txt', '/about', '/enrollment', '/lms', '/blogs'],
         disallow: [
           '/admin',
           '/admin/',

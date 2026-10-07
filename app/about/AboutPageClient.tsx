@@ -140,13 +140,13 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
                 ) : (
                   <>
                     <p>
-                      When I started dropshipping, the biggest hurdle wasn&rsquo;t the technical setup &mdash; it was the lack of reliable local supplier contacts in the GCC and constant trial-and-error wasting hard-earned ad spend.
+                      When I started in e-commerce, the real turning point was realizing that dropshipping is just the testing ground &mdash; the real long-term wealth is built by converting winning products into white label and scaling sustainable private label brands.
                     </p>
                     <p>
-                      After years of testing, scaling, and establishing direct relationships with verified warehouses across Dubai, Sharjah, and Riyadh, I designed this training specifically for beginners in Pakistan who want to earn in Dirhams and Riyals from home.
+                      From Abbottabad, Pakistan, I built a dedicated e-commerce agency with a professional team managing media buying, supply chains, and store conversions. I designed this mentorship specifically so beginners can start with low risk, validate winners with dropshipping, transition to custom white label packaging, and eventually scale into private label brands across Pakistan, UAE, Saudi Arabia, and global markets.
                     </p>
                     <p>
-                      Our goal is simple: eliminate the guesswork, give you direct phone numbers to real suppliers, teach you high-converting TikTok &amp; Facebook media buying, and provide live mentorship whenever you get stuck.
+                      Our mission is straightforward: provide real-world screen walkthroughs, tested ad blueprints (including the 3-Shift Scaling Formula™ &amp; Order Booster System), verified supplier contacts, and direct 1-on-1 mentorship whenever you get stuck.
                     </p>
                   </>
                 )}

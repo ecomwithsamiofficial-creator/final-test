@@ -63,7 +63,7 @@ function generateWhatsAppUrl(student: { name: string; email: string; phone: stri
     `✅ *Next Steps:*\n` +
     `1. Open the portal link above\n` +
     `2. Enter your Email and Password\n` +
-    `3. Start watching the 11 Course Modules and access the Supplier Directory!\n\n` +
+    `3. Start watching the 8 Course Modules and access the Supplier Directory!\n\n` +
     `If you face any issues, feel free to reply directly to this message.\n\n` +
     `Best Regards,\n` +
     `*Mentor Sardar Samiullah & Support Team*`
@@ -2251,7 +2251,7 @@ export default function AdminDashboardPage() {
                 <button
                   type="button"
                   onClick={() => {
-                    const rawMsg = `🎉 Assalam-o-Alaikum ${accessModalData.enrollment.name}! Welcome to Ecom With Sami Mentorship!\n\nYour enrollment payment proof has been verified and your Student LMS Portal Account is now ACTIVE.\n\n━━━━━━━━━━━━━━━━━━━━\n🔐 YOUR LMS LOGIN CREDENTIALS:\n🌐 Login Portal: https://ecomwithsami.com/login\n📧 Email: ${accessModalData.enrollment.email}\n🔑 Password: ${accessModalData.password}\n━━━━━━━━━━━━━━━━━━━━\n\n✅ Next Steps:\n1. Open the portal link above\n2. Enter your Email and Password\n3. Start watching the 11 Course Modules and access the Supplier Directory!\n\nBest Regards,\nMentor Sardar Samiullah & Support Team`;
+                    const rawMsg = `🎉 Assalam-o-Alaikum ${accessModalData.enrollment.name}! Welcome to Ecom With Sami Mentorship!\n\nYour enrollment payment proof has been verified and your Student LMS Portal Account is now ACTIVE.\n\n━━━━━━━━━━━━━━━━━━━━\n🔐 YOUR LMS LOGIN CREDENTIALS:\n🌐 Login Portal: https://ecomwithsami.com/login\n📧 Email: ${accessModalData.enrollment.email}\n🔑 Password: ${accessModalData.password}\n━━━━━━━━━━━━━━━━━━━━\n\n✅ Next Steps:\n1. Open the portal link above\n2. Enter your Email and Password\n3. Start watching the 8 Course Modules and access the Supplier Directory!\n\nBest Regards,\nMentor Sardar Samiullah & Support Team`;
                     handleCopyAccessText(rawMsg, 'modal-full-msg');
                   }}
                   className="flex-1 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-bold flex items-center justify-center gap-1.5 transition-colors border border-white/10"

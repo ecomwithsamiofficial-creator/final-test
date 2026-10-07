@@ -1483,7 +1483,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       </section>
 
       {/* ========================================================================= */}
-      {/* 8. COMPLETE COURSE CURRICULUM (11 MODULES) */}
+      {/* 8. COMPLETE COURSE CURRICULUM (8 MODULES) */}
       {/* ========================================================================= */}
       <section id="curriculum" className="py-14 sm:py-20 bg-white">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -1496,7 +1496,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               {content.homepage_curriculum?.title || 'Everything You Get Inside the Course'}
             </h2>
             <p className="text-xs sm:text-sm md:text-base text-slate-600 font-medium">
-              {content.homepage_curriculum?.subtitle || 'Start from zero and build your own UAE & KSA store, step by step.'}
+              {content.homepage_curriculum?.subtitle || 'From beginner dropshipping to white label and private label scaling, step by step.'}
             </p>
           </div>
 
