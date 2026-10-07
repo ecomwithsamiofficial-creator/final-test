@@ -1810,7 +1810,19 @@ export default function AdminDashboardPage() {
                 {previewReceipt.receiptUrl && (
                   <>
                     <button
-                      onClick={() => window.open(previewReceipt.receiptUrl, '_blank')}
+                      onClick={() => {
+                        const url = previewReceipt.receiptUrl;
+                        if (!url) return;
+                        if (url.startsWith('data:')) {
+                          const win = window.open('');
+                          if (win) {
+                            win.document.write(`<!DOCTYPE html><html><head><title>Receipt - ${previewReceipt.name}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/></head><body style="margin:0;background:#0b0f19;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${url}" style="max-width:100%;max-height:98vh;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,0.5);border-radius:12px;"/></body></html>`);
+                            win.document.close();
+                          }
+                        } else {
+                          window.open(url, '_blank');
+                        }
+                      }}
                       className="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-200 font-medium flex items-center gap-1.5 border border-white/10 transition-colors"
                       title="Open full image in new tab"
                     >
@@ -1845,7 +1857,19 @@ export default function AdminDashboardPage() {
                     src={previewReceipt.receiptUrl}
                     alt="Payment Receipt"
                     className="max-h-[60vh] sm:max-h-[65vh] max-w-full w-auto rounded-xl object-contain shadow-2xl cursor-zoom-in transition-transform duration-200 group-hover:scale-[1.01]"
-                    onClick={() => window.open(previewReceipt.receiptUrl, '_blank')}
+                    onClick={() => {
+                      const url = previewReceipt.receiptUrl;
+                      if (!url) return;
+                      if (url.startsWith('data:')) {
+                        const win = window.open('');
+                        if (win) {
+                          win.document.write(`<!DOCTYPE html><html><head><title>Receipt - ${previewReceipt.name}</title><meta name="viewport" content="width=device-width, initial-scale=1.0"/></head><body style="margin:0;background:#0b0f19;display:flex;align-items:center;justify-content:center;min-height:100vh;"><img src="${url}" style="max-width:100%;max-height:98vh;object-fit:contain;box-shadow:0 10px 40px rgba(0,0,0,0.5);border-radius:12px;"/></body></html>`);
+                          win.document.close();
+                        }
+                      } else {
+                        window.open(url, '_blank');
+                      }
+                    }}
                     title="Click to view original high-resolution in new tab"
                   />
                   <div className="absolute bottom-2 right-2 px-2 py-1 rounded bg-black/70 backdrop-blur-sm text-[10px] text-slate-300 pointer-events-none flex items-center gap-1 border border-white/10">

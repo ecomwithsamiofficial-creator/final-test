@@ -170,17 +170,17 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
         return;
       }
 
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = (event) => {
-        const img = new Image();
-        img.src = event.target?.result as string;
-        img.onload = () => {
-          // Allow up to 1080 width and 1600 height for crystal-clear mobile bank slips
-          const maxWidth = 1080;
-          const maxHeight = 1600;
-          let width = img.width;
-          let height = img.height;
+      const img = new Image();
+      const objectUrl = URL.createObjectURL(file);
+      img.src = objectUrl;
+
+      const processImage = () => {
+        try {
+          // Allow up to 1200 width and 1800 height for crystal-clear mobile bank slips
+          const maxWidth = 1200;
+          const maxHeight = 1800;
+          let width = img.naturalWidth || img.width;
+          let height = img.naturalHeight || img.height;
 
           if (width > height) {
             if (width > maxWidth) {
@@ -199,20 +199,37 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           if (!ctx) {
-            resolve((event.target?.result as string) || '');
+            URL.revokeObjectURL(objectUrl);
+            resolve('');
             return;
           }
 
-          // Crisp image rendering with 0.72 quality (~80-120KB) - never cuts or corrupts
+          // Crisp image rendering with 0.78 quality - never cuts or corrupts
           ctx.imageSmoothingEnabled = true;
           ctx.imageSmoothingQuality = 'high';
           ctx.drawImage(img, 0, 0, width, height);
-          const compressed = canvas.toDataURL('image/jpeg', 0.72);
+          const compressed = canvas.toDataURL('image/jpeg', 0.78);
+          URL.revokeObjectURL(objectUrl);
           resolve(compressed);
-        };
-        img.onerror = () => resolve((event.target?.result as string) || '');
+        } catch {
+          URL.revokeObjectURL(objectUrl);
+          const fallbackReader = new FileReader();
+          fallbackReader.onloadend = () => resolve((fallbackReader.result as string) || '');
+          fallbackReader.readAsDataURL(file);
+        }
       };
-      reader.onerror = () => resolve('');
+
+      if ('decode' in img) {
+        img.decode().then(processImage).catch(processImage);
+      } else {
+        img.onload = processImage;
+        img.onerror = () => {
+          URL.revokeObjectURL(objectUrl);
+          const fallbackReader = new FileReader();
+          fallbackReader.onloadend = () => resolve((fallbackReader.result as string) || '');
+          fallbackReader.readAsDataURL(file);
+        };
+      }
     });
   };
 

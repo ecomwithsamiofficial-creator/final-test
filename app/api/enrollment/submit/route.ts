@@ -1,5 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { dbAddEnrollment, dbGetStudentByEmail, dbAddStudent, generateRandomNumericPassword } from '@/lib/database';
+import fs from 'fs';
+import path from 'path';
 
 export const dynamic = 'force-dynamic';
 
@@ -28,7 +30,39 @@ export async function POST(request: NextRequest) {
     const studentId = `std_${Date.now()}`;
     const uniquePassword = generateRandomNumericPassword();
 
-    // Add enrollment record to persistent database (Supabase + SQLite)
+    // Persist receipt image directly to disk & database
+    let savedReceiptUrl = receiptUrl || '';
+    if (receiptUrl && typeof receiptUrl === 'string' && receiptUrl.startsWith('data:image/')) {
+      try {
+        const matches = receiptUrl.match(/^data:([A-Za-z0-9-+\/]+);base64,(.+)$/);
+        if (matches && matches.length === 3) {
+          const mime = matches[1];
+          const base64Data = matches[2];
+          const buffer = Buffer.from(base64Data, 'base64');
+          const ext = mime.includes('png') ? '.png' : mime.includes('webp') ? '.webp' : '.jpg';
+          const filename = `receipt_${trackingCode}_${Date.now()}${ext}`;
+          const dir = path.join(process.cwd(), 'public', 'uploads', 'receipts');
+          if (!fs.existsSync(dir)) {
+            fs.mkdirSync(dir, { recursive: true });
+          }
+          const filePath = path.join(dir, filename);
+          fs.writeFileSync(filePath, buffer);
+          savedReceiptUrl = `/uploads/receipts/${filename}`;
+
+          // Also save in MySQL media_uploads for permanent persistence
+          try {
+            const { mysqlSaveMediaUpload } = await import('@/lib/mysql');
+            await mysqlSaveMediaUpload(filename, 'receipts', filename, mime, buffer);
+          } catch (mErr) {
+            console.warn('Backup receipt to MySQL media error:', mErr);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to save receipt file to disk:', err);
+      }
+    }
+
+    // Add enrollment record to persistent database
     const enrollment = await dbAddEnrollment({
       id: `enr_${Date.now()}`,
       trackingCode,
@@ -40,7 +74,7 @@ export async function POST(request: NextRequest) {
       paymentMethod: paymentMethod || 'Easypaisa',
       transactionId: transactionId || 'Pending Verification',
       whereHeard: whereHeard || 'TikTok',
-      receiptUrl: receiptUrl || '',
+      receiptUrl: savedReceiptUrl,
       amount: 'PKR 3,799',
       status: 'pending',
       createdAt: new Date().toISOString(),

@@ -191,10 +191,12 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`transaction_id\` VARCHAR(255) NULL`,
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`where_heard\` VARCHAR(100) NULL`,
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`receipt_url\` LONGTEXT NULL`,
+        `ALTER TABLE \`enrollments\` MODIFY COLUMN \`receipt_url\` LONGTEXT NULL`,
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`amount\` VARCHAR(100) NULL`,
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`status\` VARCHAR(50) DEFAULT 'pending'`,
         `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`password\` VARCHAR(255) NULL`,
-        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`created_at\` VARCHAR(100) NULL`
+        `ALTER TABLE \`enrollments\` ADD COLUMN IF NOT EXISTS \`created_at\` VARCHAR(100) NULL`,
+        `ALTER TABLE \`media_uploads\` MODIFY COLUMN \`data_base64\` LONGTEXT NOT NULL`
       ];
       for (const colQuery of enrCols) {
         try { await p.query(colQuery); } catch {}
