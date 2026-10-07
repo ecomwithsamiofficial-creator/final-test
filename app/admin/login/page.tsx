@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ShieldCheck, Lock, Mail, ArrowRight, AlertCircle } from 'lucide-react';
 
@@ -9,6 +9,10 @@ export default function AdminLoginPage() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    document.title = 'Admin Login | Ecom With Sami';
+  }, []);
 
   const handleAdminLogin = async (e: React.FormEvent) => {
     e.preventDefault();

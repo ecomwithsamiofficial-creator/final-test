@@ -4,6 +4,17 @@ import type { NextRequest } from 'next/server';
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
+  // 0. ADMIN ROUTE ALIASES (/admin-panel, /adminpanel, /dashboard, /panel, /admin/dashboard)
+  if (
+    pathname === '/admin-panel' || 
+    pathname === '/adminpanel' || 
+    pathname === '/dashboard' || 
+    pathname === '/panel' || 
+    pathname === '/admin/dashboard'
+  ) {
+    return NextResponse.redirect(new URL('/admin', request.url));
+  }
+
   // 1. ADMIN ROUTE PROTECTION (/admin, /admin/cms, etc.)
   if (pathname.startsWith('/admin')) {
     // Exclude the login page itself
@@ -49,6 +60,10 @@ export function middleware(request: NextRequest) {
 export const config = {
   matcher: [
     '/admin/:path*',
+    '/admin-panel',
+    '/adminpanel',
+    '/dashboard',
+    '/panel',
     '/lms/:path*',
     '/login'
   ]

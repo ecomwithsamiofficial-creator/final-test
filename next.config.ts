@@ -85,6 +85,35 @@ const nextConfig: NextConfig = {
       },
     ];
   },
+  async redirects() {
+    return [
+      {
+        source: '/admin-panel',
+        destination: '/admin',
+        permanent: false,
+      },
+      {
+        source: '/adminpanel',
+        destination: '/admin',
+        permanent: false,
+      },
+      {
+        source: '/admin/dashboard',
+        destination: '/admin',
+        permanent: false,
+      },
+      {
+        source: '/dashboard',
+        destination: '/admin',
+        permanent: false,
+      },
+      {
+        source: '/panel',
+        destination: '/admin',
+        permanent: false,
+      },
+    ];
+  },
 };
 
 export default nextConfig;

@@ -102,6 +102,10 @@ export default function AdminDashboardPage() {
   const [copiedPassId, setCopiedPassId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
+  useEffect(() => {
+    document.title = 'Admin Portal | Ecom With Sami';
+  }, []);
+
   // Quick Password Reset Finder state
   const [quickResetInput, setQuickResetInput] = useState('');
   const [quickResetLoading, setQuickResetLoading] = useState(false);
