@@ -1,8 +1,7 @@
 import { dbGetCmsSettings, dbGetModules } from '@/lib/database';
 import { HomePageClient } from '@/components/landing/HomePageClient';
 
-export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60; // ISR: Ultra-fast static caching with automatic 60s background revalidation
 
 export default async function HomePage() {
   const [content, modules] = await Promise.all([

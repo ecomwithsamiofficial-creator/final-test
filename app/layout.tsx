@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { DynamicPixels, LiveVisitorTracker } from '@/components/tracking';
 import { WhatsAppWidget } from '@/components/common';
@@ -124,10 +125,14 @@ export default async function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico?v=sami2026" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=sami2026" />
         <JsonLd />
-        {/* Google tag (gtag.js) - Google Analytics */}
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3" />
-        <script
+        {/* Google tag (gtag.js) - Google Analytics optimized with afterInteractive */}
+        <Script
+          strategy="afterInteractive"
+          src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3"
+        />
+        <Script
           id="google-analytics-tag"
+          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];

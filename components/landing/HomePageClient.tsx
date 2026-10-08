@@ -742,10 +742,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                 {/* Social Proof with Avatar Bubbles */}
                 <div className="flex items-center gap-2.5 text-xs font-bold text-slate-600 pt-1">
                   <div className="flex -space-x-2">
-                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop" alt="Student" />
-                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop" alt="Student" />
-                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop" alt="Student" />
-                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop" alt="Student" />
+                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=80&h=80&fit=crop" alt="Student" width={28} height={28} loading="lazy" decoding="async" />
+                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80&h=80&fit=crop" alt="Student" width={28} height={28} loading="lazy" decoding="async" />
+                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80&h=80&fit=crop" alt="Student" width={28} height={28} loading="lazy" decoding="async" />
+                    <img className="w-7 h-7 rounded-full border-2 border-white object-cover shadow-xs" src="https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80&h=80&fit=crop" alt="Student" width={28} height={28} loading="lazy" decoding="async" />
                   </div>
                   <span>{hero.trusted_text || `Trusted by ${mentor.students_count || '1,200+'} Students`}</span>
                 </div>
@@ -813,7 +813,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       muted={isHeroMuted}
                       loop
                       playsInline
-                      preload="auto"
+                      preload="metadata"
                       onLoadedMetadata={() => {
                         setIsHeroPlaying(true);
                         heroVideoRef.current?.play().catch(() => {});
@@ -1259,6 +1259,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   <img
                     src={mentor.image ? (mentor.image.startsWith('data:') ? mentor.image : `${mentor.image}${mentor.image.includes('?') ? '&' : '?'}v=20260919_v3`) : '/sami-logo.jpg?v=20260919_v3'}
                     alt={mentor.name || 'Mentor Samiullah'}
+                    loading="lazy"
+                    decoding="async"
                     className="w-full h-full rounded-full object-cover"
                     onError={(e) => {
                       (e.target as HTMLImageElement).src = '/sami-logo.jpg';
