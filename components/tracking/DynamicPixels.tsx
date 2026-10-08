@@ -17,17 +17,27 @@ export function DynamicPixels() {
     // Only execute on browser client
     if (typeof window === 'undefined') return;
 
-    fetch('/api/pixels/active')
-      .then(res => res.json())
-      .then(data => {
-        if (data.success && Array.isArray(data.pixels)) {
-          setPixels(data.pixels);
-          injectAllPixels(data.pixels);
-        }
-      })
-      .catch(err => {
-        console.warn('[DynamicPixels] Could not load tracking pixels:', err);
-      });
+    const loadPixels = () => {
+      fetch('/api/pixels/active')
+        .then(res => res.json())
+        .then(data => {
+          if (data.success && Array.isArray(data.pixels)) {
+            setPixels(data.pixels);
+            injectAllPixels(data.pixels);
+          }
+        })
+        .catch(err => {
+          console.warn('[DynamicPixels] Could not load tracking pixels:', err);
+        });
+    };
+
+    if ('requestIdleCallback' in window) {
+      const handle = (window as any).requestIdleCallback(loadPixels, { timeout: 2000 });
+      return () => (window as any).cancelIdleCallback?.(handle);
+    } else {
+      const timer = setTimeout(loadPixels, 1000);
+      return () => clearTimeout(timer);
+    }
   }, []);
 
   const injectAllPixels = (activePixels: ActivePixel[]) => {

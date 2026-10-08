@@ -138,10 +138,6 @@ export default async function RootLayout({
             `,
           }}
         />
-        <link rel="preconnect" href="https://img.youtube.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://img.youtube.com" />
-        <link rel="preconnect" href="https://www.youtube.com" />
-        <link rel="dns-prefetch" href="https://www.youtube.com" />
         <style id="sami-dynamic-theme" dangerouslySetInnerHTML={{ __html: dynamicCss }} />
         <script
           dangerouslySetInnerHTML={{
