@@ -23,16 +23,6 @@ const nextConfig: NextConfig = {
   },
   async headers() {
     return [
-      // 0. Immutable edge caching for content-hashed Next.js static chunks (JS/CSS)
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
       // 1. Optimized caching for static public media files (images, icons, fonts, videos)
       {
         source: '/:all*(svg|jpg|jpeg|png|webp|avif|gif|ico|woff|woff2|ttf|mp4|webm)',

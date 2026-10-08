@@ -813,7 +813,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       muted={isHeroMuted}
                       loop
                       playsInline
-                      preload="metadata"
+                      preload="auto"
                       onLoadedMetadata={() => {
                         setIsHeroPlaying(true);
                         heroVideoRef.current?.play().catch(() => {});

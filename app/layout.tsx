@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import './globals.css';
 import { DynamicPixels, LiveVisitorTracker } from '@/components/tracking';
 import { WhatsAppWidget } from '@/components/common';
@@ -10,7 +9,8 @@ import { generateThemeCss, DEFAULT_THEME_COLORS } from '@/utils/cmsStore';
 import { JsonLd } from '@/components/seo/JsonLd';
 import { AntiInspectShield } from '@/components/security/AntiInspectShield';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export const metadata: Metadata = {
   metadataBase: new URL('https://ecomwithsami.com'),
@@ -125,14 +125,10 @@ export default async function RootLayout({
         <link rel="shortcut icon" href="/favicon.ico?v=sami2026" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=sami2026" />
         <JsonLd />
-        {/* Google tag (gtag.js) - Google Analytics optimized with afterInteractive */}
-        <Script
-          strategy="afterInteractive"
-          src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3"
-        />
-        <Script
+        {/* Google tag (gtag.js) - Google Analytics */}
+        <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3" />
+        <script
           id="google-analytics-tag"
-          strategy="afterInteractive"
           dangerouslySetInnerHTML={{
             __html: `
               window.dataLayer = window.dataLayer || [];

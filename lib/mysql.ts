@@ -367,10 +367,16 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
   }
 }
 
+let cachedCmsSettings: { data: any; expiresAt: number } | null = null;
+
 /**
- * Fetches CMS settings from Hostinger MySQL.
+ * Fetches CMS settings from Hostinger MySQL with short-lived memory cache.
  */
 export async function mysqlGetCmsSettings(): Promise<any | null> {
+  if (cachedCmsSettings && Date.now() < cachedCmsSettings.expiresAt) {
+    return cachedCmsSettings.data;
+  }
+
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
@@ -379,7 +385,9 @@ export async function mysqlGetCmsSettings(): Promise<any | null> {
       );
       if (Array.isArray(rows) && rows.length > 0 && rows[0]?.value_json) {
         const raw = rows[0].value_json;
-        return typeof raw === 'string' ? JSON.parse(raw) : raw;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        cachedCmsSettings = { data: parsed, expiresAt: Date.now() + 30000 };
+        return parsed;
       }
     } catch {
       // Fall through
@@ -392,6 +400,7 @@ export async function mysqlGetCmsSettings(): Promise<any | null> {
  * Saves CMS settings into Hostinger MySQL.
  */
 export async function mysqlSaveCmsSettings(data: any): Promise<boolean> {
+  cachedCmsSettings = null; // Instantly invalidate memory cache
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
@@ -402,6 +411,7 @@ export async function mysqlSaveCmsSettings(data: any): Promise<boolean> {
          ON DUPLICATE KEY UPDATE \`value_json\` = VALUES(\`value_json\`), \`updated_at\` = NOW()`,
         [jsonStr]
       );
+      cachedCmsSettings = null; // Re-invalidate to ensure fresh data
       return true;
     } catch (err) {
       console.error('MySQL CMS save error:', err);
@@ -713,11 +723,17 @@ export async function getLast30DaysAnalytics(): Promise<{
   };
 }
 
+let cachedModules: { data: Module[] | null; expiresAt: number } | null = null;
+
 /**
- * Fetches all LMS modules from Hostinger MySQL.
+ * Fetches all LMS modules from Hostinger MySQL with short-lived memory cache.
  * Returns empty array [] if admin deleted all modules (avoids resurrection).
  */
 export async function mysqlGetModules(): Promise<Module[] | null> {
+  if (cachedModules && Date.now() < cachedModules.expiresAt) {
+    return cachedModules.data;
+  }
+
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
@@ -725,7 +741,7 @@ export async function mysqlGetModules(): Promise<Module[] | null> {
         `SELECT id, title, duration, description, lessons_json FROM lms_modules ORDER BY id ASC`
       );
       if (Array.isArray(rows)) {
-        return rows.map((r: any) => {
+        const result = rows.map((r: any) => {
           let lessons: Lesson[] = [];
           if (r.lessons_json) {
             try {
@@ -742,6 +758,8 @@ export async function mysqlGetModules(): Promise<Module[] | null> {
             lessons: Array.isArray(lessons) ? lessons : [],
           };
         });
+        cachedModules = { data: result, expiresAt: Date.now() + 30000 };
+        return result;
       }
     } catch (err) {
       console.error('mysqlGetModules error:', err);
@@ -754,6 +772,7 @@ export async function mysqlGetModules(): Promise<Module[] | null> {
  * Inserts a new LMS module into Hostinger MySQL.
  */
 export async function mysqlAddModule(mod: Module): Promise<Module> {
+  cachedModules = null; // Instantly invalidate cache
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     let newId = mod.id;
@@ -826,6 +845,7 @@ export async function mysqlUpdateModule(id: number, patch: Partial<Module>): Pro
         [updatedTitle || '', updatedDuration || '', updatedDesc || '', JSON.stringify(updatedLessons || []), id]
       );
 
+      cachedModules = null; // Instantly invalidate cache
       return {
         id: Number(id),
         title: updatedTitle,
@@ -844,10 +864,12 @@ export async function mysqlUpdateModule(id: number, patch: Partial<Module>): Pro
  * Permanently deletes a single module from Hostinger MySQL.
  */
 export async function mysqlDeleteModule(id: number): Promise<boolean> {
+  cachedModules = null; // Instantly invalidate cache
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
       await pool.query(`DELETE FROM lms_modules WHERE id = ?`, [id]);
+      cachedModules = null;
       return true;
     } catch (err) {
       console.error('mysqlDeleteModule error:', err);
@@ -861,6 +883,7 @@ export async function mysqlDeleteModule(id: number): Promise<boolean> {
  */
 export async function mysqlBulkDeleteModules(ids: number[]): Promise<boolean> {
   if (!ids || ids.length === 0) return true;
+  cachedModules = null; // Instantly invalidate cache
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
@@ -868,6 +891,7 @@ export async function mysqlBulkDeleteModules(ids: number[]): Promise<boolean> {
       if (numericIds.length === 0) return true;
       const idList = numericIds.join(',');
       await pool.query(`DELETE FROM lms_modules WHERE id IN (${idList})`);
+      cachedModules = null;
       return true;
     } catch (err) {
       console.error('mysqlBulkDeleteModules error:', err);
