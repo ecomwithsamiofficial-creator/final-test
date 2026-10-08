@@ -3,7 +3,6 @@ import './globals.css';
 import { DynamicPixels, LiveVisitorTracker } from '@/components/tracking';
 import { WhatsAppWidget } from '@/components/common';
 import { StickyMobileCta } from '@/components/layout';
-import { VoiceAdvisorButton } from '@/components/ai-advisor';
 import { dbGetCmsSettings } from '@/lib/database';
 import { generateThemeCss, DEFAULT_THEME_COLORS } from '@/utils/cmsStore';
 
@@ -160,7 +159,6 @@ export default async function RootLayout({
         <LiveVisitorTracker />
         {children}
         <WhatsAppWidget />
-        <VoiceAdvisorButton />
         <StickyMobileCta />
       </body>
     </html>
