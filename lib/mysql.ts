@@ -301,47 +301,63 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
       console.error('ensureAnalyticsTables support_tickets error:', err);
     }
 
-    // Auto-seed initial students if empty
+    // 10. Community Updates table in Hostinger MySQL
     try {
-      const [stdRows]: any = await p.query(`SELECT COUNT(*) as count FROM students`);
-      if (Number(stdRows?.[0]?.count || 0) === 0) {
-        for (const s of initialStudents) {
-          await p.query(
-            `INSERT IGNORE INTO students (id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [s.id, s.name, s.email, s.phone, s.city, s.password, s.isActive ? 1 : 0, s.enrolledAt, JSON.stringify(s.completedLessons || [])]
-          );
-        }
-      }
-    } catch {}
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`community_updates\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`title\` VARCHAR(255) NOT NULL,
+          \`content\` LONGTEXT NOT NULL,
+          \`tag\` VARCHAR(50) DEFAULT 'Announcement',
+          \`author\` VARCHAR(100) DEFAULT 'Mentor Sardar Samiullah',
+          \`pinned\` TINYINT(1) DEFAULT 0,
+          \`created_at\` VARCHAR(100) NOT NULL,
+          PRIMARY KEY (\`id\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
 
-    // Auto-seed initial enrollments if empty
-    try {
-      const [enrRows]: any = await p.query(`SELECT COUNT(*) as count FROM enrollments`);
-      if (Number(enrRows?.[0]?.count || 0) === 0) {
-        for (const e of initialEnrollments) {
+      const [updRows]: any = await p.query(`SELECT COUNT(*) as count FROM community_updates`);
+      if (Number(updRows?.[0]?.count || 0) === 0) {
+        const initialSeedUpdates = [
+          {
+            id: 'upd-01',
+            title: '🎉 Welcome to Ecom With Sami Mentorship Hub!',
+            content: 'Assalam-o-Alaikum Students! Tamam naye students ko VIP Mentorship mein khushamdeed. Course ke tamam 8 modules sequence wise dekhein aur notes banayein. Har Module ke baad resources aur action steps lazmi follow karein.',
+            tag: 'Announcement',
+            author: 'Mentor Sardar Samiullah',
+            pinned: 1,
+            createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+          },
+          {
+            id: 'upd-02',
+            title: '🚀 Winning Product Formula & TikTok Ad Testing SOP Uploaded',
+            content: 'Student feedback ke mutabiq Module 4 aur 5 ke sath TikTok Spark Ads ka testing formula update kardiya gaya hai. Low-budget testing ke liye yeh strategy lazmi implement karein.',
+            tag: 'Strategy',
+            author: 'Mentor Sardar Samiullah',
+            pinned: 0,
+            createdAt: new Date(Date.now() - 3600000 * 18).toISOString()
+          },
+          {
+            id: 'upd-03',
+            title: '📹 Live Q&A Session This Sunday 9:00 PM PKT',
+            content: 'Tamam enrolled students ke liye weekly Zoom / Live Q&A session schedule kiya gaya hai. Apne store audits aur questions tayar rakhein.',
+            tag: 'Live Session',
+            author: 'Mentor Sardar Samiullah',
+            pinned: 0,
+            createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
+          }
+        ];
+        for (const u of initialSeedUpdates) {
           await p.query(
-            `INSERT IGNORE INTO enrollments (id, tracking_code, student_id, name, email, phone, city, payment_method, transaction_id, where_heard, receipt_url, amount, status, created_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-            [e.id, e.trackingCode, e.studentId, e.name, e.email, e.phone, e.city, e.paymentMethod, e.transactionId, e.whereHeard || '', e.receiptUrl || '', e.amount, e.status, e.createdAt]
+            `INSERT IGNORE INTO community_updates (id, title, content, tag, author, pinned, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?)`,
+            [u.id, u.title, u.content, u.tag, u.author, u.pinned, u.createdAt]
           );
         }
       }
-    } catch {}
-
-    // Auto-seed initial suppliers if empty
-    try {
-      const [supRows]: any = await p.query(`SELECT COUNT(*) as count FROM lms_suppliers`);
-      if (Number(supRows?.[0]?.count || 0) === 0) {
-        for (const sup of initialSuppliers) {
-          await p.query(
-            `INSERT IGNORE INTO lms_suppliers (id, name, category, country, city, phone, whatsapp_link, min_order, delivery_time, cod_supported, notes, updated_at)
-             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())`,
-            [sup.id, sup.name, sup.category, sup.country, sup.city, sup.phone, sup.whatsappLink, sup.minOrder, sup.deliveryTime, sup.codSupported ? 1 : 0, sup.notes]
-          );
-        }
-      }
-    } catch {}
+    } catch (err) {
+      console.error('ensureAnalyticsTables community_updates error:', err);
+    }
     tablesInitialized = true;
     return true;
   } catch (error) {
@@ -1600,5 +1616,118 @@ export async function mysqlGetMediaUpload(idOrFilename: string): Promise<{
     }
   }
   return null;
+}
+
+export interface CommunityUpdateItem {
+  id: string;
+  title: string;
+  content: string;
+  tag: string;
+  author: string;
+  pinned: boolean;
+  createdAt: string;
+}
+
+let inMemoryCommunityUpdates: CommunityUpdateItem[] = [
+  {
+    id: 'upd-01',
+    title: '🎉 Welcome to Ecom With Sami Mentorship Hub!',
+    content: 'Assalam-o-Alaikum Students! Tamam naye students ko VIP Mentorship mein khushamdeed. Course ke tamam 8 modules sequence wise dekhein aur notes banayein. Har Module ke baad resources aur action steps lazmi follow karein.',
+    tag: 'Announcement',
+    author: 'Mentor Sardar Samiullah',
+    pinned: true,
+    createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
+  },
+  {
+    id: 'upd-02',
+    title: '🚀 Winning Product Formula & TikTok Ad Testing SOP Uploaded',
+    content: 'Student feedback ke mutabiq Module 4 aur 5 ke sath TikTok Spark Ads ka testing formula update kardiya gaya hai. Low-budget testing ke liye yeh strategy lazmi implement karein.',
+    tag: 'Strategy',
+    author: 'Mentor Sardar Samiullah',
+    pinned: false,
+    createdAt: new Date(Date.now() - 3600000 * 18).toISOString()
+  },
+  {
+    id: 'upd-03',
+    title: '📹 Live Q&A Session This Sunday 9:00 PM PKT',
+    content: 'Tamam enrolled students ke liye weekly Zoom / Live Q&A session schedule kiya gaya hai. Apne store audits aur questions tayar rakhein.',
+    tag: 'Live Session',
+    author: 'Mentor Sardar Samiullah',
+    pinned: false,
+    createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
+  }
+];
+
+export async function mysqlGetCommunityUpdates(): Promise<CommunityUpdateItem[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT id, title, content, tag, author, pinned, created_at FROM community_updates ORDER BY pinned DESC, created_at DESC LIMIT 50`
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map((r: any) => ({
+          id: String(r.id),
+          title: String(r.title || ''),
+          content: String(r.content || ''),
+          tag: String(r.tag || 'Announcement'),
+          author: String(r.author || 'Mentor Sardar Samiullah'),
+          pinned: Boolean(r.pinned),
+          createdAt: String(r.created_at || new Date().toISOString())
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetCommunityUpdates error:', err);
+    }
+  }
+  return inMemoryCommunityUpdates;
+}
+
+export async function mysqlCreateCommunityUpdate(data: {
+  title: string;
+  content: string;
+  tag?: string;
+  author?: string;
+  pinned?: boolean;
+}): Promise<CommunityUpdateItem> {
+  const id = 'upd-' + Date.now();
+  const newItem: CommunityUpdateItem = {
+    id,
+    title: data.title,
+    content: data.content,
+    tag: data.tag || 'Announcement',
+    author: data.author || 'Mentor Sardar Samiullah',
+    pinned: Boolean(data.pinned),
+    createdAt: new Date().toISOString()
+  };
+
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO community_updates (id, title, content, tag, author, pinned, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`,
+        [newItem.id, newItem.title, newItem.content, newItem.tag, newItem.author, newItem.pinned ? 1 : 0, newItem.createdAt]
+      );
+    } catch (err) {
+      console.error('mysqlCreateCommunityUpdate error:', err);
+    }
+  }
+
+  inMemoryCommunityUpdates = [newItem, ...inMemoryCommunityUpdates];
+  return newItem;
+}
+
+export async function mysqlDeleteCommunityUpdate(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM community_updates WHERE id = ?`, [id]);
+    } catch (err) {
+      console.error('mysqlDeleteCommunityUpdate error:', err);
+    }
+  }
+  inMemoryCommunityUpdates = inMemoryCommunityUpdates.filter(u => u.id !== id);
+  return true;
 }
 

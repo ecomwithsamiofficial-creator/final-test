@@ -35,7 +35,10 @@ import {
   Loader2,
   Shield,
   ShieldAlert,
-  AlertTriangle
+  AlertTriangle,
+  Bell,
+  Pin,
+  Radio
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -52,7 +55,9 @@ export default function LmsClassroomPage() {
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
-  const [activeTab, setActiveTab] = useState<'video' | 'suppliers' | 'resources'>('video');
+  const [activeTab, setActiveTab] = useState<'video' | 'suppliers' | 'resources' | 'community'>('video');
+  const [communityUpdates, setCommunityUpdates] = useState<any[]>([]);
+  const [unreadCount, setUnreadCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
   const [supplierCountryFilter, setSupplierCountryFilter] = useState<'ALL' | 'UAE' | 'Saudi Arabia'>('ALL');
   const [supplierSearch, setSupplierSearch] = useState('');
@@ -60,6 +65,16 @@ export default function LmsClassroomPage() {
   const [watchProgress, setWatchProgress] = useState<{ [lessonId: string]: number }>({});
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
   const [syncFeedback, setSyncFeedback] = useState<string>('');
+
+  const markUpdatesAsRead = () => {
+    if (communityUpdates.length > 0) {
+      try {
+        const allIds = communityUpdates.map((u: any) => u.id);
+        localStorage.setItem('sami_lms_read_updates_v1', JSON.stringify(allIds));
+        setUnreadCount(0);
+      } catch (e) {}
+    }
+  };
 
   const isLoggingOutRef = React.useRef(false);
   const tabIdRef = React.useRef(typeof window !== 'undefined' ? Math.random().toString(36).substring(2, 9) : 'tab');
@@ -476,6 +491,30 @@ export default function LmsClassroomPage() {
         if (res.success && res.resources) setResources(res.resources);
       });
 
+    // Fetch Community Updates & Announcements
+    fetch(`/api/community?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && Array.isArray(res.updates)) {
+          setCommunityUpdates(res.updates);
+          try {
+            const readIdsStr = localStorage.getItem('sami_lms_read_updates_v1') || '[]';
+            const readIds: string[] = JSON.parse(readIdsStr);
+            const unread = res.updates.filter((u: any) => !readIds.includes(u.id)).length;
+            setUnreadCount(unread);
+          } catch (e) {
+            setUnreadCount(res.updates.length);
+          }
+        }
+      })
+      .catch(() => {});
+
     return () => {
       clearInterval(heartbeatInterval);
       window.removeEventListener('storage', onStorage);
@@ -760,6 +799,23 @@ export default function LmsClassroomPage() {
           )}
         </div>
 
+        {/* Community Broadcasts Notification Bell */}
+        <button
+          onClick={() => {
+            setActiveTab('community');
+            markUpdatesAsRead();
+          }}
+          className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[#00A0DF] hover:text-white border border-[#00A0DF]/30 transition-all cursor-pointer flex items-center justify-center active:scale-95"
+          title="Community Announcements & Broadcasts"
+        >
+          <Bell size={15} />
+          {unreadCount > 0 && (
+            <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-md shadow-red-500/50">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+
         {/* DRM Security Status Indicator Badge */}
         <button
           onClick={() => setShowDrmModal(true)}
@@ -1018,6 +1074,23 @@ export default function LmsClassroomPage() {
               >
                 <Download size={13} />
                 <span>Bonuses</span>
+              </button>
+              <button
+                onClick={() => {
+                  setActiveTab('community');
+                  markUpdatesAsRead();
+                }}
+                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs transition-colors relative ${
+                  activeTab === 'community' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'
+                }`}
+              >
+                <Radio size={13} className={unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''} />
+                <span>Community Updates</span>
+                {unreadCount > 0 && (
+                  <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse ml-0.5">
+                    {unreadCount}
+                  </span>
+                )}
               </button>
             </div>
 
@@ -1531,6 +1604,126 @@ export default function LmsClassroomPage() {
               </div>
             )}
 
+            {/* ========================================================================= */}
+            {/* TAB 4: COMMUNITY UPDATES & ANNOUNCEMENTS */}
+            {/* ========================================================================= */}
+            {activeTab === 'community' && (
+              <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-in fade-in duration-200">
+                {/* Header Banner */}
+                <div className="bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] border border-[#00A0DF]/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 relative overflow-hidden shadow-2xl">
+                  <div className="absolute top-0 right-0 w-80 h-80 bg-[#00A0DF]/10 rounded-full blur-3xl pointer-events-none" />
+                  
+                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
+                    <div className="flex items-start gap-3 sm:gap-4">
+                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-black text-white text-xl sm:text-2xl shadow-xl shadow-[#00A0DF]/30 flex-shrink-0">
+                        S
+                      </div>
+                      <div className="space-y-1">
+                        <div className="flex flex-wrap items-center gap-2">
+                          <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
+                            Community &amp; Broadcasts
+                          </h2>
+                          <span className="bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/40 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                            <span className="w-1.5 h-1.5 rounded-full bg-[#00A0DF] animate-ping" />
+                            Live Hub
+                          </span>
+                        </div>
+                        <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
+                          Official announcements, winning product recommendations, scaling strategies, and Zoom links directly from <strong>Mentor Sardar Samiullah</strong>.
+                        </p>
+                      </div>
+                    </div>
+
+                    <a
+                      href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20am%20an%20active%20student%20in%20LMS%20mentorship."
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 whitespace-nowrap self-start sm:self-auto"
+                    >
+                      <MessageSquare size={15} />
+                      <span>VIP WhatsApp Group</span>
+                    </a>
+                  </div>
+                </div>
+
+                {/* Updates Feed */}
+                <div className="space-y-3 sm:space-y-4">
+                  {communityUpdates.length === 0 ? (
+                    <div className="text-center py-12 bg-[#111827] border border-white/10 rounded-2xl p-6">
+                      <Radio size={32} className="mx-auto text-slate-500 mb-2 animate-pulse" />
+                      <h3 className="text-sm font-bold text-white mb-1">No Broadcasts Yet</h3>
+                      <p className="text-xs text-slate-400">All new mentorship announcements from Mentor Sami will appear right here.</p>
+                    </div>
+                  ) : (
+                    communityUpdates.map((update: any) => {
+                      const isUrgent = update.tag === 'Urgent';
+                      const isStrategy = update.tag === 'Strategy';
+                      const isLive = update.tag === 'Live Session';
+                      
+                      const badgeBg = isUrgent
+                        ? 'bg-red-500/15 text-red-400 border-red-500/30'
+                        : isStrategy
+                        ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
+                        : isLive
+                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                        : 'bg-[#00A0DF]/15 text-[#00A0DF] border-[#00A0DF]/30';
+
+                      return (
+                        <div
+                          key={update.id}
+                          className={`bg-[#111827] border ${
+                            update.pinned ? 'border-[#00A0DF]/50 bg-gradient-to-br from-[#111827] to-[#141e30]' : 'border-white/10'
+                          } rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl space-y-3 transition-all hover:border-white/20`}
+                        >
+                          <div className="flex flex-wrap items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              {update.pinned && (
+                                <span className="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
+                                  <Pin size={10} /> Pinned
+                                </span>
+                              )}
+                              <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${badgeBg}`}>
+                                {update.tag || 'Announcement'}
+                              </span>
+                            </div>
+
+                            <span className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1">
+                              <Clock size={12} />
+                              {new Date(update.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+
+                          <h3 className="text-sm sm:text-base md:text-lg font-black text-white leading-snug">
+                            {update.title}
+                          </h3>
+
+                          <div className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
+                            {update.content}
+                          </div>
+
+                          <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
+                            <span className="font-semibold text-slate-300 flex items-center gap-1.5 text-[11px]">
+                              <span className="w-2 h-2 rounded-full bg-[#00A0DF]" />
+                              {update.author || 'Mentor Sardar Samiullah'}
+                            </span>
+                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
+                              <CheckCircle2 size={12} />
+                              <span>Official Broadcast</span>
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
           </div>
         </main>
 
@@ -1568,6 +1761,24 @@ export default function LmsClassroomPage() {
         >
           <Download size={17} />
           <span>Bonuses</span>
+        </button>
+        <button
+          onClick={() => { 
+            setActiveTab('community'); 
+            setSidebarOpen(false); 
+            markUpdatesAsRead(); 
+          }}
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative ${activeTab === 'community' ? 'text-[#00A0DF]' : 'text-slate-400'}`}
+        >
+          <div className="relative">
+            <Radio size={17} />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1.5 bg-red-500 text-white font-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
+                {unreadCount}
+              </span>
+            )}
+          </div>
+          <span>Updates</span>
         </button>
       </div>
 

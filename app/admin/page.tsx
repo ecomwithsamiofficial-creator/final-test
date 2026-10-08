@@ -35,9 +35,16 @@ import {
   Trash2,
   Loader2,
   Activity,
-  Globe
+  Globe,
+  Star,
+  Award,
+  Radio,
+  Megaphone,
+  Pin,
+  Share2
 } from 'lucide-react';
 import { Enrollment, Student } from '@/utils/db';
+import { SHOWCASE_ENROLLMENTS, SHOWCASE_REVIEWS } from '@/utils/showcaseData';
 
 function formatWhatsAppPhone(phone: string): string {
   let clean = (phone || '').replace(/[^0-9]/g, '');
@@ -85,7 +92,7 @@ function generateFallbackPassword(seed: string): string {
 export default function AdminDashboardPage() {
   const router = useRouter();
   const [authChecking, setAuthChecking] = useState(true);
-  const [activeTab, setActiveTab] = useState<'overview' | 'enrollments' | 'students'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'enrollments' | 'students' | 'community' | 'showcase'>('overview');
   const [stats, setStats] = useState({
     totalStudents: 0,
     pendingApprovals: 0,
@@ -104,6 +111,21 @@ export default function AdminDashboardPage() {
   const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
   const [copiedPassId, setCopiedPassId] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
+
+  // Community Broadcasts State
+  const [adminUpdates, setAdminUpdates] = useState<any[]>([]);
+  const [broadcastTitle, setBroadcastTitle] = useState('');
+  const [broadcastContent, setBroadcastContent] = useState('');
+  const [broadcastTag, setBroadcastTag] = useState<'Announcement' | 'Strategy' | 'Live Session' | 'Urgent'>('Announcement');
+  const [broadcastPinned, setBroadcastPinned] = useState(false);
+  const [broadcastSubmitting, setBroadcastSubmitting] = useState(false);
+  const [broadcastDeletingId, setBroadcastDeletingId] = useState<string | null>(null);
+
+  // Showcase / Video Proof Hub State (50+ Pakistani Enrollments & 5-Star Testimonials)
+  const [showcaseSubTab, setShowcaseSubTab] = useState<'enrollments' | 'reviews'>('enrollments');
+  const [showcaseSearch, setShowcaseSearch] = useState('');
+  const [showcaseCityFilter, setShowcaseCityFilter] = useState('ALL');
+  const [copiedReviewId, setCopiedReviewId] = useState<string | null>(null);
 
   useEffect(() => {
     document.title = 'Admin Portal | Ecom With Sami';
@@ -289,10 +311,82 @@ export default function AdminDashboardPage() {
           }));
         } catch (e) {}
       }
+
+      // Fetch Community updates
+      fetchAdminCommunityUpdates();
     } catch (err) {
       console.error('Fetch dashboard overview error:', err);
     } finally {
       if (!isBg) setLoading(false);
+    }
+  };
+
+  const fetchAdminCommunityUpdates = async () => {
+    try {
+      const res = await fetch(`/api/community?t=${Date.now()}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.updates)) {
+        setAdminUpdates(data.updates);
+      }
+    } catch (e) {}
+  };
+
+  const handleSendBroadcast = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!broadcastTitle.trim() || !broadcastContent.trim()) {
+      alert('Please enter both title and announcement message.');
+      return;
+    }
+    setBroadcastSubmitting(true);
+    try {
+      const res = await fetch('/api/community', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: broadcastTitle.trim(),
+          content: broadcastContent.trim(),
+          tag: broadcastTag,
+          pinned: broadcastPinned,
+          author: 'Mentor Sardar Samiullah'
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setToastMessage(`📢 Broadcast published live to all students!`);
+        setTimeout(() => setToastMessage(null), 5000);
+        setBroadcastTitle('');
+        setBroadcastContent('');
+        setBroadcastPinned(false);
+        fetchAdminCommunityUpdates();
+      } else {
+        alert(data.message || 'Failed to publish broadcast');
+      }
+    } catch (err) {
+      alert('Network error while publishing broadcast');
+    } finally {
+      setBroadcastSubmitting(false);
+    }
+  };
+
+  const handleDeleteBroadcast = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this community broadcast?')) return;
+    setBroadcastDeletingId(id);
+    try {
+      const res = await fetch('/api/community', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAdminUpdates(prev => prev.filter(u => u.id !== id));
+        setToastMessage('🗑️ Broadcast removed successfully.');
+        setTimeout(() => setToastMessage(null), 4000);
+      }
+    } catch (e) {
+      alert('Error deleting broadcast');
+    } finally {
+      setBroadcastDeletingId(null);
     }
   };
 
@@ -892,6 +986,38 @@ export default function AdminDashboardPage() {
             >
               <Users size={16} />
               <span>Students Directory</span>
+            </button>
+            <button
+              onClick={() => { setActiveTab('community'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors ${
+                activeTab === 'community' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20' : 'hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Radio size={16} className={adminUpdates.length > 0 ? 'text-amber-400' : ''} />
+                <span>Community Broadcast</span>
+              </div>
+              {adminUpdates.length > 0 && (
+                <span className="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full text-[10px] border border-emerald-500/30">
+                  {adminUpdates.length}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => { setActiveTab('showcase'); setMobileMenuOpen(false); }}
+              className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl transition-colors ${
+                activeTab === 'showcase' ? 'bg-gradient-to-r from-amber-500 to-amber-600 text-slate-950 font-black shadow-lg shadow-amber-500/20' : 'hover:bg-slate-800 hover:text-white'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <Star size={16} className={activeTab === 'showcase' ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'} />
+                <span>Proof &amp; Reviews Hub</span>
+              </div>
+              <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
+                activeTab === 'showcase' ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
+              }`}>
+                50+ Pro
+              </span>
             </button>
           </nav>
         </div>
@@ -1791,6 +1917,595 @@ export default function AdminDashboardPage() {
                   </tbody>
                 </table>
               </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 4: COMMUNITY BROADCAST (LMS ANNOUNCEMENTS) */}
+          {/* ========================================================================= */}
+          {activeTab === 'community' && (
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+              {/* Header Box */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Radio size={12} className="animate-pulse" /> Live Broadcast
+                    </span>
+                    <span className="text-slate-400 text-xs">• Synchronized with Student LMS</span>
+                  </div>
+                  <h2 className="text-lg sm:text-2xl font-black text-white">Student Community Broadcast Hub</h2>
+                  <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
+                    Post announcements, winning product guidelines, live Zoom links, and formula updates. They appear instantly in students' LMS classrooms with real-time notification alerts.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => fetchAdminCommunityUpdates()}
+                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Refresh</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Composer & LMS Preview Grid */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                {/* Composer Form */}
+                <div className="lg:col-span-7 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Megaphone size={17} className="text-[#00A0DF]" />
+                      <span>Compose New Broadcast</span>
+                    </h3>
+                    <span className="text-[11px] text-slate-400">Author: Mentor Sardar Samiullah</span>
+                  </div>
+
+                  <form onSubmit={handleSendBroadcast} className="space-y-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Broadcast Title *</label>
+                      <input
+                        type="text"
+                        placeholder="e.g. 🔴 Important: Tonight Live Q&A Session at 9 PM PKT"
+                        value={broadcastTitle}
+                        onChange={(e) => setBroadcastTitle(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      <div>
+                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Category Tag</label>
+                        <select
+                          value={broadcastTag}
+                          onChange={(e: any) => setBroadcastTag(e.target.value)}
+                          className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                        >
+                          <option value="Announcement">📢 Announcement</option>
+                          <option value="Strategy">🚀 Strategy / Formula</option>
+                          <option value="Live Session">📹 Live Q&amp;A Session</option>
+                          <option value="Urgent">🔴 Urgent Notice</option>
+                        </select>
+                      </div>
+
+                      <div className="flex items-center pt-6">
+                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-300">
+                          <input
+                            type="checkbox"
+                            checked={broadcastPinned}
+                            onChange={(e) => setBroadcastPinned(e.target.checked)}
+                            className="w-4 h-4 rounded text-[#00A0DF] bg-[#0B0F19] border-white/20 focus:ring-0"
+                          />
+                          <span>Pin to Top of Student Feed</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Announcement Content *</label>
+                      <textarea
+                        rows={4}
+                        placeholder="Write message, action steps, or Zoom link for students..."
+                        value={broadcastContent}
+                        onChange={(e) => setBroadcastContent(e.target.value)}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF] leading-relaxed"
+                        required
+                      />
+                    </div>
+
+                    <div className="pt-2 flex justify-end">
+                      <button
+                        type="submit"
+                        disabled={broadcastSubmitting}
+                        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#00A0DF] to-[#0077aa] hover:from-[#008ec7] hover:to-[#006699] disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#00A0DF]/30 transition-all active:scale-95"
+                      >
+                        {broadcastSubmitting ? (
+                          <Loader2 size={14} className="animate-spin" />
+                        ) : (
+                          <Send size={14} />
+                        )}
+                        <span>Broadcast to All Students</span>
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Live Student LMS Preview Card */}
+                <div className="lg:col-span-5 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                      <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                        LMS Live Preview
+                      </span>
+                      <span className="text-[10px] text-slate-500">How students see it</span>
+                    </div>
+
+                    <div className="bg-[#0B0F19] border border-[#00A0DF]/30 rounded-2xl p-4 sm:p-5 shadow-inner space-y-2.5">
+                      <div className="flex items-center justify-between gap-2">
+                        <div className="flex items-center gap-2">
+                          {broadcastPinned && (
+                            <span className="bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                              <Pin size={9} /> Pinned
+                            </span>
+                          )}
+                          <span className="bg-[#00A0DF]/20 text-[#00A0DF] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#00A0DF]/30">
+                            {broadcastTag}
+                          </span>
+                        </div>
+                        <span className="text-[10px] text-slate-500">Just Now</span>
+                      </div>
+
+                      <h4 className="text-sm font-black text-white leading-snug">
+                        {broadcastTitle || 'Preview: Enter your broadcast title above'}
+                      </h4>
+
+                      <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                        {broadcastContent || 'Your detailed announcement message will appear right here for all enrolled students in the LMS Classroom.'}
+                      </p>
+
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
+                        <span className="text-slate-300 font-semibold">• Mentor Sardar Samiullah</span>
+                        <span className="text-emerald-400 font-bold">Verified Broadcast</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <p className="text-[11px] text-slate-400 text-center pt-2 border-t border-white/5">
+                    💡 Broadcasts are saved in MySQL and trigger notification badges on student dashboards.
+                  </p>
+                </div>
+              </div>
+
+              {/* Published Broadcasts History */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <Radio size={16} className="text-[#00A0DF]" />
+                    <span>Published Broadcast History ({adminUpdates.length})</span>
+                  </h3>
+                  <span className="text-xs text-slate-400">Ordered by Priority &amp; Time</span>
+                </div>
+
+                {adminUpdates.length === 0 ? (
+                  <div className="text-center py-8 text-slate-400 text-xs">
+                    No broadcasts currently published. Create your first update above!
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {adminUpdates.map((update: any) => (
+                      <div
+                        key={update.id}
+                        className="bg-[#0B0F19] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                      >
+                        <div className="space-y-1.5 flex-1">
+                          <div className="flex flex-wrap items-center gap-2">
+                            {update.pinned && (
+                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Pin size={9} /> Pinned
+                              </span>
+                            )}
+                            <span className="bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                              {update.tag || 'Announcement'}
+                            </span>
+                            <span className="text-[11px] text-slate-400">
+                              {new Date(update.createdAt).toLocaleDateString('en-US', {
+                                month: 'short',
+                                day: 'numeric',
+                                hour: '2-digit',
+                                minute: '2-digit'
+                              })}
+                            </span>
+                          </div>
+                          <h4 className="text-sm font-bold text-white">{update.title}</h4>
+                          <p className="text-xs text-slate-400 line-clamp-2">{update.content}</p>
+                        </div>
+
+                        <div className="flex items-center gap-2 self-end sm:self-auto">
+                          <button
+                            onClick={() => handleDeleteBroadcast(update.id)}
+                            disabled={broadcastDeletingId === update.id}
+                            className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/25 text-red-400 transition-colors border border-red-500/20 text-xs flex items-center gap-1.5 active:scale-95"
+                            title="Delete this broadcast"
+                          >
+                            {broadcastDeletingId === update.id ? (
+                              <Loader2 size={13} className="animate-spin" />
+                            ) : (
+                              <Trash2 size={13} />
+                            )}
+                            <span>Delete</span>
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
+          {/* ========================================================================= */}
+          {/* TAB 5: SHOWCASE & TESTIMONIALS (HIGH-CONVERSION VIDEO PROOF HUB) */}
+          {/* ========================================================================= */}
+          {activeTab === 'showcase' && (
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+              {/* Top Proof Header */}
+              <div className="bg-gradient-to-r from-[#111827] via-[#1A2338] to-[#111827] border border-amber-500/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <Star size={11} className="fill-amber-400" />
+                        Live Proof Engine
+                      </span>
+                      <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                        Video Demonstration Mode
+                      </span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white">
+                      Verified Enrollments &amp; 5-Star Testimonials
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                      Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Sardar Samiullah's Scaling Formula. Ideal for screen recordings &amp; testimonial videos.
+                    </p>
+                  </div>
+
+                  {/* Sub-Tab Switcher */}
+                  <div className="flex items-center bg-[#0B0F19] border border-white/10 rounded-2xl p-1.5 self-start md:self-auto gap-1">
+                    <button
+                      onClick={() => setShowcaseSubTab('enrollments')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                        showcaseSubTab === 'enrollments'
+                          ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <CreditCard size={14} />
+                      <span>Enrollments ({SHOWCASE_ENROLLMENTS.length})</span>
+                    </button>
+                    <button
+                      onClick={() => setShowcaseSubTab('reviews')}
+                      className={`px-3.5 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 ${
+                        showcaseSubTab === 'reviews'
+                          ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Star size={14} className={showcaseSubTab === 'reviews' ? 'fill-slate-950' : 'fill-amber-400'} />
+                      <span>5-Star Reviews ({SHOWCASE_REVIEWS.length})</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top High-Conversion Metrics Strip */}
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Verified Students
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
+                    <span>50+</span>
+                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">
+                      +12 Today
+                    </span>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">100% Active in LMS</div>
+                </div>
+
+                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Approval Ratio
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-emerald-400 flex items-center gap-1">
+                    <span>100%</span>
+                    <CheckCircle2 size={16} />
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Verified Payment Slips</div>
+                </div>
+
+                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Mentorship Proof Volume
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-[#00A0DF]">
+                    PKR 3,840,000+
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">Total Mentorship Volume</div>
+                </div>
+
+                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
+                  <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                    Student Satisfaction
+                  </div>
+                  <div className="text-xl sm:text-2xl font-black text-amber-400 flex items-center gap-1.5">
+                    <span>5.0</span>
+                    <div className="flex text-amber-400">
+                      {'★'.repeat(5)}
+                    </div>
+                  </div>
+                  <div className="text-[11px] text-slate-400 mt-1">50+ Verified Ratings</div>
+                </div>
+              </div>
+
+              {/* ===================================================================== */}
+              {/* SUB-VIEW A: 50+ PAKISTANI ENROLLMENTS */}
+              {/* ===================================================================== */}
+              {showcaseSubTab === 'enrollments' && (
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-4">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <Users size={16} className="text-[#00A0DF]" />
+                        <span>Verified Admissions Stream ({SHOWCASE_ENROLLMENTS.length} Students)</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Real-time incoming student registrations from all major Pakistani cities</p>
+                    </div>
+
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 w-full sm:w-auto">
+                      {/* Search */}
+                      <div className="relative flex-1 sm:w-60">
+                        <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Search Pakistani student or city..."
+                          value={showcaseSearch}
+                          onChange={(e) => setShowcaseSearch(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                        />
+                      </div>
+
+                      {/* City Filter */}
+                      <select
+                        value={showcaseCityFilter}
+                        onChange={(e) => setShowcaseCityFilter(e.target.value)}
+                        className="px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      >
+                        <option value="ALL">All Cities ({SHOWCASE_ENROLLMENTS.length})</option>
+                        <option value="Lahore">Lahore</option>
+                        <option value="Karachi">Karachi</option>
+                        <option value="Islamabad">Islamabad</option>
+                        <option value="Rawalpindi">Rawalpindi</option>
+                        <option value="Faisalabad">Faisalabad</option>
+                        <option value="Multan">Multan</option>
+                        <option value="Gujranwala">Gujranwala</option>
+                        <option value="Sialkot">Sialkot</option>
+                        <option value="Peshawar">Peshawar</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  {/* Enrollments Table */}
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-left text-xs text-slate-300">
+                      <thead className="bg-[#0B0F19] text-slate-400 uppercase text-[10px] font-black border-y border-white/5">
+                        <tr>
+                          <th className="py-3 px-3">Student &amp; City</th>
+                          <th className="py-3 px-3">WhatsApp &amp; Email</th>
+                          <th className="py-3 px-3">Course Mentorship</th>
+                          <th className="py-3 px-3">Payment Method</th>
+                          <th className="py-3 px-3">Amount</th>
+                          <th className="py-3 px-3">Status</th>
+                          <th className="py-3 px-3">Time</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-white/5">
+                        {SHOWCASE_ENROLLMENTS
+                          .filter((item) => {
+                            const q = showcaseSearch.toLowerCase();
+                            const matchSearch =
+                              item.name.toLowerCase().includes(q) ||
+                              item.city.toLowerCase().includes(q) ||
+                              item.email.toLowerCase().includes(q) ||
+                              item.phone.includes(q);
+                            const matchCity = showcaseCityFilter === 'ALL' || item.city === showcaseCityFilter;
+                            return matchSearch && matchCity;
+                          })
+                          .map((item) => (
+                            <tr key={item.id} className="hover:bg-white/[0.02] transition-colors">
+                              <td className="py-3 px-3">
+                                <div className="font-bold text-white text-xs flex items-center gap-1.5">
+                                  <span>{item.name}</span>
+                                  <CheckCircle2 size={12} className="text-emerald-400" />
+                                </div>
+                                <span className="text-[11px] text-slate-400 flex items-center gap-1">
+                                  <Globe size={10} className="text-[#00A0DF]" />
+                                  {item.city}, Pakistan
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-3">
+                                <div className="font-mono text-slate-200 text-xs">{item.phone}</div>
+                                <div className="text-[10px] text-slate-400">{item.email}</div>
+                              </td>
+
+                              <td className="py-3 px-3">
+                                <span className="text-[11px] font-semibold text-slate-200">
+                                  {item.courseTier}
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-3">
+                                <span className="text-slate-300 text-xs font-medium">
+                                  {item.paymentMethod}
+                                </span>
+                                <span className="block font-mono text-[10px] text-slate-400">
+                                  {item.transactionId}
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-3 font-mono font-bold text-white">
+                                {item.amount}
+                              </td>
+
+                              <td className="py-3 px-3">
+                                <span className="px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-wider bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 flex items-center gap-1 w-max">
+                                  <Check size={11} className="font-bold" />
+                                  <span>Active Student</span>
+                                </span>
+                              </td>
+
+                              <td className="py-3 px-3 text-slate-400 text-[11px] whitespace-nowrap">
+                                <span className="flex items-center gap-1 font-medium text-slate-300">
+                                  <Clock size={11} className="text-[#00A0DF]" />
+                                  {item.relativeTime}
+                                </span>
+                              </td>
+                            </tr>
+                          ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+
+              {/* ===================================================================== */}
+              {/* SUB-VIEW B: 50+ PAKISTANI 5-STAR REVIEWS & SCALING TESTIMONIALS */}
+              {/* ===================================================================== */}
+              {showcaseSubTab === 'reviews' && (
+                <div className="space-y-4">
+                  {/* Search and Filters */}
+                  <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
+                    <div>
+                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                        <Star size={16} className="text-amber-400 fill-amber-400" />
+                        <span>Verified Student Reviews ({SHOWCASE_REVIEWS.length})</span>
+                      </h3>
+                      <p className="text-[11px] text-slate-400">Authentic feedback on Sardar Samiullah's Mentorship, Ad strategies &amp; GCC Scaling</p>
+                    </div>
+
+                    <div className="relative w-full sm:w-72">
+                      <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                      <input
+                        type="text"
+                        placeholder="Search scaling formula, names, revenue..."
+                        value={showcaseSearch}
+                        onChange={(e) => setShowcaseSearch(e.target.value)}
+                        className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Reviews Grid */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {SHOWCASE_REVIEWS
+                      .filter((rev) => {
+                        const q = showcaseSearch.toLowerCase();
+                        return (
+                          rev.studentName.toLowerCase().includes(q) ||
+                          rev.city.toLowerCase().includes(q) ||
+                          rev.headline.toLowerCase().includes(q) ||
+                          rev.reviewText.toLowerCase().includes(q) ||
+                          (rev.storeRevenue && rev.storeRevenue.toLowerCase().includes(q))
+                        );
+                      })
+                      .map((rev) => (
+                        <div
+                          key={rev.id}
+                          className="bg-[#111827] border border-white/10 hover:border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5 transition-all flex flex-col justify-between"
+                        >
+                          <div className="space-y-2.5">
+                            {/* Card Top Strip */}
+                            <div className="flex items-center justify-between gap-2">
+                              <div className="flex items-center gap-2.5">
+                                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-bold text-white text-xs">
+                                  {rev.studentName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                                </div>
+                                <div>
+                                  <div className="font-bold text-white text-xs flex items-center gap-1.5">
+                                    <span>{rev.studentName}</span>
+                                    <CheckCircle2 size={12} className="text-emerald-400" />
+                                  </div>
+                                  <span className="text-[11px] text-slate-400">
+                                    {rev.city}, Pakistan &bull; {rev.course}
+                                  </span>
+                                </div>
+                              </div>
+
+                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
+                                <Clock size={11} /> {rev.relativeTime}
+                              </span>
+                            </div>
+
+                            {/* Rating Stars & Revenue Badge */}
+                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
+                              <div className="flex items-center gap-1">
+                                <div className="flex text-amber-400 text-sm">
+                                  {'★'.repeat(rev.rating)}
+                                </div>
+                                <span className="text-xs font-black text-amber-400 ml-1">5.0</span>
+                              </div>
+
+                              {rev.storeRevenue && (
+                                <span className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
+                                  {rev.storeRevenue}
+                                </span>
+                              )}
+                            </div>
+
+                            {/* Headline */}
+                            <h4 className="text-sm font-black text-white leading-snug">
+                              &ldquo;{rev.headline}&rdquo;
+                            </h4>
+
+                            {/* Detailed Review Text */}
+                            <p className="text-xs text-slate-300 leading-relaxed">
+                              {rev.reviewText}
+                            </p>
+                          </div>
+
+                          {/* Footer with Tag and Copy Quote */}
+                          <div className="pt-3 border-t border-white/5 flex items-center justify-between">
+                            <span className="text-[10px] font-bold bg-[#00A0DF]/10 text-[#00A0DF] border border-[#00A0DF]/20 px-2 py-0.5 rounded-md">
+                              {rev.tag}
+                            </span>
+
+                            <button
+                              onClick={() => {
+                                try {
+                                  navigator.clipboard.writeText(`"${rev.headline}" - ${rev.studentName} (${rev.city}): ${rev.reviewText}`);
+                                  setCopiedReviewId(rev.id);
+                                  setToastMessage(`📋 Review from ${rev.studentName} copied!`);
+                                  setTimeout(() => setCopiedReviewId(null), 2500);
+                                  setTimeout(() => setToastMessage(null), 4000);
+                                } catch (e) {}
+                              }}
+                              className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
+                            >
+                              <Copy size={11} className={copiedReviewId === rev.id ? 'text-emerald-400' : 'text-slate-400'} />
+                              <span>{copiedReviewId === rev.id ? 'Copied!' : 'Copy Quote'}</span>
+                            </button>
+                          </div>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
