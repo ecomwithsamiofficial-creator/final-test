@@ -573,7 +573,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string) => {

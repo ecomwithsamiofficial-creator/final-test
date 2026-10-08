@@ -34,10 +34,10 @@ export function VideoModal({
   if (!isDirectVideo) {
     if (url.includes('youtube.com/watch?v=')) {
       const videoId = url.split('v=')[1]?.split('&')[0];
-      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&cc_load_policy=0&cc_lang_pref=none`;
     } else if (url.includes('youtu.be/')) {
       const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1`;
+      if (videoId) embedUrl = `https://www.youtube.com/embed/${videoId}?autoplay=1&cc_load_policy=0&cc_lang_pref=none`;
     } else if (url.includes('mediadelivery.net')) {
       const base = url.split('?')[0];
       embedUrl = `${base}?autoplay=true&preload=true&responsive=true`;
