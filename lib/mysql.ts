@@ -13,6 +13,7 @@ import {
   initialEnrollments, 
   initialSuppliers 
 } from '@/utils/db';
+import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
 
 let pool: mysql.Pool | null = null;
 let tablesInitialized = false;
@@ -1728,6 +1729,58 @@ export async function mysqlDeleteCommunityUpdate(id: string): Promise<boolean> {
     }
   }
   inMemoryCommunityUpdates = inMemoryCommunityUpdates.filter(u => u.id !== id);
+  return true;
+}
+
+let inMemoryShowcaseCms: ShowcaseCmsData = defaultShowcaseCmsData;
+
+export async function mysqlGetShowcaseCms(): Promise<ShowcaseCmsData> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT value_json FROM cms_settings WHERE \`key\` = 'showcase_cms' LIMIT 1`
+      );
+      if (Array.isArray(rows) && rows.length > 0 && rows[0]?.value_json) {
+        const raw = rows[0].value_json;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (parsed && typeof parsed === 'object') {
+          return {
+            ...defaultShowcaseCmsData,
+            ...parsed,
+            navLabels: { ...defaultShowcaseCmsData.navLabels, ...(parsed.navLabels || {}) },
+            hero: { ...defaultShowcaseCmsData.hero, ...(parsed.hero || {}) },
+            metrics: { ...defaultShowcaseCmsData.metrics, ...(parsed.metrics || {}) },
+            enrollments: Array.isArray(parsed.enrollments) ? parsed.enrollments : defaultShowcaseCmsData.enrollments,
+            reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaultShowcaseCmsData.reviews
+          };
+        }
+      }
+    } catch (err) {
+      console.error('mysqlGetShowcaseCms error:', err);
+    }
+  }
+  return inMemoryShowcaseCms;
+}
+
+export async function mysqlSaveShowcaseCms(data: ShowcaseCmsData): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const jsonStr = JSON.stringify(data);
+      await pool.query(
+        `INSERT INTO cms_settings (\`key\`, \`value_json\`, \`updated_at\`)
+         VALUES ('showcase_cms', ?, NOW())
+         ON DUPLICATE KEY UPDATE \`value_json\` = VALUES(\`value_json\`), \`updated_at\` = NOW()`,
+        [jsonStr]
+      );
+      inMemoryShowcaseCms = data;
+      return true;
+    } catch (err) {
+      console.error('mysqlSaveShowcaseCms error:', err);
+    }
+  }
+  inMemoryShowcaseCms = data;
   return true;
 }
 

@@ -974,3 +974,67 @@ export const SHOWCASE_REVIEWS: ShowcaseReview[] = [
     tag: "Fast Track Student"
   }
 ];
+
+export interface ShowcaseCmsData {
+  navLabels: {
+    dashboard: string;
+    cms: string;
+    enrollments: string;
+    students: string;
+    community: string;
+    showcase: string;
+  };
+  hero: {
+    badge: string;
+    subBadge: string;
+    title: string;
+    description: string;
+    enrollmentsTabLabel: string;
+    reviewsTabLabel: string;
+  };
+  metrics: {
+    studentsCount: string;
+    studentsTag: string;
+    studentsSubtext: string;
+    approvalRatio: string;
+    approvalSubtext: string;
+    revenueVolume: string;
+    revenueSubtext: string;
+    satisfactionRating: string;
+    satisfactionSubtext: string;
+  };
+  enrollments: ShowcaseEnrollment[];
+  reviews: ShowcaseReview[];
+}
+
+export const defaultShowcaseCmsData: ShowcaseCmsData = {
+  navLabels: {
+    dashboard: "Dashboard Overview",
+    cms: "Website & LMS CMS",
+    enrollments: "Enrollment Queue",
+    students: "Students Directory",
+    community: "Community Broadcast",
+    showcase: "Proof & Reviews Hub"
+  },
+  hero: {
+    badge: "Live Proof Engine",
+    subBadge: "Video Demonstration Mode",
+    title: "Verified Enrollments & 5-Star Testimonials",
+    description: "Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Sardar Samiullah's Scaling Formula. Ideal for screen recordings & testimonial videos.",
+    enrollmentsTabLabel: "Verified Enrollments",
+    reviewsTabLabel: "5-Star Reviews"
+  },
+  metrics: {
+    studentsCount: "50+",
+    studentsTag: "+12 Today",
+    studentsSubtext: "100% Active in LMS",
+    approvalRatio: "100%",
+    approvalSubtext: "Verified Payment Slips",
+    revenueVolume: "PKR 3,840,000+",
+    revenueSubtext: "Total Mentorship Volume",
+    satisfactionRating: "5.0",
+    satisfactionSubtext: "50+ Verified Ratings"
+  },
+  enrollments: SHOWCASE_ENROLLMENTS,
+  reviews: SHOWCASE_REVIEWS
+};

@@ -54,6 +54,12 @@ import {
   updateCmsContent
 } from '@/utils/cmsStore';
 import { Module, Supplier, initialModules, initialSuppliers } from '@/utils/db';
+import { 
+  ShowcaseCmsData, 
+  defaultShowcaseCmsData, 
+  ShowcaseEnrollment, 
+  ShowcaseReview 
+} from '@/utils/showcaseData';
 
 import { supabase } from '@/lib/supabase';
 import { optimizeVideoTo720p } from '@/utils/videoCompressor';
@@ -63,7 +69,7 @@ export default function AdminCmsPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isPageReady, setIsPageReady] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page'
+    'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page' | 'proof_hub'
   >('hero');
   const [cmsData, setCmsData] = useState<CmsContentSchema>(() => {
     if (typeof window !== 'undefined') {
@@ -86,6 +92,13 @@ export default function AdminCmsPage() {
   const [loading, setLoading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
+
+  // Showcase & Proof Hub CMS State
+  const [showcaseCms, setShowcaseCms] = useState<ShowcaseCmsData>(defaultShowcaseCmsData);
+  const [showcaseSubView, setShowcaseSubView] = useState<'metrics' | 'enrollments' | 'reviews'>('metrics');
+  const [savingShowcase, setSavingShowcase] = useState(false);
+  const [showcaseSavedToast, setShowcaseSavedToast] = useState(false);
+  const [showcaseSearchCms, setShowcaseSearchCms] = useState('');
 
   // New Module modal/form state
   const [showAddModuleModal, setShowAddModuleModal] = useState(false);
@@ -335,6 +348,23 @@ export default function AdminCmsPage() {
       }
     } catch (err) {}
 
+    // 3b. Fetch Showcase & Proof Hub CMS from Hostinger MySQL API
+    try {
+      const showRes = await fetch(`/api/cms/showcase?_nocache=${cacheBuster}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      });
+      if (showRes.ok) {
+        const showData = await showRes.json();
+        if (showData.success && showData.data) {
+          setShowcaseCms(showData.data);
+          try {
+            localStorage.setItem('sami_showcase_cms', JSON.stringify(showData.data));
+          } catch (e) {}
+        }
+      }
+    } catch (err) {}
+
     // 4. Direct Supabase Cloud Fetch (CMS Settings Mirror fallback ONLY if MySQL API did not load)
     if (supabase && !cmsLoadedFromApi) {
       try {
@@ -475,6 +505,19 @@ export default function AdminCmsPage() {
       if (pmRes.ok) saved = true;
     } catch (e) {}
 
+    // 1c. Also persist showcase CMS settings to /api/cms/showcase endpoint
+    try {
+      const showRes = await fetch('/api/cms/showcase', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate'
+        },
+        body: JSON.stringify(showcaseCms)
+      });
+      if (showRes.ok) saved = true;
+    } catch (e) {}
+
     // 2. Direct Supabase Cloud Save (Guaranteed fallback for static web hosts like Hostinger)
     if (supabase) {
       try {
@@ -493,6 +536,7 @@ export default function AdminCmsPage() {
       try {
         localStorage.setItem('sami_cms_payment_methods', JSON.stringify(dataToSave.payment_methods));
         localStorage.setItem('sami_cms_content', JSON.stringify(dataToSave));
+        localStorage.setItem('sami_showcase_cms', JSON.stringify(showcaseCms));
         if (dataToSave.checkout_page) {
           localStorage.setItem('sami_cms_checkout_page', JSON.stringify(dataToSave.checkout_page));
         }
@@ -503,6 +547,36 @@ export default function AdminCmsPage() {
       setTimeout(() => setSavedSuccess(false), 3000);
     }
     setLoading(false);
+  };
+
+  const handleSaveShowcase = async () => {
+    setSavingShowcase(true);
+    try {
+      const res = await fetch('/api/cms/showcase', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(showcaseCms)
+      });
+      const data = await res.json();
+      if (data.success) {
+        setShowcaseSavedToast(true);
+        setTimeout(() => setShowcaseSavedToast(false), 3500);
+        try {
+          localStorage.setItem('sami_showcase_cms', JSON.stringify(showcaseCms));
+        } catch (e) {}
+      } else {
+        alert(data.message || 'Failed to save showcase settings');
+      }
+    } catch (err: any) {
+      alert('Error saving showcase settings: ' + err.message);
+    } finally {
+      setSavingShowcase(false);
+    }
+  };
+
+  const handleResetShowcaseToDefaults = () => {
+    if (!confirm('Are you sure you want to reset all Proof Hub & Showcase settings back to default 50 enrollments and 20 reviews?')) return;
+    setShowcaseCms(defaultShowcaseCmsData);
   };
 
   // --- LMS MODULE ACTIONS ---
@@ -1643,7 +1717,8 @@ export default function AdminCmsPage() {
             { id: 'pixels', label: '19. 🎯 Pixels & Code', icon: Settings },
             { id: 'success_page', label: '20. 🏆 Success Stories Page', icon: Award },
             { id: 'checkout_page', label: '21. ⏱️ Urgency Timer & Seats (Home & Checkout)', icon: Clock },
-            { id: 'about_page', label: '22. 👤 About Sami Page', icon: Users }
+            { id: 'about_page', label: '22. 👤 About Sami Page', icon: Users },
+            { id: 'proof_hub', label: '23. ⭐ Proof Hub & Video Showcase (Admin)', icon: Star }
           ].map((t) => {
             const Icon = t.icon;
             return (
@@ -8381,6 +8456,861 @@ export default function AdminCmsPage() {
                 </button>
               </div>
 
+            </div>
+
+          </div>
+        )}
+
+        {/* ========================================================================= */}
+        {/* TAB 23: PROOF HUB & VIDEO SHOWCASE CMS (ADMIN PANEL CONTROL) */}
+        {/* ========================================================================= */}
+        {activeTab === 'proof_hub' && (
+          <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+            
+            {/* Save Success Toast */}
+            {showcaseSavedToast && (
+              <div className="fixed bottom-6 right-6 z-50 bg-emerald-600 text-white px-5 py-3 rounded-2xl shadow-2xl flex items-center gap-2 text-xs sm:text-sm font-bold animate-in fade-in slide-in-from-bottom">
+                <CheckCircle2 size={16} />
+                <span>Proof Hub &amp; Showcase CMS saved to Database!</span>
+              </div>
+            )}
+
+            {/* Header Box */}
+            <div className="bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] border border-amber-500/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                <div>
+                  <div className="flex items-center gap-2 mb-1.5">
+                    <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                      <Star size={11} className="fill-amber-400" />
+                      Proof Engine CMS
+                    </span>
+                    <span className="text-slate-400 text-xs">• Live Admin Dashboard Control</span>
+                  </div>
+                  <h2 className="text-xl sm:text-2xl font-black text-white">
+                    Proof Hub &amp; Video Showcase Editor
+                  </h2>
+                  <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+                    Edit every Pakistani student enrollment, 5-star review, headline, revenue pill, and big KPI counter. All changes update permanently in MySQL and reflect live on your Admin Dashboard.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={handleResetShowcaseToDefaults}
+                    className="px-3.5 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all"
+                    title="Reset back to standard 50 Pakistani enrollments"
+                  >
+                    <RotateCcw size={13} />
+                    <span>Reset Defaults</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveShowcase}
+                    disabled={savingShowcase}
+                    className="px-5 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-450 hover:to-amber-550 text-slate-950 font-black text-xs flex items-center gap-2 shadow-lg shadow-amber-500/20 transition-all active:scale-95 disabled:opacity-50"
+                  >
+                    {savingShowcase ? (
+                      <Loader2 size={14} className="animate-spin" />
+                    ) : (
+                      <Save size={14} />
+                    )}
+                    <span>Save Proof Hub</span>
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            {/* Sub-Navigation Tabs */}
+            <div className="flex items-center bg-[#111827] border border-white/10 rounded-2xl p-1.5 gap-1 overflow-x-auto no-scrollbar">
+              <button
+                type="button"
+                onClick={() => setShowcaseSubView('metrics')}
+                className={`flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  showcaseSubView === 'metrics'
+                    ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <SlidersHorizontal size={14} />
+                <span>1. Headings, Metrics &amp; Labels</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowcaseSubView('enrollments')}
+                className={`flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  showcaseSubView === 'enrollments'
+                    ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <CreditCard size={14} />
+                <span>2. Pakistani Admissions ({showcaseCms.enrollments.length})</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setShowcaseSubView('reviews')}
+                className={`flex-1 min-w-[180px] py-2.5 px-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 ${
+                  showcaseSubView === 'reviews'
+                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Star size={14} className={showcaseSubView === 'reviews' ? 'fill-slate-950' : 'fill-amber-400'} />
+                <span>3. 5-Star Reviews &amp; Stories ({showcaseCms.reviews.length})</span>
+              </button>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* SUB-VIEW 1: HEADINGS, METRICS & LABELS */}
+            {/* ========================================================================= */}
+            {showcaseSubView === 'metrics' && (
+              <div className="space-y-6">
+                
+                {/* 1. Sidebar Navigation Custom Labels */}
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                  <div className="border-b border-white/5 pb-3">
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Settings size={16} className="text-[#00A0DF]" />
+                      <span>Admin Sidebar Navigation Custom Labels</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Customize the exact names shown in your admin sidebar buttons</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Overview Button Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.dashboard}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, dashboard: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">CMS Button Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.cms}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, cms: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Enrollments Queue Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.enrollments}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, enrollments: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Students Directory Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.students}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, students: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Community Broadcast Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.community}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, community: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Proof Hub Tab Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.navLabels.showcase}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          navLabels: { ...showcaseCms.navLabels, showcase: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 2. Top Header & Badges */}
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                  <div className="border-b border-white/5 pb-3">
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Star size={16} className="text-amber-400 fill-amber-400" />
+                      <span>Proof Hub Header &amp; Subtitle Configuration</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Customize the main banner text seen at top of Proof Hub</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Main Heading *</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.hero.title}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, title: e.target.value }
+                        })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Top Badge 1</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.hero.badge}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, badge: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Top Badge 2</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.hero.subBadge}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, subBadge: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Enrollments Tab Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.hero.enrollmentsTabLabel}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, enrollmentsTabLabel: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Reviews Tab Label</label>
+                      <input
+                        type="text"
+                        value={showcaseCms.hero.reviewsTabLabel}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, reviewsTabLabel: e.target.value }
+                        })}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-400 mb-1">Description Paragraph</label>
+                      <textarea
+                        rows={3}
+                        value={showcaseCms.hero.description}
+                        onChange={(e) => setShowcaseCms({
+                          ...showcaseCms,
+                          hero: { ...showcaseCms.hero, description: e.target.value }
+                        })}
+                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] leading-relaxed"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                {/* 3. The 4 Big KPI Highlight Cards */}
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                  <div className="border-b border-white/5 pb-3">
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Clock size={16} className="text-[#00A0DF]" />
+                      <span>The 4 Big Highlight KPI Metric Cards</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">These four cards are heavily highlighted when recording screen proof videos</p>
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    {/* Metric 1 */}
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2.5">
+                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 1: Students</span>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Big Number</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.studentsCount}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, studentsCount: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs font-bold text-white focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Green Tag</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.studentsTag}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, studentsTag: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs text-emerald-400 font-bold focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Subtext</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.studentsSubtext}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, studentsSubtext: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-[11px] text-slate-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Metric 2 */}
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2.5">
+                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 2: Approval Ratio</span>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Big Ratio (%)</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.approvalRatio}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, approvalRatio: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs font-bold text-emerald-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Subtext</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.approvalSubtext}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, approvalSubtext: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-[11px] text-slate-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Metric 3 */}
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2.5">
+                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 3: Revenue Proof</span>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Total Volume Amount</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.revenueVolume}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, revenueVolume: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs font-bold text-[#00A0DF] focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Subtext</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.revenueSubtext}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, revenueSubtext: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-[11px] text-slate-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Metric 4 */}
+                    <div className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2.5">
+                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 4: Rating</span>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Average Stars Score</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.satisfactionRating}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, satisfactionRating: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs font-bold text-amber-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Subtext</label>
+                        <input
+                          type="text"
+                          value={showcaseCms.metrics.satisfactionSubtext}
+                          onChange={(e) => setShowcaseCms({
+                            ...showcaseCms,
+                            metrics: { ...showcaseCms.metrics, satisfactionSubtext: e.target.value }
+                          })}
+                          className="w-full px-2.5 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-[11px] text-slate-400 focus:border-[#00A0DF]"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* SUB-VIEW 2: PAKISTANI ENROLLMENTS MANAGER */}
+            {/* ========================================================================= */}
+            {showcaseSubView === 'enrollments' && (
+              <div className="space-y-4">
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Users size={16} className="text-[#00A0DF]" />
+                      <span>Pakistani Admissions ({showcaseCms.enrollments.length} Students)</span>
+                    </h3>
+                    <p className="text-xs text-slate-400">Edit every individual Pakistani student record shown in the proof table</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newEnrollment: ShowcaseEnrollment = {
+                          id: `ENR-PK-${Math.floor(1000 + Math.random() * 9000)}`,
+                          trackingCode: `TRK-${Math.floor(10000 + Math.random() * 90000)}`,
+                          name: 'Zubair Tariq',
+                          email: 'zubair.tariq.ecom@gmail.com',
+                          phone: '+92 301 5592810',
+                          city: 'Lahore',
+                          paymentMethod: 'JazzCash',
+                          transactionId: `JC${Math.floor(1000000000 + Math.random() * 9000000000)}`,
+                          amount: 'PKR 3,799',
+                          status: 'approved',
+                          relativeTime: 'Just now',
+                          courseTier: 'VIP Ecom Mentorship + GCC Scaling'
+                        };
+                        setShowcaseCms({
+                          ...showcaseCms,
+                          enrollments: [newEnrollment, ...showcaseCms.enrollments]
+                        });
+                      }}
+                      className="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/30 active:scale-95 transition-all"
+                    >
+                      <Plus size={14} />
+                      <span>Add Student</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Enrollments Editor List */}
+                <div className="space-y-3">
+                  {showcaseCms.enrollments.map((enr, idx) => (
+                    <div
+                      key={enr.id || idx}
+                      className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl space-y-3"
+                    >
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                        <span className="text-xs font-bold text-[#00A0DF] flex items-center gap-1.5">
+                          <span>#{idx + 1} &bull;</span>
+                          <span className="font-mono text-white">{enr.name || 'Student'}</span>
+                          <span className="text-slate-400 font-normal">({enr.city})</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!confirm(`Delete student record "${enr.name}"?`)) return;
+                            setShowcaseCms({
+                              ...showcaseCms,
+                              enrollments: showcaseCms.enrollments.filter((_, i) => i !== idx)
+                            });
+                          }}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 text-xs flex items-center gap-1 transition-colors"
+                          title="Delete this enrollment"
+                        >
+                          <Trash2 size={13} />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Student Full Name</label>
+                          <input
+                            type="text"
+                            value={enr.name}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], name: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Pakistani City</label>
+                          <input
+                            type="text"
+                            value={enr.city}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], city: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">WhatsApp Mobile (+92...)</label>
+                          <input
+                            type="text"
+                            value={enr.phone}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], phone: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-mono text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Email Address</label>
+                          <input
+                            type="text"
+                            value={enr.email}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], email: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Course Tier</label>
+                          <input
+                            type="text"
+                            value={enr.courseTier}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], courseTier: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Payment Method</label>
+                          <input
+                            type="text"
+                            value={enr.paymentMethod}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], paymentMethod: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Fee Amount</label>
+                          <input
+                            type="text"
+                            value={enr.amount}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], amount: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-mono font-bold text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Relative Timestamp</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 18 mins ago"
+                            value={enr.relativeTime}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.enrollments];
+                              updated[idx] = { ...updated[idx], relativeTime: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, enrollments: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:border-[#00A0DF]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* ========================================================================= */}
+            {/* SUB-VIEW 3: 5-STAR REVIEWS & SCALING STORIES MANAGER */}
+            {/* ========================================================================= */}
+            {showcaseSubView === 'reviews' && (
+              <div className="space-y-4">
+                <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <Star size={16} className="text-amber-400 fill-amber-400" />
+                      <span>5-Star Testimonials ({showcaseCms.reviews.length} Stories)</span>
+                    </h3>
+                    <p className="text-xs text-slate-400">Edit every 5-star review, scaling revenue badge, headline, and feedback text</p>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const newReview: ShowcaseReview = {
+                          id: `REV-PK-${Date.now().toString().slice(-4)}`,
+                          studentName: 'Kamran Akram',
+                          city: 'Lahore',
+                          rating: 5,
+                          relativeTime: '2 hours ago',
+                          course: 'VIP Mentorship + GCC Scaling',
+                          storeRevenue: 'PKR 350,000 / month',
+                          headline: 'Sami bhai ki guidance ne pehle month profitable kardiya!',
+                          reviewText: 'MashaAllah Sardar Samiullah bhai ne jo ad scaling formula sikhaya hai, us se mere daily 35+ orders successfully deliver ho rahe hain.',
+                          tag: 'Verified Scaling Student'
+                        };
+                        setShowcaseCms({
+                          ...showcaseCms,
+                          reviews: [newReview, ...showcaseCms.reviews]
+                        });
+                      }}
+                      className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-450 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+                    >
+                      <Plus size={14} />
+                      <span>Add Testimonial</span>
+                    </button>
+                  </div>
+                </div>
+
+                {/* Reviews Editor List */}
+                <div className="space-y-4">
+                  {showcaseCms.reviews.map((rev, idx) => (
+                    <div
+                      key={rev.id || idx}
+                      className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-6 shadow-xl space-y-3.5"
+                    >
+                      <div className="flex items-center justify-between border-b border-white/5 pb-2.5">
+                        <span className="text-xs font-bold text-amber-400 flex items-center gap-1.5">
+                          <span>#{idx + 1} &bull;</span>
+                          <span className="text-white font-bold">{rev.studentName}</span>
+                          <span className="text-slate-400 font-normal">({rev.city})</span>
+                        </span>
+
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!confirm(`Delete testimonial from "${rev.studentName}"?`)) return;
+                            setShowcaseCms({
+                              ...showcaseCms,
+                              reviews: showcaseCms.reviews.filter((_, i) => i !== idx)
+                            });
+                          }}
+                          className="p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 text-xs flex items-center gap-1 transition-colors"
+                          title="Delete this review"
+                        >
+                          <Trash2 size={13} />
+                          <span>Remove</span>
+                        </button>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Student Name</label>
+                          <input
+                            type="text"
+                            value={rev.studentName}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], studentName: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">City</label>
+                          <input
+                            type="text"
+                            value={rev.city}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], city: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Rating (1 to 5)</label>
+                          <input
+                            type="number"
+                            min={1}
+                            max={5}
+                            step={0.1}
+                            value={rev.rating}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], rating: parseFloat(e.target.value) || 5 };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-amber-400 font-bold focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Relative Timestamp</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 35 mins ago"
+                            value={rev.relativeTime}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], relativeTime: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Store Monthly Revenue Badge</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. PKR 520,000 / month"
+                            value={rev.storeRevenue || ''}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], storeRevenue: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-bold text-emerald-400 focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Badge Tag</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. Verified Scaling Student"
+                            value={rev.tag}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], tag: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-[#00A0DF] focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2">
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Bold Punchy Headline *</label>
+                          <input
+                            type="text"
+                            value={rev.headline}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], headline: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-bold text-white focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div className="sm:col-span-2 lg:col-span-4">
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Full Testimonial Paragraph *</label>
+                          <textarea
+                            rows={3}
+                            value={rev.reviewText}
+                            onChange={(e) => {
+                              const updated = [...showcaseCms.reviews];
+                              updated[idx] = { ...updated[idx], reviewText: e.target.value };
+                              setShowcaseCms({ ...showcaseCms, reviews: updated });
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-slate-300 leading-relaxed focus:border-[#00A0DF]"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Bottom Save Bar */}
+            <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+              <p className="text-xs text-slate-400">
+                All changes reflect live in your <strong>/admin</strong> dashboard immediately upon saving.
+              </p>
+              <button
+                type="button"
+                onClick={handleSaveShowcase}
+                disabled={savingShowcase}
+                className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-450 hover:to-amber-550 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all disabled:opacity-50"
+              >
+                {savingShowcase ? (
+                  <Loader2 size={15} className="animate-spin" />
+                ) : (
+                  <Save size={15} />
+                )}
+                <span>Save All Proof Hub Changes</span>
+              </button>
             </div>
 
           </div>

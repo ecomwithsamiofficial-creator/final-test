@@ -8,7 +8,7 @@ export const runtime = 'nodejs';
 export const maxDuration = 300;
 
 // Dual-path directory resolver: checks primary web root, falls back to os.tmpdir()
-export function getVideoStorageDir(): string {
+function getVideoStorageDir(): string {
   // Primary: public/uploads/videos
   const primaryDir = path.join(process.cwd(), 'public', 'uploads', 'videos');
   try {

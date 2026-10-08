@@ -44,7 +44,7 @@ import {
   Share2
 } from 'lucide-react';
 import { Enrollment, Student } from '@/utils/db';
-import { SHOWCASE_ENROLLMENTS, SHOWCASE_REVIEWS } from '@/utils/showcaseData';
+import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
 
 function formatWhatsAppPhone(phone: string): string {
   let clean = (phone || '').replace(/[^0-9]/g, '');
@@ -121,7 +121,8 @@ export default function AdminDashboardPage() {
   const [broadcastSubmitting, setBroadcastSubmitting] = useState(false);
   const [broadcastDeletingId, setBroadcastDeletingId] = useState<string | null>(null);
 
-  // Showcase / Video Proof Hub State (50+ Pakistani Enrollments & 5-Star Testimonials)
+  // Showcase / Video Proof Hub State (Dynamic from CMS)
+  const [showcaseCms, setShowcaseCms] = useState<ShowcaseCmsData>(defaultShowcaseCmsData);
   const [showcaseSubTab, setShowcaseSubTab] = useState<'enrollments' | 'reviews'>('enrollments');
   const [showcaseSearch, setShowcaseSearch] = useState('');
   const [showcaseCityFilter, setShowcaseCityFilter] = useState('ALL');
@@ -312,12 +313,25 @@ export default function AdminDashboardPage() {
         } catch (e) {}
       }
 
-      // Fetch Community updates
+      // Fetch Community updates and Showcase CMS data
       fetchAdminCommunityUpdates();
+      fetchShowcaseCms();
     } catch (err) {
       console.error('Fetch dashboard overview error:', err);
     } finally {
       if (!isBg) setLoading(false);
+    }
+  };
+
+  const fetchShowcaseCms = async () => {
+    try {
+      const res = await fetch(`/api/cms/showcase?t=${Date.now()}`);
+      const data = await res.json();
+      if (data.success && data.data) {
+        setShowcaseCms(data.data);
+      }
+    } catch (e) {
+      console.error('Fetch showcase CMS error:', e);
     }
   };
 
@@ -950,7 +964,7 @@ export default function AdminDashboardPage() {
               }`}
             >
               <TrendingUp size={16} />
-              <span>Dashboard Overview</span>
+              <span>{showcaseCms.navLabels?.dashboard || 'Dashboard Overview'}</span>
             </button>
             <Link
               href="/admin/cms"
@@ -958,7 +972,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-2.5">
                 <Sparkles size={16} />
-                <span>Website &amp; LMS CMS</span>
+                <span>{showcaseCms.navLabels?.cms || 'Website & LMS CMS'}</span>
               </div>
               <ArrowRight size={14} />
             </Link>
@@ -970,7 +984,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <CreditCard size={16} />
-                <span>Enrollment Queue</span>
+                <span>{showcaseCms.navLabels?.enrollments || 'Enrollment Queue'}</span>
               </div>
               {stats.pendingApprovals > 0 && (
                 <span className="bg-amber-500 text-slate-950 font-black px-2 py-0.5 rounded-full text-[10px]">
@@ -985,7 +999,7 @@ export default function AdminDashboardPage() {
               }`}
             >
               <Users size={16} />
-              <span>Students Directory</span>
+              <span>{showcaseCms.navLabels?.students || 'Students Directory'}</span>
             </button>
             <button
               onClick={() => { setActiveTab('community'); setMobileMenuOpen(false); }}
@@ -995,7 +1009,7 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <Radio size={16} className={adminUpdates.length > 0 ? 'text-amber-400' : ''} />
-                <span>Community Broadcast</span>
+                <span>{showcaseCms.navLabels?.community || 'Community Broadcast'}</span>
               </div>
               {adminUpdates.length > 0 && (
                 <span className="bg-emerald-500/20 text-emerald-400 font-bold px-2 py-0.5 rounded-full text-[10px] border border-emerald-500/30">
@@ -1011,12 +1025,12 @@ export default function AdminDashboardPage() {
             >
               <div className="flex items-center gap-3">
                 <Star size={16} className={activeTab === 'showcase' ? 'text-slate-950 fill-slate-950' : 'text-amber-400 fill-amber-400'} />
-                <span>Proof &amp; Reviews Hub</span>
+                <span>{showcaseCms.navLabels?.showcase || 'Proof & Reviews Hub'}</span>
               </div>
               <span className={`text-[10px] font-black uppercase px-2 py-0.5 rounded-full ${
                 activeTab === 'showcase' ? 'bg-slate-950 text-amber-400' : 'bg-amber-500/20 text-amber-300 border border-amber-500/30'
               }`}>
-                50+ Pro
+                {(showcaseCms.enrollments || []).length > 0 ? `${(showcaseCms.enrollments || []).length}+ Pro` : '50+ Pro'}
               </span>
             </button>
           </nav>
@@ -1111,19 +1125,19 @@ export default function AdminDashboardPage() {
           <div className="md:hidden flex items-center gap-2 overflow-x-auto no-scrollbar py-1 text-xs font-bold border-b border-white/10 pb-3">
             <button
               onClick={() => setActiveTab('overview')}
-              className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
                 activeTab === 'overview' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30 font-black' : 'bg-[#111827] text-slate-400'
               }`}
             >
-              Overview
+              {showcaseCms.navLabels?.dashboard || 'Overview'}
             </button>
             <button
               onClick={() => setActiveTab('enrollments')}
-              className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap flex items-center gap-1.5 transition-colors ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap flex items-center gap-1.5 transition-colors ${
                 activeTab === 'enrollments' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30 font-black' : 'bg-[#111827] text-slate-400'
               }`}
             >
-              <span>Queue</span>
+              <span>{showcaseCms.navLabels?.enrollments || 'Queue'}</span>
               {stats.pendingApprovals > 0 && (
                 <span className="bg-amber-400 text-slate-950 font-black px-1.5 py-0.2 rounded-full text-[9px]">
                   {stats.pendingApprovals}
@@ -1132,18 +1146,34 @@ export default function AdminDashboardPage() {
             </button>
             <button
               onClick={() => setActiveTab('students')}
-              className={`px-3.5 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
                 activeTab === 'students' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30 font-black' : 'bg-[#111827] text-slate-400'
               }`}
             >
-              Students ({students.length})
+              {showcaseCms.navLabels?.students || 'Students'} ({students.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('community')}
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
+                activeTab === 'community' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/30 font-black' : 'bg-[#111827] text-slate-400'
+              }`}
+            >
+              {showcaseCms.navLabels?.community || 'Community'}
+            </button>
+            <button
+              onClick={() => setActiveTab('showcase')}
+              className={`px-3 py-1.5 rounded-xl whitespace-nowrap transition-colors ${
+                activeTab === 'showcase' ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/30 font-black' : 'bg-[#111827] text-amber-400'
+              }`}
+            >
+              {showcaseCms.navLabels?.showcase || 'Proof Hub'}
             </button>
             <Link
               href="/admin/cms"
-              className="px-3.5 py-1.5 rounded-xl whitespace-nowrap bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 flex items-center gap-1"
+              className="px-3 py-1.5 rounded-xl whitespace-nowrap bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 flex items-center gap-1"
             >
               <Sparkles size={12} />
-              <span>CMS</span>
+              <span>{showcaseCms.navLabels?.cms || 'CMS'}</span>
             </Link>
           </div>
 
@@ -2158,20 +2188,27 @@ export default function AdminDashboardPage() {
 
                 <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
                   <div>
-                    <div className="flex items-center gap-2 mb-1.5">
+                    <div className="flex items-center gap-2 mb-1.5 flex-wrap">
                       <span className="bg-amber-500/20 text-amber-300 border border-amber-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
                         <Star size={11} className="fill-amber-400" />
-                        Live Proof Engine
+                        {showcaseCms.hero?.badge || 'Live Proof Engine'}
                       </span>
                       <span className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-                        Video Demonstration Mode
+                        {showcaseCms.hero?.subBadge || 'Video Demonstration Mode'}
                       </span>
+                      <Link
+                        href="/admin/cms"
+                        className="bg-[#00A0DF]/20 hover:bg-[#00A0DF]/30 text-[#00A0DF] border border-[#00A0DF]/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1 transition-colors"
+                      >
+                        <Settings size={10} />
+                        CMS Editor (Tab 23)
+                      </Link>
                     </div>
                     <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white">
-                      Verified Enrollments &amp; 5-Star Testimonials
+                      {showcaseCms.hero?.title || 'Verified Enrollments & 5-Star Testimonials'}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                      Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Sardar Samiullah's Scaling Formula. Ideal for screen recordings &amp; testimonial videos.
+                      {showcaseCms.hero?.description || "Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Sardar Samiullah's Scaling Formula. Ideal for screen recordings & testimonial videos."}
                     </p>
                   </div>
 
@@ -2186,7 +2223,7 @@ export default function AdminDashboardPage() {
                       }`}
                     >
                       <CreditCard size={14} />
-                      <span>Enrollments ({SHOWCASE_ENROLLMENTS.length})</span>
+                      <span>{showcaseCms.hero?.enrollmentsTabLabel || 'Enrollments'} ({(showcaseCms.enrollments || []).length})</span>
                     </button>
                     <button
                       onClick={() => setShowcaseSubTab('reviews')}
@@ -2197,7 +2234,7 @@ export default function AdminDashboardPage() {
                       }`}
                     >
                       <Star size={14} className={showcaseSubTab === 'reviews' ? 'fill-slate-950' : 'fill-amber-400'} />
-                      <span>5-Star Reviews ({SHOWCASE_REVIEWS.length})</span>
+                      <span>{showcaseCms.hero?.reviewsTabLabel || '5-Star Reviews'} ({(showcaseCms.reviews || []).length})</span>
                     </button>
                   </div>
                 </div>
@@ -2210,12 +2247,16 @@ export default function AdminDashboardPage() {
                     Verified Students
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
-                    <span>50+</span>
-                    <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">
-                      +12 Today
-                    </span>
+                    <span>{showcaseCms.metrics?.studentsCount || '50+'}</span>
+                    {showcaseCms.metrics?.studentsTag && (
+                      <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">
+                        {showcaseCms.metrics.studentsTag}
+                      </span>
+                    )}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">100% Active in LMS</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    {showcaseCms.metrics?.studentsSubtext || '100% Active in LMS'}
+                  </div>
                 </div>
 
                 <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -2223,10 +2264,12 @@ export default function AdminDashboardPage() {
                     Approval Ratio
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-emerald-400 flex items-center gap-1">
-                    <span>100%</span>
+                    <span>{showcaseCms.metrics?.approvalRatio || '100%'}</span>
                     <CheckCircle2 size={16} />
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">Verified Payment Slips</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    {showcaseCms.metrics?.approvalSubtext || 'Verified Payment Slips'}
+                  </div>
                 </div>
 
                 <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -2234,9 +2277,11 @@ export default function AdminDashboardPage() {
                     Mentorship Proof Volume
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-[#00A0DF]">
-                    PKR 3,840,000+
+                    {showcaseCms.metrics?.revenueVolume || 'PKR 3,840,000+'}
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">Total Mentorship Volume</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    {showcaseCms.metrics?.revenueSubtext || 'Total Mentorship Volume'}
+                  </div>
                 </div>
 
                 <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
@@ -2244,12 +2289,14 @@ export default function AdminDashboardPage() {
                     Student Satisfaction
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-amber-400 flex items-center gap-1.5">
-                    <span>5.0</span>
+                    <span>{showcaseCms.metrics?.satisfactionRating || '5.0'}</span>
                     <div className="flex text-amber-400">
-                      {'★'.repeat(5)}
+                      {'★'.repeat(Math.min(5, Math.max(1, Math.round(parseFloat(showcaseCms.metrics?.satisfactionRating || '5')))))}
                     </div>
                   </div>
-                  <div className="text-[11px] text-slate-400 mt-1">50+ Verified Ratings</div>
+                  <div className="text-[11px] text-slate-400 mt-1">
+                    {showcaseCms.metrics?.satisfactionSubtext || '50+ Verified Ratings'}
+                  </div>
                 </div>
               </div>
 
@@ -2262,7 +2309,7 @@ export default function AdminDashboardPage() {
                     <div>
                       <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
                         <Users size={16} className="text-[#00A0DF]" />
-                        <span>Verified Admissions Stream ({SHOWCASE_ENROLLMENTS.length} Students)</span>
+                        <span>Verified Admissions Stream ({(showcaseCms.enrollments || []).length} Students)</span>
                       </h3>
                       <p className="text-[11px] text-slate-400">Real-time incoming student registrations from all major Pakistani cities</p>
                     </div>
@@ -2286,16 +2333,10 @@ export default function AdminDashboardPage() {
                         onChange={(e) => setShowcaseCityFilter(e.target.value)}
                         className="px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
                       >
-                        <option value="ALL">All Cities ({SHOWCASE_ENROLLMENTS.length})</option>
-                        <option value="Lahore">Lahore</option>
-                        <option value="Karachi">Karachi</option>
-                        <option value="Islamabad">Islamabad</option>
-                        <option value="Rawalpindi">Rawalpindi</option>
-                        <option value="Faisalabad">Faisalabad</option>
-                        <option value="Multan">Multan</option>
-                        <option value="Gujranwala">Gujranwala</option>
-                        <option value="Sialkot">Sialkot</option>
-                        <option value="Peshawar">Peshawar</option>
+                        <option value="ALL">All Cities ({(showcaseCms.enrollments || []).length})</option>
+                        {Array.from(new Set((showcaseCms.enrollments || []).map((e) => e.city))).filter(Boolean).map((city) => (
+                          <option key={city} value={city}>{city}</option>
+                        ))}
                       </select>
                     </div>
                   </div>
@@ -2315,14 +2356,14 @@ export default function AdminDashboardPage() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-white/5">
-                        {SHOWCASE_ENROLLMENTS
+                        {(showcaseCms.enrollments || [])
                           .filter((item) => {
                             const q = showcaseSearch.toLowerCase();
                             const matchSearch =
-                              item.name.toLowerCase().includes(q) ||
-                              item.city.toLowerCase().includes(q) ||
-                              item.email.toLowerCase().includes(q) ||
-                              item.phone.includes(q);
+                              (item.name || '').toLowerCase().includes(q) ||
+                              (item.city || '').toLowerCase().includes(q) ||
+                              (item.email || '').toLowerCase().includes(q) ||
+                              (item.phone || '').includes(q);
                             const matchCity = showcaseCityFilter === 'ALL' || item.city === showcaseCityFilter;
                             return matchSearch && matchCity;
                           })
@@ -2394,7 +2435,7 @@ export default function AdminDashboardPage() {
                     <div>
                       <h3 className="text-sm font-bold text-white flex items-center gap-2">
                         <Star size={16} className="text-amber-400 fill-amber-400" />
-                        <span>Verified Student Reviews ({SHOWCASE_REVIEWS.length})</span>
+                        <span>Verified Student Reviews ({(showcaseCms.reviews || []).length})</span>
                       </h3>
                       <p className="text-[11px] text-slate-400">Authentic feedback on Sardar Samiullah's Mentorship, Ad strategies &amp; GCC Scaling</p>
                     </div>
@@ -2413,14 +2454,14 @@ export default function AdminDashboardPage() {
 
                   {/* Reviews Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {SHOWCASE_REVIEWS
+                    {(showcaseCms.reviews || [])
                       .filter((rev) => {
                         const q = showcaseSearch.toLowerCase();
                         return (
-                          rev.studentName.toLowerCase().includes(q) ||
-                          rev.city.toLowerCase().includes(q) ||
-                          rev.headline.toLowerCase().includes(q) ||
-                          rev.reviewText.toLowerCase().includes(q) ||
+                          (rev.studentName || '').toLowerCase().includes(q) ||
+                          (rev.city || '').toLowerCase().includes(q) ||
+                          (rev.headline || '').toLowerCase().includes(q) ||
+                          (rev.reviewText || '').toLowerCase().includes(q) ||
                           (rev.storeRevenue && rev.storeRevenue.toLowerCase().includes(q))
                         );
                       })
