@@ -112,13 +112,10 @@ export default async function RootLayout({
     <html lang="en" data-theme={activeTheme} className="scroll-smooth">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
-        {/* Fast Video & CDN Preconnect (Instant loading like LearnWithAfaq) */}
-        <link rel="preconnect" href="https://www.youtube.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="anonymous" />
-        <link rel="preconnect" href="https://www.google.com" crossOrigin="anonymous" />
+        {/* Mobile-Optimized Fast DNS Prefetch */}
         <link rel="dns-prefetch" href="https://www.youtube.com" />
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
-        <link rel="dns-prefetch" href="https://www.google.com" />
+        <link rel="dns-prefetch" href="https://www.googletagmanager.com" />
         {/* Immediate Browser Tab Favicon Invalidation (Cache Busting) */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026" />
@@ -142,10 +139,6 @@ export default async function RootLayout({
             `,
           }}
         />
-        <link rel="preconnect" href="https://img.youtube.com" crossOrigin="anonymous" />
-        <link rel="dns-prefetch" href="https://img.youtube.com" />
-        <link rel="preconnect" href="https://www.youtube.com" />
-        <link rel="dns-prefetch" href="https://www.youtube.com" />
         <style id="sami-dynamic-theme" dangerouslySetInnerHTML={{ __html: dynamicCss }} />
         <script
           dangerouslySetInnerHTML={{
