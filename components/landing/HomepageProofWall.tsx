@@ -113,7 +113,7 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
                 <img
                   src={finalUrl}
                   alt={`Student Result ${idx + 1}`}
-                  loading="lazy"
+                  loading={isInitial ? 'eager' : 'lazy'}
                   decoding="async"
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;

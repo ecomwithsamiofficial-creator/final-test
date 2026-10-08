@@ -153,7 +153,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
@@ -196,7 +196,7 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="lazy"
+                        loading="eager"
                         decoding="async"
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;

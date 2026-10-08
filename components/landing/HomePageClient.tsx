@@ -8,18 +8,13 @@ import {
   Footer, 
   TopMarquee 
 } from '@/components/layout';
-import dynamic from 'next/dynamic';
 import { 
   BonusStack, 
   CountdownTimer, 
   CurriculumAccordion, 
-  HomepageProofWall 
+  HomepageProofWall, 
+  VideoModal 
 } from '@/components/landing';
-
-const VideoModal = dynamic(
-  () => import('@/components/landing/VideoModal').then((mod) => mod.VideoModal),
-  { ssr: false }
-);
 import { 
   Play, 
   ArrowRight, 
