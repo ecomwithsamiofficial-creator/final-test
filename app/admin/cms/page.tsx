@@ -42,7 +42,8 @@ import {
   Star,
   X,
   Zap,
-  Users
+  Users,
+  Image as ImageIcon
 } from 'lucide-react';
 import { 
   defaultCmsContent, 
@@ -159,6 +160,12 @@ export default function AdminCmsPage() {
   const [heroUploadSuccess, setHeroUploadSuccess] = useState(false);
   const heroUploadXhrRef = useRef<XMLHttpRequest | null>(null);
   const heroFileInputRef = useRef<HTMLInputElement>(null);
+
+  // Hero Video Thumbnail Poster States
+  const [heroThumbnailUploading, setHeroThumbnailUploading] = useState(false);
+  const [heroThumbnailStatus, setHeroThumbnailStatus] = useState('');
+  const [heroThumbnailError, setHeroThumbnailError] = useState('');
+  const heroThumbnailInputRef = useRef<HTMLInputElement>(null);
 
   // New Supplier form state
   const [showAddSupplierModal, setShowAddSupplierModal] = useState(false);
@@ -1379,6 +1386,48 @@ export default function AdminCmsPage() {
       setHomeProofUploading(false);
       if (homeProofFileInputRef.current) {
         homeProofFileInputRef.current.value = '';
+      }
+    }
+  };
+
+  const handleHeroThumbnailUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setHeroThumbnailUploading(true);
+    setHeroThumbnailStatus('Uploading thumbnail poster...');
+    setHeroThumbnailError('');
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/admin/cms/upload-review-image', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      if (!res.ok || !data.success || !data.url) {
+        throw new Error(data.message || 'Failed to upload thumbnail image');
+      }
+
+      setCmsData(prev => ({
+        ...prev,
+        hero: {
+          ...prev.hero,
+          video_thumbnail: data.url
+        }
+      }));
+
+      setHeroThumbnailStatus('✅ Thumbnail poster uploaded successfully!');
+      setTimeout(() => setHeroThumbnailStatus(''), 4000);
+    } catch (err: any) {
+      setHeroThumbnailError(err.message || 'Failed to upload thumbnail');
+    } finally {
+      setHeroThumbnailUploading(false);
+      if (heroThumbnailInputRef.current) {
+        heroThumbnailInputRef.current.value = '';
       }
     }
   };
@@ -3245,6 +3294,92 @@ export default function AdminCmsPage() {
                       className="w-full px-3 py-2 rounded-xl bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
                     />
                   </div>
+                </div>
+
+                {/* Video Thumbnail (Poster) Configuration */}
+                <div className="p-3.5 rounded-xl bg-[#111827] border border-white/5 space-y-2.5">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                      <label className="block text-xs font-bold text-white flex items-center gap-1.5">
+                        <ImageIcon size={14} className="text-[#00A0DF]" />
+                        <span>Video Poster / Thumbnail Image</span>
+                      </label>
+                      <p className="text-[11px] text-slate-400">
+                        Upload a custom thumbnail image or leave empty to automatically fetch HD thumbnail from YouTube.
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="file"
+                        ref={heroThumbnailInputRef}
+                        onChange={handleHeroThumbnailUpload}
+                        accept="image/*"
+                        className="hidden"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => heroThumbnailInputRef.current?.click()}
+                        disabled={heroThumbnailUploading}
+                        className="px-3 py-1.5 rounded-lg bg-[#00A0DF]/10 hover:bg-[#00A0DF]/20 border border-[#00A0DF]/30 text-xs font-bold text-[#00A0DF] transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                      >
+                        <UploadCloud size={13} />
+                        <span>{heroThumbnailUploading ? 'Uploading...' : 'Upload Image'}</span>
+                      </button>
+                      {cmsData.hero?.video_thumbnail && (
+                        <button
+                          type="button"
+                          onClick={() => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_thumbnail: '' } })}
+                          className="px-2.5 py-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 text-xs font-bold text-red-400 transition-all cursor-pointer"
+                          title="Reset to Auto YouTube Thumbnail"
+                        >
+                          Clear
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  <input
+                    type="text"
+                    value={cmsData.hero?.video_thumbnail ?? ''}
+                    onChange={(e) => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_thumbnail: e.target.value } })}
+                    placeholder="e.g. /uploads/reviews/... or custom image URL (Leave blank for auto YouTube HD thumbnail)"
+                    className="w-full px-3 py-2 rounded-xl bg-[#0d121f] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
+                  />
+
+                  {heroThumbnailStatus && (
+                    <p className="text-xs text-emerald-400 font-medium">{heroThumbnailStatus}</p>
+                  )}
+                  {heroThumbnailError && (
+                    <p className="text-xs text-rose-400 font-medium">{heroThumbnailError}</p>
+                  )}
+
+                  {/* Thumbnail Status Indicator */}
+                  {(() => {
+                    const customThumb = cmsData.hero?.video_thumbnail?.trim();
+                    const vUrl = cmsData.hero?.video_url?.trim() || '';
+                    const ytMatch = vUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                    const ytId = ytMatch ? ytMatch[1] : null;
+
+                    if (customThumb) {
+                      return (
+                        <div className="flex items-center gap-2 pt-1 text-[11px] text-emerald-400 font-semibold">
+                          <CheckCircle2 size={13} />
+                          <span>Using Custom Uploaded Thumbnail Poster:</span>
+                          <span className="font-mono text-slate-300 truncate max-w-[200px]">{customThumb}</span>
+                        </div>
+                      );
+                    }
+                    if (ytId) {
+                      return (
+                        <div className="flex items-center gap-2 pt-1 text-[11px] text-[#00A0DF] font-semibold">
+                          <CheckCircle2 size={13} />
+                          <span>Auto-Fetching HD Thumbnail from YouTube CDN:</span>
+                          <span className="font-mono text-slate-300">maxresdefault.jpg</span>
+                        </div>
+                      );
+                    }
+                    return null;
+                  })()}
                 </div>
 
                 {/* Live In-CMS Video Preview Player */}

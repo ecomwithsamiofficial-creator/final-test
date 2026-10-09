@@ -227,9 +227,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [content, setContent] = useState<CmsContentSchema>(initialContent || defaultCmsContent);
   const [isReviewTouchPaused, setIsReviewTouchPaused] = useState(false);
 
-  // Hero Autoplay Video & Sound States (LearnWithAfaq Style)
-  const [isHeroMuted, setIsHeroMuted] = useState(true);
-  const [isHeroPlaying, setIsHeroPlaying] = useState(true);
+  // Hero Video & Poster States
+  const [isHeroMuted, setIsHeroMuted] = useState(false);
+  const [isHeroPlaying, setIsHeroPlaying] = useState(false);
+  const [hasUserStartedHero, setHasUserStartedHero] = useState(false);
+  const [heroThumbnailSrc, setHeroThumbnailSrc] = useState<string>('');
   const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
@@ -310,15 +312,16 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     setIsVideoOpen(true);
   };
 
-  const handleHeroUnmute = (e?: React.SyntheticEvent) => {
+  const startHeroPlayback = (e?: React.SyntheticEvent) => {
     if (e) {
       e.stopPropagation();
       const now = Date.now();
       if (now - lastTouchTimeRef.current < 400) return;
       lastTouchTimeRef.current = now;
     }
-    setIsHeroMuted(false);
+    setHasUserStartedHero(true);
     setIsHeroPlaying(true);
+    setIsHeroMuted(false);
     if (isDirectVideo && heroVideoRef.current) {
       heroVideoRef.current.muted = false;
       heroVideoRef.current.volume = 1;
@@ -355,6 +358,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   };
 
   const toggleHeroPlay = (e?: React.SyntheticEvent) => {
+    if (!hasUserStartedHero) {
+      startHeroPlayback(e);
+      return;
+    }
     if (e) {
       e.stopPropagation();
       const now = Date.now();
@@ -519,21 +526,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return match && match[1] ? match[1] : 'dQw4w9WgXcQ';
   };
 
-  // Force immediate autoplay on mount for direct videos across all devices (Safari, Chrome, Android, iOS)
+  const heroVideoId = getYouTubeId(hero.video_url);
+
+  // Synchronize high-res video poster thumbnail
   useEffect(() => {
-    if (isDirectVideo && heroVideoRef.current) {
-      heroVideoRef.current.defaultMuted = true;
-      heroVideoRef.current.muted = true;
-      const playPromise = heroVideoRef.current.play();
-      if (playPromise !== undefined) {
-        playPromise
-          .then(() => {
-            setIsHeroPlaying(true);
-          })
-          .catch(() => {});
-      }
+    if (hero.video_thumbnail?.trim()) {
+      setHeroThumbnailSrc(hero.video_thumbnail.trim());
+    } else if (isYouTubeVideo && heroVideoId) {
+      setHeroThumbnailSrc(`https://i.ytimg.com/vi/${heroVideoId}/maxresdefault.jpg`);
+    } else {
+      setHeroThumbnailSrc('');
     }
-  }, [isDirectVideo, cleanHeroVideoUrl]);
+  }, [hero.video_thumbnail, isYouTubeVideo, heroVideoId]);
 
   // Derive duration from video header text if available (e.g. "Watch this 128 seconds...")
   useEffect(() => {
@@ -570,16 +574,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  const getYouTubeEmbedUrl = (url: string) => {
+  const getYouTubeEmbedUrl = (url: string, autoPlayOnStart = false) => {
     const vId = getYouTubeId(url);
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+    const ap = autoPlayOnStart ? '1' : '0';
+    return `https://www.youtube.com/embed/${vId}?autoplay=${ap}&mute=0&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
-  const getBunnyEmbedUrl = (url: string) => {
+  const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
     const clean = getCleanVideoUrl(url) || url;
     const base = clean.split('?')[0];
-    return `${base}?autoplay=true&loop=true&muted=true&preload=true&responsive=true`;
+    const ap = autoPlayOnStart ? 'true' : 'false';
+    return `${base}?autoplay=${ap}&loop=true&muted=false&preload=true&responsive=true`;
   };
 
   const videoReviews = [
@@ -793,8 +799,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                 <div 
                   onClick={(e) => {
                     if (e.target === e.currentTarget) {
-                      if (isHeroMuted) {
-                        handleHeroUnmute(e);
+                      if (!hasUserStartedHero) {
+                        startHeroPlayback(e);
                       } else {
                         toggleHeroPlay(e);
                       }
@@ -804,222 +810,224 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   onMouseEnter={() => setIsHeroControlsHovered(true)}
                   onMouseLeave={() => setIsHeroControlsHovered(false)}
                 >
-                  {/* Embedded / HTML5 Autoplaying Video */}
-                  {isDirectVideo ? (
-                    <video
-                      ref={heroVideoRef}
-                      src={hero.video_url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
-                      autoPlay
-                      muted={isHeroMuted}
-                      loop
-                      playsInline
-                      preload="auto"
-                      onLoadedMetadata={() => {
-                        setIsHeroPlaying(true);
-                        heroVideoRef.current?.play().catch(() => {});
-                      }}
-                      onLoadedData={() => {
-                        setIsHeroPlaying(true);
-                        heroVideoRef.current?.play().catch(() => {});
-                      }}
-                      onCanPlay={() => {
-                        setIsHeroPlaying(true);
-                        heroVideoRef.current?.play().catch(() => {});
-                      }}
-                      onPlay={() => {
-                        setIsHeroPlaying(true);
-                      }}
-                      onTimeUpdate={() => {
-                        if (heroVideoRef.current) {
-                          setHeroCurrentTime(Math.floor(heroVideoRef.current.currentTime));
-                          if (heroVideoRef.current.duration) {
-                            setHeroDuration(Math.floor(heroVideoRef.current.duration));
+                  {/* Video Playback (Mounted & streamed only when user clicks play) */}
+                  {hasUserStartedHero && (
+                    isDirectVideo ? (
+                      <video
+                        ref={heroVideoRef}
+                        src={hero.video_url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
+                        autoPlay
+                        muted={isHeroMuted}
+                        loop
+                        playsInline
+                        preload="auto"
+                        onLoadedMetadata={() => {
+                          setIsHeroPlaying(true);
+                          heroVideoRef.current?.play().catch(() => {});
+                        }}
+                        onPlay={() => setIsHeroPlaying(true)}
+                        onPause={() => setIsHeroPlaying(false)}
+                        onTimeUpdate={() => {
+                          if (heroVideoRef.current) {
+                            setHeroCurrentTime(Math.floor(heroVideoRef.current.currentTime));
+                            if (heroVideoRef.current.duration) {
+                              setHeroDuration(Math.floor(heroVideoRef.current.duration));
+                            }
                           }
-                        }
-                      }}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : isYouTubeVideo ? (
-                    <div className="absolute inset-0 pointer-events-none select-none">
-                      <iframe
-                        ref={heroIframeRef}
-                        src={getYouTubeEmbedUrl(hero.video_url)}
-                        title="Hero Overview Video"
-                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                        tabIndex={-1}
-                        className="w-full h-full pointer-events-none select-none border-0"
+                        }}
+                        className="w-full h-full object-cover"
                       />
-                    </div>
-                  ) : (
-                    <div className="absolute inset-0 pointer-events-none select-none">
-                      <iframe
-                        ref={heroIframeRef}
-                        src={getBunnyEmbedUrl(hero.video_url)}
-                        title="Hero Overview Video"
-                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                        allowFullScreen
-                        tabIndex={-1}
-                        className="w-full h-full pointer-events-none select-none border-0"
-                      />
-                    </div>
+                    ) : isYouTubeVideo ? (
+                      <div className="absolute inset-0 pointer-events-none select-none">
+                        <iframe
+                          ref={heroIframeRef}
+                          src={getYouTubeEmbedUrl(hero.video_url, true)}
+                          title="Hero Overview Video"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          tabIndex={-1}
+                          className="w-full h-full pointer-events-none select-none border-0"
+                        />
+                      </div>
+                    ) : (
+                      <div className="absolute inset-0 pointer-events-none select-none">
+                        <iframe
+                          ref={heroIframeRef}
+                          src={getBunnyEmbedUrl(hero.video_url, true)}
+                          title="Hero Overview Video"
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          allowFullScreen
+                          tabIndex={-1}
+                          className="w-full h-full pointer-events-none select-none border-0"
+                        />
+                      </div>
+                    )
                   )}
 
                   {/* Transparent Click Shield (Physically intercepts all taps and prevents YouTube redirect) */}
                   <div
                     onClick={(e) => {
                       e.stopPropagation();
-                      if (isHeroMuted) {
-                        handleHeroUnmute(e);
+                      if (!hasUserStartedHero) {
+                        startHeroPlayback(e);
                       } else {
                         toggleHeroPlay(e);
                       }
                     }}
                     style={{ touchAction: 'manipulation' }}
                     className="absolute inset-0 z-10 cursor-pointer"
-                    title={isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
+                    title={!hasUserStartedHero ? 'Click to Play' : isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
                   />
 
-                  {/* High-Converting Afaq/VSL Animated "Click To Unmute / Tap For Sound" Center Overlay */}
-                  {isHeroMuted && (
-                    <button 
+                  {/* Initial High-Res Poster Thumbnail with Custom Glowing Play Button (Before playback starts) */}
+                  {!hasUserStartedHero && (
+                    <button
                       type="button"
-                      aria-label="Click to unmute video"
-                      onClick={handleHeroUnmute}
+                      aria-label="Play overview video"
+                      onClick={startHeroPlayback}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/35 backdrop-blur-[2px] cursor-pointer p-3 transition-opacity duration-300 border-none outline-none select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center cursor-pointer p-0 border-none outline-none select-none group/poster overflow-hidden"
                     >
-                      <div className="relative bg-slate-950/85 hover:bg-slate-900/95 border-2 border-[#00A0DF]/70 backdrop-blur-md rounded-2xl sm:rounded-3xl p-4 sm:p-6 text-center text-white shadow-[0_0_40px_rgba(0,160,223,0.35)] transition-transform active:scale-95 max-w-[270px] sm:max-w-[310px] group/card pointer-events-none">
-                        
-                        {/* Glowing Outer Ripple Rings */}
-                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 mx-auto mb-2.5 flex items-center justify-center">
-                          <span className="absolute -inset-2 rounded-full bg-[#00A0DF]/30 animate-ping" />
-                          <span className="absolute -inset-1 rounded-full bg-[#00A0DF]/40 animate-pulse" />
-                          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] flex items-center justify-center border border-white/40 shadow-xl group-hover/card:scale-105 transition-transform">
-                            <VolumeX size={26} className="text-white" />
-                          </div>
-                        </div>
+                      {/* Poster Image */}
+                      {heroThumbnailSrc ? (
+                        <img
+                          src={heroThumbnailSrc}
+                          alt={hero.video_title || 'Video overview thumbnail'}
+                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/poster:scale-105"
+                          onError={() => {
+                            if (isYouTubeVideo && heroVideoId && !heroThumbnailSrc.includes('hqdefault')) {
+                              setHeroThumbnailSrc(`https://i.ytimg.com/vi/${heroVideoId}/hqdefault.jpg`);
+                            }
+                          }}
+                        />
+                      ) : (
+                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
+                      )}
 
-                        {/* Animated Equalizer Wave Bars */}
-                        <div className="flex items-end justify-center gap-1.5 h-5 mb-2">
-                          <span className="w-1 bg-[#00A0DF] rounded-full audio-bar-1" />
-                          <span className="w-1 bg-cyan-400 rounded-full audio-bar-2" />
-                          <span className="w-1 bg-white rounded-full audio-bar-3" />
-                          <span className="w-1 bg-[#00A0DF] rounded-full audio-bar-4" />
-                        </div>
+                      {/* Vignette / Dark Ambient Backdrop */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/40 pointer-events-none" />
 
-                        <h4 className="text-xs sm:text-sm font-extrabold text-slate-200 tracking-tight mb-2.5 drop-shadow-sm">
-                          Video Is Playing Muted
-                        </h4>
+                      {/* Concentric Expanding Ripple Waves & Glowing Play Button */}
+                      <div className="relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 pointer-events-none">
+                        <span className="afaq-wave-ring afaq-wave-ring-1" />
+                        <span className="afaq-wave-ring afaq-wave-ring-2" />
+                        <span className="afaq-wave-ring afaq-wave-ring-3" />
 
-                        <div className="inline-flex items-center gap-2 text-xs sm:text-sm font-black text-white bg-gradient-to-r from-[#00A0DF] to-[#008ac2] px-4 py-2 rounded-full shadow-lg shadow-[#00A0DF]/40 uppercase tracking-wider animate-pulse">
-                          <Volume2 size={16} />
-                          <span>Tap For Sound</span>
+                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_0_35px_rgba(0,160,223,0.7)] border-2 border-white/50 group-hover/poster:scale-110 active:scale-95 transition-all duration-300">
+                          <svg
+                            className="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-white pointer-events-none drop-shadow"
+                            viewBox="0 0 24 24"
+                            fill="currentColor"
+                            xmlns="http://www.w3.org/2000/svg"
+                          >
+                            <polygon points="6 4 20 12 6 20 6 4" />
+                          </svg>
                         </div>
+                      </div>
+
+                      {/* Bottom Pill Hint */}
+                      <div className="absolute bottom-3 sm:bottom-4 px-3.5 sm:px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/poster:bg-[#00A0DF]/90 transition-colors pointer-events-none">
+                        <Play size={12} className="fill-white" />
+                        <span>Watch 128s Video</span>
                       </div>
                     </button>
                   )}
 
-                  {/* Paused Center Indicator Overlay (When unmuted but paused) */}
-                  {!isHeroPlaying && !isHeroMuted && (
+                  {/* Paused Center Indicator Overlay (When user has started but paused) */}
+                  {hasUserStartedHero && !isHeroPlaying && (
                     <button
                       type="button"
                       aria-label="Resume video"
                       onClick={toggleHeroPlay}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/40 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/45 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
                     >
-                      <div className="relative flex items-center justify-center w-28 h-28 sm:w-36 sm:h-36">
-                        {/* Concentric Expanding Ripple Waves (LearnWithAfaq Style) */}
+                      <div className="relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32">
+                        {/* Concentric Expanding Ripple Waves */}
                         <span className="afaq-wave-ring afaq-wave-ring-1" />
                         <span className="afaq-wave-ring afaq-wave-ring-2" />
                         <span className="afaq-wave-ring afaq-wave-ring-3" />
 
                         {/* Main Circular Button with Glowing Drop Shadow */}
                         <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_0_30px_rgba(0,160,223,0.6)] border border-white/30 hover:scale-105 active:scale-95 transition-transform duration-200">
-                          {/* Outlined Play Triangle (LearnWithAfaq / Vidalytics Exact Icon) */}
                           <svg
                             className="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-white pointer-events-none"
                             viewBox="0 0 24 24"
-                            fill="none"
+                            fill="currentColor"
                             xmlns="http://www.w3.org/2000/svg"
                           >
-                            <polygon
-                              points="6 4 19 12 6 20 6 4"
-                              stroke="currentColor"
-                              strokeWidth="2.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                            />
+                            <polygon points="6 4 20 12 6 20 6 4" />
                           </svg>
                         </div>
                       </div>
                     </button>
                   )}
 
-                  {/* Bottom Sleek Control Bar (Afaq style - 44px touch targets for mobile) */}
-                  <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/80 via-black/40 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${isHeroMuted && !isHeroControlsHovered ? 'opacity-80' : 'opacity-100'}`}>
-                    <div className="flex items-center gap-1 sm:gap-1.5">
-                      {/* Play / Pause Toggle Button */}
-                      <button
-                        type="button"
-                        onClick={toggleHeroPlay}
-                        style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
-                        title={isHeroPlaying ? 'Pause Video' : 'Play Video'}
+                  {/* Bottom Sleek Control Bar (Active during and after playback) */}
+                  {hasUserStartedHero && (
+                    <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${!isHeroPlaying && !isHeroControlsHovered ? 'opacity-90' : 'opacity-100'}`}>
+                      <div className="flex items-center gap-1 sm:gap-1.5">
+                        {/* Play / Pause Toggle Button */}
+                        <button
+                          type="button"
+                          onClick={toggleHeroPlay}
+                          style={{ touchAction: 'manipulation' }}
+                          className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
+                          title={isHeroPlaying ? 'Pause Video' : 'Play Video'}
+                        >
+                          {isHeroPlaying ? <Pause size={17} /> : <Play size={17} className="fill-white" />}
+                        </button>
+
+                        {/* Mute / Unmute Button */}
+                        <button
+                          type="button"
+                          onClick={toggleHeroMute}
+                          style={{ touchAction: 'manipulation' }}
+                          className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
+                          title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
+                        >
+                          {isHeroMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
+                        </button>
+
+                        <span className="text-[10px] sm:text-xs font-mono font-bold text-white tracking-tight whitespace-nowrap ml-0.5">
+                          {formatHeroTime(heroCurrentTime)} / {formatHeroTime(heroDuration)}
+                        </span>
+                      </div>
+
+                      {/* Interactive Draggable & Tap-to-Seek Timeline */}
+                      <div 
+                        ref={heroTimelineTrackRef}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleTimelineInteraction(e.clientX);
+                        }}
+                        onTouchStart={(e) => {
+                          e.stopPropagation();
+                          if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                        }}
+                        onTouchMove={(e) => {
+                          e.stopPropagation();
+                          if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                        }}
+                        style={{ touchAction: 'none' }}
+                        className="flex-1 ml-2.5 py-3 -my-3 flex items-center cursor-pointer select-none group/timeline relative"
+                        title="Drag or tap to seek"
                       >
-                        {isHeroPlaying ? <Pause size={17} /> : <Play size={17} className="fill-white" />}
-                      </button>
-
-                      {/* Mute / Unmute Button */}
-                      <button
-                        type="button"
-                        onClick={toggleHeroMute}
-                        style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
-                        title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
-                      >
-                        {isHeroMuted ? <VolumeX size={17} /> : <Volume2 size={17} />}
-                      </button>
-
-                      <span className="text-[10px] sm:text-xs font-mono font-bold text-white tracking-tight whitespace-nowrap ml-0.5">
-                        {formatHeroTime(heroCurrentTime)} / {formatHeroTime(heroDuration)}
-                      </span>
-                    </div>
-
-                    {/* Interactive Draggable & Tap-to-Seek Timeline (Hand Drag/Seek on Mobile) */}
-                    <div 
-                      ref={heroTimelineTrackRef}
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTimelineInteraction(e.clientX);
-                      }}
-                      onTouchStart={(e) => {
-                        e.stopPropagation();
-                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
-                      }}
-                      onTouchMove={(e) => {
-                        e.stopPropagation();
-                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
-                      }}
-                      style={{ touchAction: 'none' }}
-                      className="flex-1 ml-2.5 py-3 -my-3 flex items-center cursor-pointer select-none group/timeline relative"
-                      title="Drag or tap to seek"
-                    >
-                      {/* Track Background */}
-                      <div className="w-full bg-white/30 group-hover/timeline:bg-white/40 rounded-full h-1.5 sm:h-2 relative overflow-visible transition-colors">
-                        {/* Progress Fill */}
-                        <div 
-                          className="bg-[#00A0DF] h-full rounded-full transition-[width] duration-75"
-                          style={{ width: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
-                        />
-                        {/* Draggable Glowing Scrubber Thumb */}
-                        <div 
-                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg border-2 border-[#00A0DF] transition-transform active:scale-125 group-hover/timeline:scale-110 pointer-events-none"
-                          style={{ left: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
-                        />
+                        {/* Track Background */}
+                        <div className="w-full bg-white/30 group-hover/timeline:bg-white/40 rounded-full h-1.5 sm:h-2 relative overflow-visible transition-colors">
+                          {/* Progress Fill */}
+                          <div 
+                            className="bg-[#00A0DF] h-full rounded-full transition-[width] duration-75"
+                            style={{ width: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
+                          />
+                          {/* Draggable Glowing Scrubber Thumb */}
+                          <div 
+                            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg border-2 border-[#00A0DF] transition-transform active:scale-125 group-hover/timeline:scale-110 pointer-events-none"
+                            style={{ left: `${Math.min(100, (heroCurrentTime / Math.max(1, heroDuration)) * 100)}%` }}
+                          />
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  )}
 
                 </div>
               </div>
