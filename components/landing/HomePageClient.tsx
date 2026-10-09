@@ -231,6 +231,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroMuted, setIsHeroMuted] = useState(false);
   const [isHeroPlaying, setIsHeroPlaying] = useState(false);
   const [hasUserStartedHero, setHasUserStartedHero] = useState(false);
+  const [isHeroVideoReady, setIsHeroVideoReady] = useState(false);
   const [isYtMaxResFailed, setIsYtMaxResFailed] = useState(false);
   const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
@@ -365,6 +366,19 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     setHasUserStartedHero(true);
     setIsHeroPlaying(true);
     setIsHeroMuted(false);
+    setIsHeroVideoReady(false);
+
+    // Timeout safety fallback: reveal video after max 2.2s if YouTube message is slow
+    setTimeout(() => {
+      setIsHeroVideoReady(true);
+      try {
+        heroIframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+          '*'
+        );
+      } catch (err) {}
+    }, 2200);
+
     if (isDirectVideo && heroVideoRef.current) {
       heroVideoRef.current.muted = false;
       heroVideoRef.current.volume = 1;
@@ -373,15 +387,15 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     if (heroIframeRef.current) {
       try {
         heroIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+          '*'
+        );
+        heroIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
           '*'
         );
         heroIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
           '*'
         );
         heroIframeRef.current.contentWindow?.postMessage(
@@ -562,8 +576,23 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
             setHeroDuration(Math.floor(data.info.duration));
           }
           if (typeof data.info.playerState === 'number') {
-            if (data.info.playerState === 1) setIsHeroPlaying(true);
-            if (data.info.playerState === 2) setIsHeroPlaying(false);
+            if (data.info.playerState === 1) {
+              setIsHeroPlaying(true);
+              setIsHeroVideoReady(true);
+              try {
+                heroIframeRef.current?.contentWindow?.postMessage(
+                  JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+                  '*'
+                );
+                heroIframeRef.current?.contentWindow?.postMessage(
+                  JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+                  '*'
+                );
+              } catch (e) {}
+            }
+            if (data.info.playerState === 2) {
+              setIsHeroPlaying(false);
+            }
           }
         }
       } catch (err) {}
@@ -577,7 +606,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     const vId = getYouTubeId(url);
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
     const ap = autoPlayOnStart ? '1' : '0';
-    return `https://www.youtube.com/embed/${vId}?autoplay=${ap}&mute=0&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?autoplay=${ap}&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
@@ -824,6 +853,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           setIsHeroPlaying(true);
                           heroVideoRef.current?.play().catch(() => {});
                         }}
+                        onPlaying={() => {
+                          setIsHeroPlaying(true);
+                          setIsHeroVideoReady(true);
+                        }}
                         onPlay={() => setIsHeroPlaying(true)}
                         onPause={() => setIsHeroPlaying(false)}
                         onTimeUpdate={() => {
@@ -842,7 +875,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           ref={heroIframeRef}
                           src={getYouTubeEmbedUrl(hero.video_url, true)}
                           title="Hero Overview Video"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
                           className="w-full h-full pointer-events-none select-none border-0"
                         />
@@ -856,6 +889,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                           allowFullScreen
                           tabIndex={-1}
+                          onLoad={() => setIsHeroVideoReady(true)}
                           className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
@@ -863,78 +897,89 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   )}
 
                   {/* Transparent Click Shield (Physically intercepts all taps and prevents YouTube redirect) */}
-                  <div
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (!hasUserStartedHero) {
-                        startHeroPlayback(e);
-                      } else {
+                  {hasUserStartedHero && isHeroVideoReady && (
+                    <div
+                      onClick={(e) => {
+                        e.stopPropagation();
                         toggleHeroPlay(e);
-                      }
-                    }}
-                    style={{ touchAction: 'manipulation' }}
-                    className="absolute inset-0 z-10 cursor-pointer"
-                    title={!hasUserStartedHero ? 'Click to Play' : isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
-                  />
-
-                  {/* Initial High-Res Poster Thumbnail with Custom Glowing Play Button (Before playback starts) */}
-                  {!hasUserStartedHero && (
-                    <button
-                      type="button"
-                      aria-label="Play overview video"
-                      onClick={startHeroPlayback}
+                      }}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center cursor-pointer p-0 border-none outline-none select-none group/poster overflow-hidden"
-                    >
-                      {/* Poster Image */}
-                      {effectiveThumbnail ? (
-                        <img
-                          src={effectiveThumbnail}
-                          alt={hero.video_title || 'Video overview thumbnail'}
-                          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/poster:scale-105"
-                          onError={() => {
-                            if (isYouTubeVideo && !isYtMaxResFailed) {
-                              setIsYtMaxResFailed(true);
-                            }
-                          }}
-                        />
-                      ) : (
-                        <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
-                      )}
-
-                      {/* Light Ambient Backdrop (Leaves thumbnail vibrant & crisp) */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 pointer-events-none" />
-
-                      {/* Compact Concentric Ripple Waves & Sleek Play Button */}
-                      <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 pointer-events-none">
-                        <span className="afaq-wave-ring afaq-wave-ring-1" />
-                        <span className="afaq-wave-ring afaq-wave-ring-2" />
-                        <span className="afaq-wave-ring afaq-wave-ring-3" />
-
-                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(0,160,223,0.45)] border border-white/80 group-hover/poster:scale-108 active:scale-95 transition-all duration-300">
-                          <svg
-                            className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 text-white pointer-events-none drop-shadow-xs"
-                            viewBox="0 0 24 24"
-                            fill="currentColor"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <polygon points="6 4 20 12 6 20 6 4" />
-                          </svg>
-                        </div>
-                      </div>
-
-                      {/* Bottom Pill Hint */}
-                      {(hero.video_badge === undefined || hero.video_badge.trim() !== '') && (
-                        <div className="absolute bottom-3 sm:bottom-4 px-3.5 sm:px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/poster:bg-[#00A0DF]/90 transition-colors pointer-events-none">
-                          <Play size={12} className="fill-white" />
-                          <span>{hero.video_badge || 'Watch 128s Video'}</span>
-                        </div>
-                      )}
-                    </button>
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      title={isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
+                    />
                   )}
 
+                  {/* High-Res Poster Thumbnail (Remains visible during buffering, transitions seamlessly once video plays) */}
+                  <div
+                    className={`absolute inset-0 z-20 w-full h-full transition-opacity duration-500 overflow-hidden select-none ${
+                      hasUserStartedHero && isHeroVideoReady
+                        ? 'opacity-0 pointer-events-none'
+                        : 'opacity-100'
+                    }`}
+                  >
+                    {/* Poster Image */}
+                    {effectiveThumbnail ? (
+                      <img
+                        src={effectiveThumbnail}
+                        alt={hero.video_title || 'Video overview thumbnail'}
+                        className="absolute inset-0 w-full h-full object-cover"
+                        onError={() => {
+                          if (isYouTubeVideo && !isYtMaxResFailed) {
+                            setIsYtMaxResFailed(true);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
+                    )}
+
+                    {/* Light Ambient Backdrop */}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 pointer-events-none" />
+
+                    {!hasUserStartedHero ? (
+                      <button
+                        type="button"
+                        aria-label="Play overview video"
+                        onClick={startHeroPlayback}
+                        style={{ touchAction: 'manipulation' }}
+                        className="absolute inset-0 w-full h-full flex items-center justify-center cursor-pointer p-0 border-none outline-none group/poster"
+                      >
+                        {/* Compact Concentric Ripple Waves & Sleek Play Button */}
+                        <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 pointer-events-none">
+                          <span className="afaq-wave-ring afaq-wave-ring-1" />
+                          <span className="afaq-wave-ring afaq-wave-ring-2" />
+                          <span className="afaq-wave-ring afaq-wave-ring-3" />
+
+                          <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(0,160,223,0.45)] border border-white/80 group-hover/poster:scale-108 active:scale-95 transition-all duration-300">
+                            <svg
+                              className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 text-white pointer-events-none drop-shadow-xs"
+                              viewBox="0 0 24 24"
+                              fill="currentColor"
+                              xmlns="http://www.w3.org/2000/svg"
+                            >
+                              <polygon points="6 4 20 12 6 20 6 4" />
+                            </svg>
+                          </div>
+                        </div>
+
+                        {/* Bottom Pill Hint */}
+                        {(hero.video_badge === undefined || hero.video_badge.trim() !== '') && (
+                          <div className="absolute bottom-3 sm:bottom-4 px-3.5 sm:px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/poster:bg-[#00A0DF]/90 transition-colors pointer-events-none">
+                            <Play size={12} className="fill-white" />
+                            <span>{hero.video_badge || 'Watch 128s Video'}</span>
+                          </div>
+                        )}
+                      </button>
+                    ) : (
+                      /* Sleek Loading Spinner while video connects (ZERO BLACK SCREEN!) */
+                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white/20 border-t-[#00A0DF] animate-spin shadow-lg" />
+                      </div>
+                    )}
+                  </div>
+
                   {/* Paused Center Indicator Overlay (When user has started but paused) */}
-                  {hasUserStartedHero && !isHeroPlaying && (
+                  {hasUserStartedHero && isHeroVideoReady && !isHeroPlaying && (
                     <button
                       type="button"
                       aria-label="Resume video"
@@ -964,7 +1009,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   )}
 
                   {/* Bottom Sleek Control Bar (Active during and after playback) */}
-                  {hasUserStartedHero && (
+                  {hasUserStartedHero && isHeroVideoReady && (
                     <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${!isHeroPlaying && !isHeroControlsHovered ? 'opacity-90' : 'opacity-100'}`}>
                       <div className="flex items-center gap-1 sm:gap-1.5">
                         {/* Play / Pause Toggle Button */}
