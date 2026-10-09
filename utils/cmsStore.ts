@@ -496,7 +496,7 @@ export const defaultCmsContent: CmsContentSchema = {
   mentor: {
     name: 'Sardar Samiullah',
     title: 'Founder & E-Commerce Agency Director',
-    image: '/sami-logo.jpg',
+    image: '/mentor-profile.png',
     tag: 'YOUR MENTOR',
     badge: 'E-Commerce Agency Director',
     bio: 'Founder of Ecom With Sami. Active e-commerce business operator and agency director with over 1,200+ students mentored.',
