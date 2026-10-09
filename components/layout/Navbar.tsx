@@ -9,7 +9,6 @@ import { Menu, X, ArrowRight, GraduationCap } from 'lucide-react';
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
-  const [avatarSrc, setAvatarSrc] = useState('/mentor-profile.png');
   const pathname = usePathname() || '/';
 
   useEffect(() => {
@@ -17,18 +16,6 @@ export function Navbar() {
       setScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    // Sync latest mentor image from CMS cache if available
-    try {
-      const cached = localStorage.getItem('sami_cms_content');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        if (parsed?.mentor?.image) {
-          setAvatarSrc(parsed.mentor.image);
-        }
-      }
-    } catch (e) {}
-
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
@@ -54,15 +41,13 @@ export function Navbar() {
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group flex-shrink-0 min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-md group-hover:scale-105 transition-all flex-shrink-0 bg-slate-950 border-2 border-[#00A0DF]/70 shadow-[0_0_12px_rgba(0,160,223,0.35)] ring-1 ring-white/10 flex items-center justify-center">
-              <img
-                src={avatarSrc}
+              <Image
+                src="/mentor-profile.png"
                 alt="Ecom With Sami"
                 width={40}
                 height={40}
-                className="w-full h-full object-cover object-top"
-                onError={(e) => {
-                  (e.target as HTMLImageElement).src = '/mentor-profile.png';
-                }}
+                className="w-full h-full object-cover"
+                priority
               />
             </div>
             <div className="flex items-center min-w-0">
