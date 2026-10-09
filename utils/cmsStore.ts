@@ -19,6 +19,7 @@ export interface CmsContentSchema {
     top_pill_badge?: string;
     program_badge?: string;
     video_header?: string;
+    video_badge?: string;
     video_thumbnail?: string;
     trusted_text?: string;
   };
@@ -450,6 +451,7 @@ export const defaultCmsContent: CmsContentSchema = {
     video_title: '',
     program_badge: 'Ecominion Program ',
     video_header: 'Watch this 128 seconds of video to learn how easy it is',
+    video_badge: 'Watch 128s Video',
     video_thumbnail: '',
     trusted_text: 'Trusted by 350+ Students',
     original_price: 'PKR 14,999',

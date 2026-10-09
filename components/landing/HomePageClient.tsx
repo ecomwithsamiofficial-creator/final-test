@@ -924,10 +924,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       </div>
 
                       {/* Bottom Pill Hint */}
-                      <div className="absolute bottom-3 sm:bottom-4 px-3.5 sm:px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/poster:bg-[#00A0DF]/90 transition-colors pointer-events-none">
-                        <Play size={12} className="fill-white" />
-                        <span>Watch 128s Video</span>
-                      </div>
+                      {(hero.video_badge === undefined || hero.video_badge.trim() !== '') && (
+                        <div className="absolute bottom-3 sm:bottom-4 px-3.5 sm:px-4 py-1.5 rounded-full bg-slate-950/80 border border-white/20 backdrop-blur-md text-white text-[11px] sm:text-xs font-bold uppercase tracking-wider flex items-center gap-1.5 shadow-lg group-hover/poster:bg-[#00A0DF]/90 transition-colors pointer-events-none">
+                          <Play size={12} className="fill-white" />
+                          <span>{hero.video_badge || 'Watch 128s Video'}</span>
+                        </div>
+                      )}
                     </button>
                   )}
 

@@ -3190,15 +3190,30 @@ export default function AdminCmsPage() {
                 <span className="text-[10px] text-slate-500 block mt-1">If left blank, no subtitle will appear on the homepage</span>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-400 mb-1">Video Box Header Label</label>
-                <input
-                  type="text"
-                  value={cmsData.hero?.video_header ?? defaultCmsContent.hero.video_header}
-                  onChange={(e) => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_header: e.target.value } })}
-                  placeholder="Watch Sami explain the entire 2026 dropshipping blueprint"
-                  className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Video Box Header Label</label>
+                  <input
+                    type="text"
+                    value={cmsData.hero?.video_header ?? defaultCmsContent.hero.video_header}
+                    onChange={(e) => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_header: e.target.value } })}
+                    placeholder="Watch this 128 seconds of video to learn how easy it is"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
+                  />
+                  <span className="text-[10px] text-slate-500 block mt-1">Video card ke ooper wali line</span>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Video Thumbnail Badge (e.g. Watch 128s Video)</label>
+                  <input
+                    type="text"
+                    value={cmsData.hero?.video_badge ?? defaultCmsContent.hero.video_badge ?? 'Watch 128s Video'}
+                    onChange={(e) => setCmsData({ ...cmsData, hero: { ...cmsData.hero, video_badge: e.target.value } })}
+                    placeholder="Watch 128s Video"
+                    className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white focus:outline-none focus:border-[#00A0DF]"
+                  />
+                  <span className="text-[10px] text-slate-500 block mt-1">Thumbnail ke bottom pill ka text (khali chhorne par hide ho jayega)</span>
+                </div>
               </div>
 
               {/* Preview Video Settings with Direct File Upload */}
