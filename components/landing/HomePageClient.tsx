@@ -232,6 +232,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroPlaying, setIsHeroPlaying] = useState(false);
   const [hasUserStartedHero, setHasUserStartedHero] = useState(false);
   const [isHeroVideoReady, setIsHeroVideoReady] = useState(false);
+  const [isClientMounted, setIsClientMounted] = useState(false);
   const [isYtMaxResFailed, setIsYtMaxResFailed] = useState(false);
   const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
@@ -242,6 +243,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const lastTouchTimeRef = useRef<number>(0);
 
   useEffect(() => {
+    setIsClientMounted(true);
     if (initialContent) {
       updateCmsContent(initialContent);
     }
@@ -366,18 +368,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     setHasUserStartedHero(true);
     setIsHeroPlaying(true);
     setIsHeroMuted(false);
-    setIsHeroVideoReady(false);
-
-    // Timeout safety fallback: reveal video after max 2.2s if YouTube message is slow
-    setTimeout(() => {
-      setIsHeroVideoReady(true);
-      try {
-        heroIframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
-          '*'
-        );
-      } catch (err) {}
-    }, 2200);
 
     if (isDirectVideo && heroVideoRef.current) {
       heroVideoRef.current.muted = false;
@@ -412,6 +402,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
         );
       } catch (e) {}
     }
+
+    // Safety fallback: reveal video after 1.2s in case YouTube message is slightly delayed
+    setTimeout(() => {
+      setIsHeroVideoReady(true);
+    }, 1200);
   };
 
   const toggleHeroPlay = (e?: React.SyntheticEvent) => {
@@ -602,11 +597,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  const getYouTubeEmbedUrl = (url: string, autoPlayOnStart = false) => {
+  const getYouTubeEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    const ap = autoPlayOnStart ? '1' : '0';
-    return `https://www.youtube.com/embed/${vId}?autoplay=${ap}&mute=1&loop=1&playlist=${vId}&controls=0&modestbranding=1&rel=0&playsinline=1&enablejsapi=1&iv_load_policy=3&disablekb=1&fs=0&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=1&playlist=${vId}&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
@@ -838,20 +832,22 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   onMouseEnter={() => setIsHeroControlsHovered(true)}
                   onMouseLeave={() => setIsHeroControlsHovered(false)}
                 >
-                  {/* Video Playback (Mounted & streamed only when user clicks play) */}
-                  {hasUserStartedHero && (
+                  {/* Video Playback (Preloaded behind poster for instant 1-tap playback on iOS & all devices) */}
+                  {isClientMounted && (
                     isDirectVideo ? (
                       <video
                         ref={heroVideoRef}
                         src={hero.video_url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
-                        autoPlay
+                        autoPlay={hasUserStartedHero}
                         muted={isHeroMuted}
                         loop
                         playsInline
-                        preload="auto"
+                        preload="metadata"
                         onLoadedMetadata={() => {
-                          setIsHeroPlaying(true);
-                          heroVideoRef.current?.play().catch(() => {});
+                          if (hasUserStartedHero) {
+                            setIsHeroPlaying(true);
+                            heroVideoRef.current?.play().catch(() => {});
+                          }
                         }}
                         onPlaying={() => {
                           setIsHeroPlaying(true);
@@ -873,7 +869,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <div className="absolute inset-0 pointer-events-none select-none">
                         <iframe
                           ref={heroIframeRef}
-                          src={getYouTubeEmbedUrl(hero.video_url, true)}
+                          src={getYouTubeEmbedUrl(hero.video_url)}
                           title="Hero Overview Video"
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
@@ -884,12 +880,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       <div className="absolute inset-0 pointer-events-none select-none">
                         <iframe
                           ref={heroIframeRef}
-                          src={getBunnyEmbedUrl(hero.video_url, true)}
+                          src={getBunnyEmbedUrl(hero.video_url, false)}
                           title="Hero Overview Video"
                           allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
                           allowFullScreen
                           tabIndex={-1}
-                          onLoad={() => setIsHeroVideoReady(true)}
+                          onLoad={() => {
+                            if (hasUserStartedHero) setIsHeroVideoReady(true);
+                          }}
                           className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
