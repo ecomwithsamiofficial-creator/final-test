@@ -3353,32 +3353,39 @@ export default function AdminCmsPage() {
                     <p className="text-xs text-rose-400 font-medium">{heroThumbnailError}</p>
                   )}
 
-                  {/* Thumbnail Status Indicator */}
+                  {/* Thumbnail Status & Visual Preview */}
                   {(() => {
                     const customThumb = cmsData.hero?.video_thumbnail?.trim();
                     const vUrl = cmsData.hero?.video_url?.trim() || '';
                     const ytMatch = vUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
                     const ytId = ytMatch ? ytMatch[1] : null;
+                    const previewThumbSrc = customThumb || (ytId ? `https://i.ytimg.com/vi/${ytId}/maxresdefault.jpg` : null);
 
-                    if (customThumb) {
-                      return (
-                        <div className="flex items-center gap-2 pt-1 text-[11px] text-emerald-400 font-semibold">
-                          <CheckCircle2 size={13} />
-                          <span>Using Custom Uploaded Thumbnail Poster:</span>
-                          <span className="font-mono text-slate-300 truncate max-w-[200px]">{customThumb}</span>
+                    if (!previewThumbSrc) return null;
+
+                    return (
+                      <div className="flex items-center gap-3 pt-2.5 border-t border-white/5">
+                        <img
+                          src={previewThumbSrc}
+                          alt="Thumbnail preview"
+                          className="w-28 h-16 rounded-lg object-cover border border-white/10 shadow-md bg-black"
+                          onError={(e) => {
+                            if (ytId && !previewThumbSrc.includes('hqdefault')) {
+                              (e.target as HTMLImageElement).src = `https://i.ytimg.com/vi/${ytId}/hqdefault.jpg`;
+                            }
+                          }}
+                        />
+                        <div className="space-y-0.5">
+                          <div className="flex items-center gap-1.5 text-xs font-bold text-white">
+                            <CheckCircle2 size={13} className={customThumb ? "text-emerald-400" : "text-[#00A0DF]"} />
+                            <span>{customThumb ? 'Custom Uploaded Poster Active' : 'YouTube HD Auto-Poster Active'}</span>
+                          </div>
+                          <p className="text-[11px] text-slate-400 font-mono truncate max-w-[240px]">
+                            {previewThumbSrc}
+                          </p>
                         </div>
-                      );
-                    }
-                    if (ytId) {
-                      return (
-                        <div className="flex items-center gap-2 pt-1 text-[11px] text-[#00A0DF] font-semibold">
-                          <CheckCircle2 size={13} />
-                          <span>Auto-Fetching HD Thumbnail from YouTube CDN:</span>
-                          <span className="font-mono text-slate-300">maxresdefault.jpg</span>
-                        </div>
-                      );
-                    }
-                    return null;
+                      </div>
+                    );
                   })()}
                 </div>
 

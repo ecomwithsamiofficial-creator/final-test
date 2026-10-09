@@ -231,7 +231,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [isHeroMuted, setIsHeroMuted] = useState(false);
   const [isHeroPlaying, setIsHeroPlaying] = useState(false);
   const [hasUserStartedHero, setHasUserStartedHero] = useState(false);
-  const [heroThumbnailSrc, setHeroThumbnailSrc] = useState<string>('');
+  const [isYtMaxResFailed, setIsYtMaxResFailed] = useState(false);
   const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
@@ -299,6 +299,49 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const stats = content.stats || defaultCmsContent.stats;
   const mentor = content.mentor || defaultCmsContent.mentor;
   const faqs = content.faqs || defaultCmsContent.faqs;
+
+  // Helper to extract clean video URL from raw CMS data (handling raw <iframe> tags, bunny /play/ urls, etc.)
+  const getCleanVideoUrl = (raw?: string) => {
+    if (!raw) return '';
+    let val = raw.trim();
+    const iframeMatch = val.match(/<iframe[^>]+src=["']([^"']+)["']/i);
+    if (iframeMatch && iframeMatch[1]) {
+      val = iframeMatch[1].trim();
+    }
+    if (val.includes('mediadelivery.net/play/')) {
+      val = val.replace('/play/', '/embed/');
+    }
+    return val;
+  };
+
+  const cleanHeroVideoUrl = getCleanVideoUrl(hero.video_url);
+
+  const isYouTubeVideo = Boolean(
+    cleanHeroVideoUrl?.includes('youtube.com') || cleanHeroVideoUrl?.includes('youtu.be')
+  );
+  const isBunnyVideo = Boolean(
+    cleanHeroVideoUrl?.includes('mediadelivery.net') || cleanHeroVideoUrl?.includes('bunny')
+  );
+  const isDirectVideo = !isYouTubeVideo && !isBunnyVideo && Boolean(cleanHeroVideoUrl);
+
+  const getYouTubeId = (url?: string) => {
+    const target = getCleanVideoUrl(url) || url;
+    if (!target) return 'dQw4w9WgXcQ';
+    const match = target.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match && match[1] ? match[1] : 'dQw4w9WgXcQ';
+  };
+
+  const heroVideoId = getYouTubeId(hero.video_url);
+
+  // Directly & synchronously calculate effective poster thumbnail (guarantees SSR renders the <img> directly)
+  const customPoster = hero.video_thumbnail?.trim();
+  const ytPoster = (isYouTubeVideo && heroVideoId)
+    ? (isYtMaxResFailed
+        ? `https://i.ytimg.com/vi/${heroVideoId}/hqdefault.jpg`
+        : `https://i.ytimg.com/vi/${heroVideoId}/maxresdefault.jpg`
+      )
+    : '';
+  const effectiveThumbnail = customPoster || ytPoster;
 
   const openMainVideo = () => {
     setActiveVideoTitle(hero.video_title || '128-Second Dropshipping Blueprint Overview');
@@ -494,50 +537,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     const s = Math.floor(secs % 60);
     return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   };
-
-  // Helper to extract clean video URL from raw CMS data (handling raw <iframe> tags, bunny /play/ urls, etc.)
-  const getCleanVideoUrl = (raw?: string) => {
-    if (!raw) return '';
-    let val = raw.trim();
-    const iframeMatch = val.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-    if (iframeMatch && iframeMatch[1]) {
-      val = iframeMatch[1].trim();
-    }
-    if (val.includes('mediadelivery.net/play/')) {
-      val = val.replace('/play/', '/embed/');
-    }
-    return val;
-  };
-
-  const cleanHeroVideoUrl = getCleanVideoUrl(hero.video_url);
-
-  const isYouTubeVideo = Boolean(
-    cleanHeroVideoUrl?.includes('youtube.com') || cleanHeroVideoUrl?.includes('youtu.be')
-  );
-  const isBunnyVideo = Boolean(
-    cleanHeroVideoUrl?.includes('mediadelivery.net') || cleanHeroVideoUrl?.includes('bunny')
-  );
-  const isDirectVideo = !isYouTubeVideo && !isBunnyVideo && Boolean(cleanHeroVideoUrl);
-
-  const getYouTubeId = (url?: string) => {
-    const target = getCleanVideoUrl(url) || url;
-    if (!target) return 'dQw4w9WgXcQ';
-    const match = target.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
-    return match && match[1] ? match[1] : 'dQw4w9WgXcQ';
-  };
-
-  const heroVideoId = getYouTubeId(hero.video_url);
-
-  // Synchronize high-res video poster thumbnail
-  useEffect(() => {
-    if (hero.video_thumbnail?.trim()) {
-      setHeroThumbnailSrc(hero.video_thumbnail.trim());
-    } else if (isYouTubeVideo && heroVideoId) {
-      setHeroThumbnailSrc(`https://i.ytimg.com/vi/${heroVideoId}/maxresdefault.jpg`);
-    } else {
-      setHeroThumbnailSrc('');
-    }
-  }, [hero.video_thumbnail, isYouTubeVideo, heroVideoId]);
 
   // Derive duration from video header text if available (e.g. "Watch this 128 seconds...")
   useEffect(() => {
@@ -888,14 +887,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       className="absolute inset-0 z-20 w-full h-full flex items-center justify-center cursor-pointer p-0 border-none outline-none select-none group/poster overflow-hidden"
                     >
                       {/* Poster Image */}
-                      {heroThumbnailSrc ? (
+                      {effectiveThumbnail ? (
                         <img
-                          src={heroThumbnailSrc}
+                          src={effectiveThumbnail}
                           alt={hero.video_title || 'Video overview thumbnail'}
                           className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover/poster:scale-105"
                           onError={() => {
-                            if (isYouTubeVideo && heroVideoId && !heroThumbnailSrc.includes('hqdefault')) {
-                              setHeroThumbnailSrc(`https://i.ytimg.com/vi/${heroVideoId}/hqdefault.jpg`);
+                            if (isYouTubeVideo && !isYtMaxResFailed) {
+                              setIsYtMaxResFailed(true);
                             }
                           }}
                         />
