@@ -73,14 +73,14 @@ export const metadata: Metadata = {
   },
   icons: {
     icon: [
-      { url: '/favicon-32x32.png?v=sami_v2026_october', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png?v=sami_v2026_october', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon.ico?v=sami_v2026_october', sizes: 'any' },
-      { url: '/icon.png?v=sami_v2026_october', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png?v=mentor_sami_v5_live', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=mentor_sami_v5_live', sizes: '16x16', type: 'image/png' },
+      { url: '/icon.png?v=mentor_sami_v5_live', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon.ico?v=mentor_sami_v5_live', sizes: 'any' },
     ],
-    shortcut: '/favicon.ico?v=sami_v2026_october',
+    shortcut: '/favicon-32x32.png?v=mentor_sami_v5_live',
     apple: [
-      { url: '/apple-icon.png?v=sami_v2026_october', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=mentor_sami_v5_live', sizes: '180x180', type: 'image/png' },
     ],
   },
   category: 'education',
@@ -120,10 +120,11 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
         {/* Immediate Browser Tab Favicon Invalidation (Cache Busting) */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026" />
-        <link rel="shortcut icon" href="/favicon.ico?v=sami2026" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=sami2026" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=mentor_sami_v5_live" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=mentor_sami_v5_live" />
+        <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=mentor_sami_v5_live" />
+        <link rel="shortcut icon" href="/favicon-32x32.png?v=mentor_sami_v5_live" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=mentor_sami_v5_live" />
         <JsonLd />
         {/* Google tag (gtag.js) - Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3" />

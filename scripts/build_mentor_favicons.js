@@ -9,12 +9,19 @@ async function generateFavicons() {
     process.exit(1);
   }
 
-  console.log('Generating high-resolution circular favicons from:', srcPath);
+  console.log('Generating face-focused, high-visibility circular favicons from:', srcPath);
+
+  // Crop parameters: 800x800 square centered on face, hair, and collar
+  // Left: 177 (centers Sami's face horizontally)
+  // Top: 40 (leaves ample breathing room above hair, zero haircut)
+  // Width: 800, Height: 800 (keeps head, ears, chin, neck, and upper suit intact)
+  const cropRegion = { left: 177, top: 40, width: 800, height: 800 };
 
   // Helper to create a circular framed avatar buffer for a given target size
   async function createCircularAvatar(size) {
     const r = size / 2;
-    const strokeWidth = Math.max(1.5, Math.round(size * 0.028));
+    // For tiny sizes (16, 32), use a slightly more pronounced border so it pops against browser tabs
+    const strokeWidth = size <= 32 ? Math.max(1.5, Math.round(size * 0.045)) : Math.max(2, Math.round(size * 0.03));
     const effectiveRadius = r - Math.ceil(strokeWidth / 2);
 
     // SVG Mask for perfect smooth anti-aliased circle
@@ -31,18 +38,26 @@ async function generateFavicons() {
       </svg>
     `);
 
-    // Resize image to size x size
-    const resizedImage = await sharp(srcPath)
-      .resize(size, size, { fit: 'cover', position: 'top' })
-      .toBuffer();
+    // 1. Extract face region, ensure alpha, resize to size x size with slight sharpening for small icons
+    let pipeline = sharp(srcPath)
+      .extract(cropRegion)
+      .ensureAlpha()
+      .resize(size, size, { fit: 'cover', position: 'top' });
 
-    // Composite with mask
+    if (size <= 48) {
+      // Apply subtle sharpening for ultra-crisp display in browser tabs
+      pipeline = pipeline.sharpen({ sigma: 0.8, m1: 1.2, m2: 0.8 });
+    }
+
+    const resizedImage = await pipeline.toBuffer();
+
+    // 2. Composite with circle mask
     const masked = await sharp(resizedImage)
       .composite([{ input: maskSvg, blend: 'dest-in' }])
       .png()
       .toBuffer();
 
-    // Composite with cyan border
+    // 3. Composite with signature cyan border
     const finalImage = await sharp(masked)
       .composite([{ input: borderSvg, blend: 'over' }])
       .png({ compressionLevel: 9 })
@@ -55,7 +70,7 @@ async function generateFavicons() {
   const pngBuffers = {};
 
   for (const sz of sizes) {
-    console.log(`Rendering ${sz}x${sz} avatar...`);
+    console.log(`Rendering face-focused ${sz}x${sz} avatar...`);
     pngBuffers[sz] = await createCircularAvatar(sz);
   }
 
@@ -88,7 +103,6 @@ async function generateFavicons() {
   header.writeUInt16LE(count, 4); // Image count
 
   let offset = 6 + count * 16;
-  const entries = [];
   const imageBuffers = [];
 
   for (let i = 0; i < count; i++) {
@@ -112,7 +126,7 @@ async function generateFavicons() {
   fs.writeFileSync(path.join(process.cwd(), 'public', 'favicon.ico'), finalIcoBuffer);
   fs.writeFileSync(path.join(process.cwd(), 'app', 'favicon.ico'), finalIcoBuffer);
 
-  console.log('✅ ALL FAVICONS AND APP ICONS SUCCESSFULLY GENERATED!');
+  console.log('✅ ALL FACE-FOCUSED FAVICONS AND APP ICONS SUCCESSFULLY RE-GENERATED!');
 }
 
 generateFavicons().catch(err => {
