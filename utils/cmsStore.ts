@@ -240,6 +240,34 @@ export interface CmsContentSchema {
       icon?: string;
     }[];
   };
+  refund_policy?: {
+    guarantee_days: number;
+    badge: string;
+    hero_title: string;
+    hero_subtitle: string;
+    effective_date: string;
+    not_marketplaces_title: string;
+    not_marketplaces_badge: string;
+    not_marketplaces_text: string;
+    mistake_enrollment_warning: string;
+    sami_roadmap_title: string;
+    sami_roadmap_text: string;
+    no_refund_title: string;
+    no_refund_points: string[];
+    criteria_title: string;
+    criteria_course_completion: string;
+    drm_tracker_notice: string;
+    criteria_products_hunting: string;
+    criteria_proof_text: string;
+    criteria_proof_points: string[];
+    criteria_zero_sales: string;
+    criteria_timely_request: string;
+    claim_steps_title: string;
+    claim_steps: { step: number; title: string; desc: string }[];
+    audit_time: string;
+    payout_time: string;
+    deactivation_notice: string;
+  };
   homepage_curriculum?: {
     tag?: string;
     title?: string;
@@ -1051,6 +1079,51 @@ export const defaultCmsContent: CmsContentSchema = {
         icon: 'users'
       }
     ]
+  },
+  refund_policy: {
+    guarantee_days: 10,
+    badge: '10-DAY CONDITIONAL MONEY-BACK GUARANTEE',
+    hero_title: '10-Day Conditional Refund Policy',
+    hero_subtitle: 'Read Carefully Before Enrolling. Action-Based, Transparent, & Zero-Gimmick Policy.',
+    effective_date: 'Effective Date: January 1, 2026 • Last Updated: October 2026',
+    not_marketplaces_title: 'Strictly Dropshipping to Brand Mentorship (NOT Amazon / eBay / Etsy)',
+    not_marketplaces_badge: 'CRITICAL MENTORSHIP CLARIFICATION',
+    not_marketplaces_text: 'We are 100% committed to your real practical e-commerce success. This mentorship teaches Shopify Store Architecture, High-Margin Winning Product Hunting, Meta & TikTok Paid Ads Scaling, and Direct Verified Supplier Sourcing.\n\nThis program is STRICTLY a Dropshipping, White Label & Private Label E-Commerce Training. It is NOT an Amazon FBA, eBay, or Etsy marketplace course.',
+    mistake_enrollment_warning: 'By enrolling, you confirm that you have reviewed the curriculum and understand the nature of the training. Enrolling by mistake, misunderstanding the course type, or claiming "I assumed this was an Amazon, eBay, or Etsy course" does NOT qualify for a refund under any circumstances.',
+    sami_roadmap_title: 'Mentor Sami’s Real Step-by-Step E-Commerce Roadmap',
+    sami_roadmap_text: 'Our proven blueprint starts beginners locally in Pakistan with Local Dropshipping on a low testing budget. This guarantees minimum risk, keeps student capital safe, and builds instant practical confidence.\n\nOnce students start seeing positive ROAS and consistent orders, we guide them step by step to transition into White Label custom branding, Private Label enterprise equity, and scaling into GCC (UAE AED & Saudi Arabia SAR) and international global markets. This takes a beginner from scratch to a professional multi-market brand owner.',
+    no_refund_title: 'No Instant or No-Action Refunds (Strictly Enforced)',
+    no_refund_points: [
+      'You enroll and request a refund without watching the full course curriculum.',
+      'You enroll and do not implement the practical store setup and ad strategies taught.',
+      'You claim "I thought this was an Amazon, eBay, or Etsy course".',
+      'You claim "I enrolled by mistake" or "my family member paid by accident".',
+      'You request a refund immediately after receiving login credentials.',
+      'You change your mind, lack personal time, or claim lack of interest.'
+    ],
+    criteria_title: '10-Day Refund Eligibility Criteria (ALL Must Be Met)',
+    criteria_course_completion: 'You must watch and complete 100% of all video modules, exercises, and assignments within 10 calendar days of enrollment.',
+    drm_tracker_notice: '⚠️ AUTOMATED LMS LIVE TRACKER & DRM MONITORING: Our student portal features an active DRM Live Watch Tracker that automatically logs your exact watch duration, playback completion percentage, and lesson progress in our database. False claims of completing the course will be verified directly against system logs.',
+    criteria_products_hunting: 'You must research, launch, and test at least 10 to 15 products on your live store using the 15-Point Product Matrix and testing framework taught in the course. Testing only 1 to 3 products does NOT qualify.',
+    criteria_proof_text: 'You must provide concrete, verifiable proof of full implementation, including:',
+    criteria_proof_points: [
+      'Live store links to at least 10–15 published product listings with custom copy and pricing.',
+      'Complete store analytics dashboard screenshots covering the full 10-day period.',
+      'Meta or TikTok Ads Manager campaign screenshots showing ad spend and testing data.',
+      'Completed Product Hunting Excel / Google Sheet checklist following course criteria.'
+    ],
+    criteria_zero_sales: 'If after 10 full days of active, verified, and consistent implementation you have generated zero sales despite applying all optimization and supplier strategies, you qualify to submit a refund request.',
+    criteria_timely_request: 'Your request must be submitted within exactly 10 calendar days from the purchase timestamp. Late requests cannot be considered.',
+    claim_steps_title: 'How to Submit a Refund Claim (4 Steps)',
+    claim_steps: [
+      { step: 1, title: 'Contact Official Support Desk', desc: 'Message our official WhatsApp support number or billing email with the subject: "Refund Request – Ecom With Sami".' },
+      { step: 2, title: 'Submit Verification & TRX Details', desc: 'Provide your full registered name, phone number, login email, and Bank / JazzCash / EasyPaisa payment receipt screenshot.' },
+      { step: 3, title: 'Submit All Required Proof & Checklist', desc: 'Attach links to your 10–15 store products, ad manager screenshots, and store analytics covering the 10-day testing timeframe.' },
+      { step: 4, title: 'Audit & Direct Payout Transfer', desc: 'Our senior audit team verifies your LMS DRM watch logs and store implementation within 7 business days. Approved refunds are transferred within 7–10 business days directly to your nominated Pakistani bank, JazzCash, or EasyPaisa account.' }
+    ],
+    audit_time: '7 business days',
+    payout_time: '7–10 business days',
+    deactivation_notice: 'Upon refund approval, your Student LMS Portal access, course certificates, and 1-on-1 WhatsApp mentorship desk access will be permanently deactivated.'
   }
 };
 

@@ -70,7 +70,7 @@ export default function AdminCmsPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [isPageReady, setIsPageReady] = useState(false);
   const [activeTab, setActiveTab] = useState<
-    'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page' | 'proof_hub'
+    'marquee' | 'hero' | 'stats' | 'why' | 'what' | 'why_different' | 'signature_framework' | 'mentor' | 'video_reviews' | 'who' | 'homepage_curriculum' | 'lms' | 'bonuses' | 'reviews' | 'proofwall_home' | 'options' | 'cost' | 'faqs' | 'cta' | 'contact' | 'payments' | 'themes' | 'pixels' | 'success_page' | 'checkout_page' | 'about_page' | 'proof_hub' | 'refund_policy'
   >('hero');
   const [cmsData, setCmsData] = useState<CmsContentSchema>(() => {
     if (typeof window !== 'undefined') {
@@ -1767,7 +1767,8 @@ export default function AdminCmsPage() {
             { id: 'success_page', label: '20. 🏆 Success Stories Page', icon: Award },
             { id: 'checkout_page', label: '21. ⏱️ Urgency Timer & Seats (Home & Checkout)', icon: Clock },
             { id: 'about_page', label: '22. 👤 About Sami Page', icon: Users },
-            { id: 'proof_hub', label: '23. ⭐ Proof Hub & Video Showcase (Admin)', icon: Star }
+            { id: 'proof_hub', label: '23. ⭐ Proof Hub & Video Showcase (Admin)', icon: Star },
+            { id: 'refund_policy', label: '24. 📄 10-Day Refund Policy', icon: ShieldCheck }
           ].map((t) => {
             const Icon = t.icon;
             return (
@@ -9472,6 +9473,614 @@ export default function AdminCmsPage() {
 
           </div>
         )}
+
+        {/* ========================================================================= */}
+        {/* TAB 24: 10-DAY CONDITIONAL REFUND POLICY CMS */}
+        {/* ========================================================================= */}
+        {activeTab === 'refund_policy' && (() => {
+          const refund = cmsData.refund_policy || defaultCmsContent.refund_policy!;
+
+          const updateRefundField = (field: string, value: any) => {
+            setCmsData(prev => ({
+              ...prev,
+              refund_policy: {
+                ...(prev.refund_policy || defaultCmsContent.refund_policy!),
+                [field]: value
+              }
+            }));
+          };
+
+          const updateNoRefundPoint = (index: number, val: string) => {
+            const list = [...(refund.no_refund_points || [])];
+            list[index] = val;
+            updateRefundField('no_refund_points', list);
+          };
+
+          const addNoRefundPoint = () => {
+            const list = [...(refund.no_refund_points || [])];
+            list.push('New non-refundable condition or exclusion.');
+            updateRefundField('no_refund_points', list);
+          };
+
+          const removeNoRefundPoint = (index: number) => {
+            const list = (refund.no_refund_points || []).filter((_, i) => i !== index);
+            updateRefundField('no_refund_points', list);
+          };
+
+          const updateProofPoint = (index: number, val: string) => {
+            const list = [...(refund.criteria_proof_points || [])];
+            list[index] = val;
+            updateRefundField('criteria_proof_points', list);
+          };
+
+          const addProofPoint = () => {
+            const list = [...(refund.criteria_proof_points || [])];
+            list.push('New proof or audit requirement link/document.');
+            updateRefundField('criteria_proof_points', list);
+          };
+
+          const removeProofPoint = (index: number) => {
+            const list = (refund.criteria_proof_points || []).filter((_, i) => i !== index);
+            updateRefundField('criteria_proof_points', list);
+          };
+
+          const updateClaimStep = (index: number, key: 'title' | 'desc', val: string) => {
+            const steps = [...(refund.claim_steps || [])];
+            if (steps[index]) {
+              steps[index] = { ...steps[index], [key]: val };
+              updateRefundField('claim_steps', steps);
+            }
+          };
+
+          return (
+            <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
+              
+              {/* Header Box */}
+              <div className="bg-gradient-to-r from-[#111827] via-[#162032] to-[#111827] border border-emerald-500/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+                <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-5">
+                  <div>
+                    <div className="flex items-center gap-2 mb-1.5">
+                      <span className="bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
+                        <ShieldCheck size={11} className="text-emerald-400" />
+                        10-Day Conditional Guarantee
+                      </span>
+                      <span className="text-slate-400 text-xs">• Live Legal &amp; Student Terms</span>
+                    </div>
+                    <h2 className="text-xl sm:text-2xl font-black text-white">
+                      10-Day Conditional Refund Policy Editor
+                    </h2>
+                    <p className="text-xs sm:text-sm text-slate-300 max-w-2xl mt-1 leading-relaxed">
+                      Edit Mentor Sami’s strict action-based guarantee, Not-Amazon/eBay disclaimers, LMS DRM live tracking warnings, 10–15 product requirements, and 4-step claim guidelines.
+                    </p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <Link
+                      href="/refund"
+                      target="_blank"
+                      className="inline-flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-white/10 transition-colors"
+                    >
+                      <ExternalLink size={14} />
+                      <span>Preview /refund</span>
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleSaveAll}
+                      disabled={loading}
+                      className="inline-flex items-center gap-2 px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs sm:text-sm shadow-xl shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-50"
+                    >
+                      <Save size={15} />
+                      <span>{loading ? 'Saving...' : 'Save Refund Policy'}</span>
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 1: GUARANTEE DAYS & HERO BANNER */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                      <ShieldCheck size={16} className="text-emerald-400" />
+                      <span>1. Guarantee Days &amp; Hero Banner</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">Define days limit and main headline on /refund</p>
+                  </div>
+                  <span className="text-xs font-mono font-bold px-2 py-0.5 bg-emerald-500/20 text-emerald-300 rounded border border-emerald-500/30">
+                    {refund.guarantee_days || 10} Days Active
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Guarantee Days Window *
+                    </label>
+                    <input
+                      type="number"
+                      min={1}
+                      max={60}
+                      value={refund.guarantee_days ?? 10}
+                      onChange={(e) => updateRefundField('guarantee_days', parseInt(e.target.value) || 10)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block mt-1">Recommended: strictly 10 Days</span>
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Hero Badge Text
+                    </label>
+                    <input
+                      type="text"
+                      value={refund.badge || ''}
+                      onChange={(e) => updateRefundField('badge', e.target.value)}
+                      placeholder="e.g. 10-DAY CONDITIONAL MONEY-BACK GUARANTEE"
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Effective / Updated Date
+                    </label>
+                    <input
+                      type="text"
+                      value={refund.effective_date || ''}
+                      onChange={(e) => updateRefundField('effective_date', e.target.value)}
+                      placeholder="e.g. Effective Date: January 1, 2026 • Last Updated: October 2026"
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Hero Main Title *
+                    </label>
+                    <input
+                      type="text"
+                      value={refund.hero_title || ''}
+                      onChange={(e) => updateRefundField('hero_title', e.target.value)}
+                      placeholder="e.g. 10-Day Conditional Refund Policy"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs sm:text-sm text-white font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-3">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Hero Subtitle / Description
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={refund.hero_subtitle || ''}
+                      onChange={(e) => updateRefundField('hero_subtitle', e.target.value)}
+                      placeholder="e.g. Read Carefully Before Enrolling. Action-Based, Transparent, & Zero-Gimmick Policy."
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500 resize-none"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 2: STRICT NOT AMAZON / EBAY / ETSY DISCLAIMER */}
+              <div className="bg-[#111827] border border-amber-500/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-amber-300 flex items-center gap-2">
+                    <AlertTriangle size={16} className="text-amber-400" />
+                    <span>2. Mentorship Clarification (NOT Amazon / eBay / Etsy)</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Crucial protection preventing users from claiming "I thought this was Amazon FBA" to demand refunds.
+                  </p>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Section Badge</label>
+                    <input
+                      type="text"
+                      value={refund.not_marketplaces_badge || ''}
+                      onChange={(e) => updateRefundField('not_marketplaces_badge', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      value={refund.not_marketplaces_title || ''}
+                      onChange={(e) => updateRefundField('not_marketplaces_title', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-amber-500"
+                    />
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      Mentorship Model Explanation Text *
+                    </label>
+                    <textarea
+                      rows={4}
+                      value={refund.not_marketplaces_text || ''}
+                      onChange={(e) => updateRefundField('not_marketplaces_text', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-amber-500"
+                    />
+                    <span className="text-[10px] text-slate-500 block mt-1">Explains Shopify Dropshipping, White Label &amp; Private Label model.</span>
+                  </div>
+
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-bold text-rose-300 mb-1">
+                      ⚠️ Mistake Enrollment Warning (Legal Disqualification Notice) *
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={refund.mistake_enrollment_warning || ''}
+                      onChange={(e) => updateRefundField('mistake_enrollment_warning', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-rose-500/40 text-xs text-rose-200 focus:outline-none focus:border-rose-400"
+                    />
+                    <span className="text-[10px] text-slate-500 block mt-1">
+                      States clearly that claims like "I enrolled by mistake" or "thought it was Amazon/eBay" will NOT qualify for refunds.
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 3: MENTOR SAMI STEP-BY-STEP ROADMAP */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <Sparkles size={16} className="text-[#00A0DF]" />
+                    <span>3. Mentor Sami E-Commerce Roadmap Explanation</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Reinforces the safe pathway: Local Pakistan low-budget start → White Label → Private Label → GCC UAE/KSA scale
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Roadmap Title</label>
+                    <input
+                      type="text"
+                      value={refund.sami_roadmap_title || ''}
+                      onChange={(e) => updateRefundField('sami_roadmap_title', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-[#00A0DF]"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Roadmap Full Text</label>
+                    <textarea
+                      rows={4}
+                      value={refund.sami_roadmap_text || ''}
+                      onChange={(e) => updateRefundField('sami_roadmap_text', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 4: NO-REFUND REASONS (INSTANT / NO-ACTION EXCLUSIONS) */}
+              <div className="bg-[#111827] border border-rose-500/20 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3 flex items-center justify-between">
+                  <div>
+                    <h3 className="text-sm sm:text-base font-bold text-rose-300 flex items-center gap-2">
+                      <XCircle size={16} className="text-rose-400" />
+                      <span>4. Strictly Enforced Non-Refundable Scenarios</span>
+                    </h3>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      Zero tolerance for instant refunds, laziness, or excuses
+                    </p>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={addNoRefundPoint}
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-rose-500/20 hover:bg-rose-500/30 text-rose-300 border border-rose-500/30 text-xs font-bold transition-colors"
+                  >
+                    <Plus size={13} />
+                    <span>Add Scenario</span>
+                  </button>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">Section Title</label>
+                  <input
+                    type="text"
+                    value={refund.no_refund_title || ''}
+                    onChange={(e) => updateRefundField('no_refund_title', e.target.value)}
+                    className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-rose-400"
+                  />
+                </div>
+
+                <div className="space-y-2.5">
+                  <label className="block text-xs font-bold text-slate-300">
+                    Non-Refundable Exclusion Points ({(refund.no_refund_points || []).length}):
+                  </label>
+                  {(refund.no_refund_points || []).map((point, idx) => (
+                    <div key={idx} className="flex items-center gap-2">
+                      <span className="w-6 h-6 rounded-lg bg-rose-500/20 text-rose-300 text-[10px] font-black flex items-center justify-center flex-shrink-0">
+                        {idx + 1}
+                      </span>
+                      <input
+                        type="text"
+                        value={point}
+                        onChange={(e) => updateNoRefundPoint(idx, e.target.value)}
+                        className="flex-1 px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-rose-400"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => removeNoRefundPoint(idx)}
+                        className="p-2 rounded-xl bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 transition-colors"
+                        title="Delete point"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* CARD 5: 10-DAY ELIGIBILITY CRITERIA, LMS DRM WATCH TRACKER & 10-15 PRODUCTS RULE */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <CheckCircle2 size={16} className="text-emerald-400" />
+                    <span>5. 10-Day Eligibility Criteria &amp; LMS DRM Live Tracker</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Strict conditions that every student MUST meet to qualify for an audit
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Criteria Section Title</label>
+                    <input
+                      type="text"
+                      value={refund.criteria_title || ''}
+                      onChange={(e) => updateRefundField('criteria_title', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">
+                      100% Course Completion Rule
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={refund.criteria_course_completion || ''}
+                      onChange={(e) => updateRefundField('criteria_course_completion', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* DRM Tracker Notice Highlight */}
+                  <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/30 space-y-2">
+                    <label className="block text-xs font-black text-indigo-300 flex items-center gap-1.5">
+                      <Lock size={14} className="text-indigo-400" />
+                      <span>Automated LMS Live Watch Tracker &amp; DRM System Notice *</span>
+                    </label>
+                    <textarea
+                      rows={3}
+                      value={refund.drm_tracker_notice || ''}
+                      onChange={(e) => updateRefundField('drm_tracker_notice', e.target.value)}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-indigo-500/30 text-xs text-indigo-100 focus:outline-none focus:border-indigo-400"
+                    />
+                    <span className="text-[10px] text-indigo-300/70 block">
+                      Warns students that exact watch duration, playback completion %, and lessons progress are tracked live in the database to prevent fraudulent claims.
+                    </span>
+                  </div>
+
+                  {/* 10 to 15 Products Rule */}
+                  <div>
+                    <label className="block text-xs font-bold text-emerald-300 mb-1">
+                      10 to 15 Products Hunting &amp; Testing Requirement (Testing 1–3 doesn't qualify) *
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={refund.criteria_products_hunting || ''}
+                      onChange={(e) => updateRefundField('criteria_products_hunting', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                    />
+                  </div>
+
+                  {/* Verifiable Proof Points */}
+                  <div className="space-y-2 pt-2 border-t border-white/5">
+                    <div className="flex items-center justify-between">
+                      <label className="block text-xs font-bold text-slate-300">
+                        Required Proof Points &amp; Screenshots:
+                      </label>
+                      <button
+                        type="button"
+                        onClick={addProofPoint}
+                        className="inline-flex items-center gap-1 px-2.5 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold"
+                      >
+                        <Plus size={11} />
+                        <span>Add Proof Item</span>
+                      </button>
+                    </div>
+
+                    <input
+                      type="text"
+                      value={refund.criteria_proof_text || ''}
+                      onChange={(e) => updateRefundField('criteria_proof_text', e.target.value)}
+                      placeholder="e.g. You must provide concrete, verifiable proof of full implementation, including:"
+                      className="w-full px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500 mb-2"
+                    />
+
+                    {(refund.criteria_proof_points || []).map((proof, idx) => (
+                      <div key={idx} className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-md bg-emerald-500/20 text-emerald-300 text-[10px] font-bold flex items-center justify-center flex-shrink-0">
+                          ✓
+                        </span>
+                        <input
+                          type="text"
+                          value={proof}
+                          onChange={(e) => updateProofPoint(idx, e.target.value)}
+                          className="flex-1 px-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => removeProofPoint(idx)}
+                          className="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-900/40 text-slate-400 hover:text-rose-300 transition-colors"
+                        >
+                          <Trash2 size={12} />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        Zero Sales Condition
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={refund.criteria_zero_sales || ''}
+                        onChange={(e) => updateRefundField('criteria_zero_sales', e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        10-Day Timely Request Window
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={refund.criteria_timely_request || ''}
+                        onChange={(e) => updateRefundField('criteria_timely_request', e.target.value)}
+                        className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-emerald-500"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* CARD 6: 4-STEP CLAIM PROCESS & TIMELINES */}
+              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-5">
+                <div className="border-b border-white/5 pb-3">
+                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                    <Clock size={16} className="text-[#00A0DF]" />
+                    <span>6. 4-Step Claim Process &amp; Payout Timelines</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Clear procedure for student submissions, audit period, and payment turnaround
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1">Section Title</label>
+                    <input
+                      type="text"
+                      value={refund.claim_steps_title || ''}
+                      onChange={(e) => updateRefundField('claim_steps_title', e.target.value)}
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-[#00A0DF]"
+                    />
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    {(refund.claim_steps || []).map((step, idx) => (
+                      <div key={idx} className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2">
+                        <div className="flex items-center gap-2 text-xs font-bold text-emerald-400">
+                          <span className="w-5 h-5 rounded-full bg-emerald-500/20 flex items-center justify-center text-[10px]">
+                            {step.step || idx + 1}
+                          </span>
+                          <span>Step {step.step || idx + 1}</span>
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-0.5">Step Title</label>
+                          <input
+                            type="text"
+                            value={step.title || ''}
+                            onChange={(e) => updateClaimStep(idx, 'title', e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-xs text-white font-bold focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+                        <div>
+                          <label className="text-[10px] text-slate-500 block mb-0.5">Step Description</label>
+                          <textarea
+                            rows={2}
+                            value={step.desc || ''}
+                            onChange={(e) => updateClaimStep(idx, 'desc', e.target.value)}
+                            className="w-full px-3 py-1.5 rounded-lg bg-[#111827] border border-white/10 text-[11px] text-slate-300 focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        Audit &amp; Verification Timeframe
+                      </label>
+                      <input
+                        type="text"
+                        value={refund.audit_time || ''}
+                        onChange={(e) => updateRefundField('audit_time', e.target.value)}
+                        placeholder="e.g. 7 business days"
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        Payout Transfer Timeframe
+                      </label>
+                      <input
+                        type="text"
+                        value={refund.payout_time || ''}
+                        onChange={(e) => updateRefundField('payout_time', e.target.value)}
+                        placeholder="e.g. 7–10 business days"
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+
+                    <div className="sm:col-span-2">
+                      <label className="block text-xs font-bold text-slate-300 mb-1">
+                        Deactivation Policy Notice
+                      </label>
+                      <textarea
+                        rows={2}
+                        value={refund.deactivation_notice || ''}
+                        onChange={(e) => updateRefundField('deactivation_notice', e.target.value)}
+                        className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:outline-none focus:border-[#00A0DF]"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bottom Sticky Save Bar */}
+              <div className="pt-4 border-t border-white/5 flex flex-col sm:flex-row items-center justify-between gap-3">
+                <p className="text-xs text-slate-400">
+                  All changes will reflect live on <strong>/refund</strong> immediately upon saving.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSaveAll}
+                  disabled={loading}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-7 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-emerald-500 hover:from-emerald-500 hover:to-emerald-400 text-white font-black text-xs sm:text-sm shadow-xl shadow-emerald-600/20 active:scale-95 transition-all disabled:opacity-50"
+                >
+                  {loading ? (
+                    <Loader2 size={15} className="animate-spin" />
+                  ) : (
+                    <Save size={15} />
+                  )}
+                  <span>Save All 10-Day Refund Policy Changes</span>
+                </button>
+              </div>
+
+            </div>
+          );
+        })()}
 
       </main>
 

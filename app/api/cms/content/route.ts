@@ -43,6 +43,7 @@ export async function POST(request: NextRequest) {
       revalidatePath('/checkout', 'page');
       revalidatePath('/enrollment', 'page');
       revalidatePath('/about', 'page');
+      revalidatePath('/refund', 'page');
       revalidatePath('/api/public/cms-content');
       revalidatePath('/api/pixels/active');
     } catch (e) {

@@ -182,7 +182,13 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
             ? parsed.about_page.why_learn_cards
             : (defaultCmsContent.about_page?.why_learn_cards || [])
         }
-      : defaultCmsContent.about_page
+      : defaultCmsContent.about_page,
+    refund_policy: parsed.refund_policy !== undefined
+      ? {
+          ...defaultCmsContent.refund_policy,
+          ...parsed.refund_policy
+        }
+      : defaultCmsContent.refund_policy
   };
 }
 
@@ -259,6 +265,8 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
       updated.checkout_page = { ...existing.checkout_page, ...patch.checkout_page };
     } else if (activeTab === 'about_page' && patch.about_page !== undefined) {
       updated.about_page = patch.about_page;
+    } else if (activeTab === 'refund_policy' && patch.refund_policy !== undefined) {
+      updated.refund_policy = patch.refund_policy;
     }
 
     try {
@@ -366,6 +374,7 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   if (patch.why_different !== undefined) updated.why_different = patch.why_different;
   if (patch.signature_framework !== undefined) updated.signature_framework = patch.signature_framework;
   if (patch.about_page !== undefined) updated.about_page = patch.about_page;
+  if (patch.refund_policy !== undefined) updated.refund_policy = patch.refund_policy;
   if (patch.theme !== undefined) {
     updated.theme = {
       ...(existing.theme || defaultCmsContent.theme),
