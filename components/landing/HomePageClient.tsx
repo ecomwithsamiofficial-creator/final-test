@@ -902,18 +902,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         <div className="absolute inset-0 w-full h-full bg-gradient-to-br from-slate-900 via-slate-950 to-slate-900" />
                       )}
 
-                      {/* Vignette / Dark Ambient Backdrop */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/75 via-black/35 to-black/40 pointer-events-none" />
+                      {/* Light Ambient Backdrop (Leaves thumbnail vibrant & crisp) */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 pointer-events-none" />
 
-                      {/* Concentric Expanding Ripple Waves & Glowing Play Button */}
-                      <div className="relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32 pointer-events-none">
+                      {/* Compact Concentric Ripple Waves & Sleek Play Button */}
+                      <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14 pointer-events-none">
                         <span className="afaq-wave-ring afaq-wave-ring-1" />
                         <span className="afaq-wave-ring afaq-wave-ring-2" />
                         <span className="afaq-wave-ring afaq-wave-ring-3" />
 
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_0_35px_rgba(0,160,223,0.7)] border-2 border-white/50 group-hover/poster:scale-110 active:scale-95 transition-all duration-300">
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(0,160,223,0.45)] border border-white/80 group-hover/poster:scale-108 active:scale-95 transition-all duration-300">
                           <svg
-                            className="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-white pointer-events-none drop-shadow"
+                            className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 text-white pointer-events-none drop-shadow-xs"
                             viewBox="0 0 24 24"
                             fill="currentColor"
                             xmlns="http://www.w3.org/2000/svg"
@@ -938,18 +938,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       aria-label="Resume video"
                       onClick={toggleHeroPlay}
                       style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/45 backdrop-blur-[2px] cursor-pointer transition-opacity select-none"
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/25 backdrop-blur-[1px] cursor-pointer transition-opacity select-none"
                     >
-                      <div className="relative flex items-center justify-center w-24 h-24 sm:w-32 sm:h-32">
+                      <div className="relative flex items-center justify-center w-12 h-12 sm:w-14 sm:h-14">
                         {/* Concentric Expanding Ripple Waves */}
                         <span className="afaq-wave-ring afaq-wave-ring-1" />
                         <span className="afaq-wave-ring afaq-wave-ring-2" />
                         <span className="afaq-wave-ring afaq-wave-ring-3" />
 
-                        {/* Main Circular Button with Glowing Drop Shadow */}
-                        <div className="relative w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_0_30px_rgba(0,160,223,0.6)] border border-white/30 hover:scale-105 active:scale-95 transition-transform duration-200">
+                        {/* Main Circular Button */}
+                        <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-full bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-[0_4px_20px_rgba(0,160,223,0.45)] border border-white/80 hover:scale-105 active:scale-95 transition-transform duration-200">
                           <svg
-                            className="w-7 h-7 sm:w-8 sm:h-8 ml-1 text-white pointer-events-none"
+                            className="w-5 h-5 sm:w-6 sm:h-6 ml-0.5 text-white pointer-events-none"
                             viewBox="0 0 24 24"
                             fill="currentColor"
                             xmlns="http://www.w3.org/2000/svg"
