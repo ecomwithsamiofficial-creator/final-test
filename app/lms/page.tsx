@@ -54,19 +54,12 @@ export default function LmsClassroomPage() {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [detectedDurations, setDetectedDurations] = useState<{ [lessonId: string]: string }>({});
-  const [videoQuality, setVideoQuality] = useState<'auto' | '1080p' | '720p' | '480p' | '360p'>('auto');
-  const [showSettingsMenu, setShowSettingsMenu] = useState<boolean>(false);
-  const [qualityFeedback, setQualityFeedback] = useState<string>('');
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('sami_lms_durations');
       if (saved) {
         setDetectedDurations(JSON.parse(saved));
-      }
-      const savedQ = localStorage.getItem('sami_lms_pref_quality') as any;
-      if (savedQ && ['auto', '1080p', '720p', '480p', '360p'].includes(savedQ)) {
-        setVideoQuality(savedQ);
       }
     } catch (e) {}
   }, []);
@@ -204,21 +197,11 @@ export default function LmsClassroomPage() {
     return match && match[1] ? match[1] : '';
   };
 
-  const getYouTubeEmbedUrl = (url?: string, quality?: string, startSec?: number, shouldAutoplay?: boolean) => {
+  const getYouTubeEmbedUrl = (url?: string) => {
     const vId = getYouTubeId(url);
     if (!vId) return '';
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    
-    let vqParam = '';
-    if (quality === '1080p') vqParam = '&vq=hd1080';
-    else if (quality === '720p') vqParam = '&vq=hd720';
-    else if (quality === '480p') vqParam = '&vq=large';
-    else if (quality === '360p') vqParam = '&vq=medium';
-
-    const startParam = startSec && startSec > 0 ? `&start=${Math.floor(startSec)}` : '';
-    const autoParam = shouldAutoplay ? '&autoplay=1' : '';
-
-    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none${vqParam}${startParam}${autoParam}${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
   const formatVideoTime = (secs: number) => {
@@ -780,10 +763,6 @@ export default function LmsClassroomPage() {
   };
 
   const togglePlay = (e?: React.SyntheticEvent) => {
-    if (showSettingsMenu) {
-      setShowSettingsMenu(false);
-      return;
-    }
     if (e) {
       e.stopPropagation();
       const now = Date.now();
@@ -891,82 +870,12 @@ export default function LmsClassroomPage() {
     seekVideo(targetSeconds);
   };
 
-  const applyVideoQuality = (q: 'auto' | '1080p' | '720p' | '480p' | '360p') => {
-    setVideoQuality(q);
-    try {
-      localStorage.setItem('sami_lms_pref_quality', q);
-    } catch (e) {}
-
-    const ytQualityMap: Record<string, string> = {
-      'auto': 'auto',
-      '1080p': 'hd1080',
-      '720p': 'hd720',
-      '480p': 'large',
-      '360p': 'medium'
-    };
-    const ytQ = ytQualityMap[q] || 'auto';
-
-    if (lmsIframeRef.current) {
-      try {
-        lmsIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({
-            event: 'command',
-            func: 'setPlaybackQuality',
-            args: [ytQ]
-          }),
-          '*'
-        );
-        lmsIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({
-            event: 'command',
-            func: 'setPlaybackQualityRange',
-            args: [ytQ, ytQ]
-          }),
-          '*'
-        );
-
-        lmsIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ method: 'setQuality', value: q === 'auto' ? 'auto' : q }),
-          '*'
-        );
-        const resMap: Record<string, number> = { '1080p': 1080, '720p': 720, '480p': 480, '360p': 360 };
-        if (resMap[q]) {
-          lmsIframeRef.current.contentWindow?.postMessage(
-            JSON.stringify({ method: 'setResolution', value: resMap[q] }),
-            '*'
-          );
-        }
-      } catch (err) {}
-    }
-
-    setQualityFeedback(q === 'auto' ? 'Quality: Auto (Optimal)' : `Quality: ${q}`);
-    setTimeout(() => setQualityFeedback(''), 2500);
-  };
-
   const onIframeLoaded = () => {
     try {
       lmsIframeRef.current?.contentWindow?.postMessage(
         JSON.stringify({ event: 'listening', id: 1 }),
         '*'
       );
-      if (videoQuality) {
-        const ytQualityMap: Record<string, string> = {
-          'auto': 'auto',
-          '1080p': 'hd1080',
-          '720p': 'hd720',
-          '480p': 'large',
-          '360p': 'medium'
-        };
-        const ytQ = ytQualityMap[videoQuality] || 'auto';
-        lmsIframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: [ytQ] }),
-          '*'
-        );
-        lmsIframeRef.current?.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: [ytQ, ytQ] }),
-          '*'
-        );
-      }
     } catch (err) {}
   };
 
@@ -1801,8 +1710,8 @@ export default function LmsClassroomPage() {
                       <div className="relative w-full h-full bg-black">
                         <iframe
                           ref={lmsIframeRef}
-                          key={activeLesson?.id + (activeLesson?.videoUrl || '') + (videoQuality ? `_${videoQuality}` : '')}
-                          src={getYouTubeEmbedUrl(activeLesson?.videoUrl, videoQuality, currentTime, isPlaying)}
+                          key={activeLesson?.id + (activeLesson?.videoUrl || '')}
+                          src={getYouTubeEmbedUrl(activeLesson?.videoUrl)}
                           title={activeLesson?.title || 'Lesson Video'}
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
@@ -1847,101 +1756,11 @@ export default function LmsClassroomPage() {
                   {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Fullscreen) */}
                   <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
 
-                  {/* Dynamic Quality Feedback Toast */}
-                  {qualityFeedback && (
-                    <div className="absolute top-4 left-4 z-40 bg-black/85 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-white/20 shadow-2xl backdrop-blur-md animate-in fade-in flex items-center gap-2 pointer-events-none select-none">
-                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-                      <span>{qualityFeedback}</span>
-                    </div>
-                  )}
-
-                  {/* Centered Glassmorphic Quality Modal (Mobile-Friendly & Zero Clipping) */}
-                  {showSettingsMenu && (
-                    <div
-                      onClick={() => setShowSettingsMenu(false)}
-                      className="absolute inset-0 z-50 bg-black/85 backdrop-blur-md flex items-center justify-center p-3 sm:p-4 select-none animate-in fade-in"
-                    >
-                      <div
-                        onClick={(e) => e.stopPropagation()}
-                        className="w-full max-w-[320px] sm:max-w-sm bg-slate-900/95 border border-white/20 rounded-2xl sm:rounded-3xl p-3.5 sm:p-5 shadow-2xl space-y-3 animate-in zoom-in-95 text-white"
-                      >
-                        {/* Modal Header */}
-                        <div className="flex items-center justify-between pb-2 border-b border-white/10">
-                          <div className="flex items-center gap-2">
-                            <div className="w-7 h-7 rounded-lg bg-blue-600/20 text-blue-400 flex items-center justify-center border border-blue-500/30">
-                              <Settings size={15} />
-                            </div>
-                            <div>
-                              <h3 className="text-xs sm:text-sm font-bold text-white">Video Quality</h3>
-                              <p className="text-[10px] text-slate-400">Select streaming resolution</p>
-                            </div>
-                          </div>
-                          <button
-                            type="button"
-                            onClick={() => setShowSettingsMenu(false)}
-                            className="text-slate-400 hover:text-white p-1.5 rounded-xl hover:bg-white/10 transition-colors cursor-pointer"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
-
-                        {/* Quality Options List */}
-                        <div className="space-y-1.5 max-h-[50vh] overflow-y-auto pr-0.5">
-                          {[
-                            { id: 'auto', label: 'Auto (Recommended)', badge: 'Optimal', desc: 'Auto-adjusts to network speed' },
-                            { id: '1080p', label: '1080p Full HD', badge: '1080p', desc: 'Maximum sharpness & detail' },
-                            { id: '720p', label: '720p HD', badge: '720p', desc: 'High definition streaming' },
-                            { id: '480p', label: '480p Standard', badge: '480p', desc: 'Balanced for medium speed' },
-                            { id: '360p', label: '360p Data Saver', badge: '360p', desc: 'Fastest for slow connections' },
-                          ].map((item) => {
-                            const isSelected = videoQuality === item.id;
-                            return (
-                              <button
-                                key={item.id}
-                                type="button"
-                                onClick={() => {
-                                  applyVideoQuality(item.id as any);
-                                  setShowSettingsMenu(false);
-                                }}
-                                className={`w-full p-2.5 rounded-xl text-left flex items-center justify-between transition-all cursor-pointer ${
-                                  isSelected
-                                    ? 'bg-blue-600 text-white font-bold shadow-lg shadow-blue-600/30 ring-1 ring-white/20'
-                                    : 'bg-white/5 hover:bg-white/10 text-slate-200 border border-white/5'
-                                }`}
-                              >
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  <div className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
-                                    isSelected ? 'border-white bg-white text-blue-600' : 'border-slate-500'
-                                  }`}>
-                                    {isSelected && <Check size={11} strokeWidth={3} />}
-                                  </div>
-                                  <div className="min-w-0 flex-1">
-                                    <div className="text-xs font-bold leading-tight flex items-center gap-1.5">
-                                      <span>{item.label}</span>
-                                    </div>
-                                    <div className={`text-[10px] mt-0.5 truncate ${isSelected ? 'text-blue-100' : 'text-slate-400'}`}>
-                                      {item.desc}
-                                    </div>
-                                  </div>
-                                </div>
-                                <span className={`text-[10px] px-2 py-0.5 rounded-md font-bold shrink-0 ${
-                                  isSelected ? 'bg-white/20 text-white' : 'bg-slate-800 text-slate-300'
-                                }`}>
-                                  {item.badge}
-                                </span>
-                              </button>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-
                   {/* Custom Sleek Bottom Control Bar */}
                   {hasLessonVideo && (
                     <div
                       className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
-                        !isPlaying || isControlsHovered || showSettingsMenu ? 'opacity-100' : 'opacity-85 hover:opacity-100'
+                        !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
                       }`}
                       onMouseEnter={() => setIsControlsHovered(true)}
                       onMouseLeave={() => setIsControlsHovered(false)}
@@ -2006,37 +1825,16 @@ export default function LmsClassroomPage() {
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
-                      {/* Video Quality Settings Button */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowSettingsMenu(true);
-                        }}
-                        style={{ touchAction: 'manipulation' }}
-                        className={`text-white hover:text-blue-400 active:scale-90 transition-all px-2.5 h-8 sm:h-9 rounded-lg flex items-center gap-1.5 cursor-pointer select-none ${
-                          showSettingsMenu ? 'bg-white/20 text-blue-400 ring-1 ring-blue-400/40' : 'hover:bg-white/10'
-                        }`}
-                        title="Video Quality Settings"
-                      >
-                        <Settings size={16} className={showSettingsMenu ? 'rotate-90 transition-transform duration-300 text-blue-400' : 'transition-transform duration-300'} />
-                        <span className="text-[10px] font-bold text-slate-300 uppercase">
-                          {videoQuality}
-                        </span>
-                      </button>
-
-                      {/* Container Fullscreen Button (Watermark stays active) */}
-                      <button
-                        type="button"
-                        onClick={togglePlayerFullscreen}
-                        style={{ touchAction: 'manipulation' }}
-                        className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
-                        title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
-                      >
-                        {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                      </button>
-                    </div>
+                    {/* Container Fullscreen Button (Watermark stays active) */}
+                    <button
+                      type="button"
+                      onClick={togglePlayerFullscreen}
+                      style={{ touchAction: 'manipulation' }}
+                      className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
+                      title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
+                    >
+                      {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
                   </div>
                   )}
 
