@@ -4,6 +4,9 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Play, 
+  Pause,
+  Volume2,
+  VolumeX,
   CheckCircle2, 
   BookOpen, 
   Download, 
@@ -31,8 +34,7 @@ import {
   FileSpreadsheet, 
   Circle,
   Maximize2,
-  Minimize2,
-  ZoomIn
+  Minimize2
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -46,7 +48,11 @@ export default function LmsClassroomPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [accountRevoked, setAccountRevoked] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState<any>(null);
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
+  const [isPlaying, setIsPlaying] = useState<boolean>(false);
+  const [isMuted, setIsMuted] = useState<boolean>(false);
+  const [currentTime, setCurrentTime] = useState<number>(0);
+  const [duration, setDuration] = useState<number>(0);
+  const [isControlsHovered, setIsControlsHovered] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
@@ -87,6 +93,10 @@ export default function LmsClassroomPage() {
   const lastToggleRef = useRef(0);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  const lmsIframeRef = useRef<HTMLIFrameElement>(null);
+  const lmsTimelineTrackRef = useRef<HTMLDivElement>(null);
+  const lastTouchTimeRef = useRef<number>(0);
+  const hasRestoredPosRef = useRef<boolean>(false);
 
   const toggleIosFullscreen = () => {
     const now = Date.now();
@@ -152,32 +162,29 @@ export default function LmsClassroomPage() {
     }
   };
 
-  const getEmbedUrl = (url?: string) => {
-    const secParams = 'enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&fs=0';
-    if (!url) return `https://www.youtube.com/embed/dQw4w9WgXcQ?${secParams}`;
+  const getYouTubeId = (url?: string) => {
+    if (!url) return '';
     let clean = url.trim();
-
     if (clean.includes('<iframe')) {
-      const match = clean.match(/<iframe[^>]+src=["']([^"']+)["']/i);
-      if (match && match[1]) {
-        clean = match[1];
-      }
+      const match = clean.match(/src=["']([^"']+)["']/i);
+      if (match && match[1]) clean = match[1];
     }
+    const match = clean.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+    return match && match[1] ? match[1] : '';
+  };
 
-    let videoId = '';
-    if (clean.includes('youtube.com/watch?v=')) {
-      videoId = clean.split('v=')[1]?.split('&')[0];
-    } else if (clean.includes('youtu.be/')) {
-      videoId = clean.split('youtu.be/')[1]?.split('?')[0];
-    } else if (clean.includes('youtube.com/embed/')) {
-      videoId = clean.split('youtube.com/embed/')[1]?.split('?')[0];
-    }
+  const getYouTubeEmbedUrl = (url?: string) => {
+    const vId = getYouTubeId(url);
+    if (!vId) return '';
+    const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+  };
 
-    if (videoId) {
-      return `https://www.youtube.com/embed/${videoId}?${secParams}`;
-    }
-
-    return clean.includes('?') ? `${clean}&${secParams}` : `${clean}?${secParams}`;
+  const formatVideoTime = (secs: number) => {
+    if (!secs || isNaN(secs) || secs < 0) return '00:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
   const handleImmediateForceLogout = (reason = 'Your student access has been suspended or rejected by the administrator.') => {
@@ -662,6 +669,238 @@ export default function LmsClassroomPage() {
     )
   );
 
+  const startPlayback = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
+    }
+    setIsPlaying(true);
+    setIsMuted(false);
+
+    if (isDirectLessonVideo && videoRef.current) {
+      videoRef.current.muted = false;
+      videoRef.current.play().catch(() => {});
+    } else if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: 'play' }),
+          '*'
+        );
+      } catch (err) {}
+    }
+  };
+
+  const togglePlay = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
+    }
+    const nextPlaying = !isPlaying;
+    setIsPlaying(nextPlaying);
+
+    if (isDirectLessonVideo && videoRef.current) {
+      if (nextPlaying) {
+        videoRef.current.play().catch(() => {});
+      } else {
+        videoRef.current.pause();
+      }
+    } else if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: nextPlaying ? 'playVideo' : 'pauseVideo',
+            args: []
+          }),
+          '*'
+        );
+        if (nextPlaying) {
+          lmsIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+            '*'
+          );
+        }
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: nextPlaying ? 'play' : 'pause' }),
+          '*'
+        );
+      } catch (err) {}
+    }
+  };
+
+  const toggleMute = (e?: React.SyntheticEvent) => {
+    if (e) {
+      e.stopPropagation();
+      const now = Date.now();
+      if (now - lastTouchTimeRef.current < 400) return;
+      lastTouchTimeRef.current = now;
+    }
+    const nextMuted = !isMuted;
+    setIsMuted(nextMuted);
+
+    if (isDirectLessonVideo && videoRef.current) {
+      videoRef.current.muted = nextMuted;
+    } else if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: nextMuted ? 'mute' : 'unMute',
+            args: []
+          }),
+          '*'
+        );
+        if (!nextMuted) {
+          lmsIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+            '*'
+          );
+        }
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: nextMuted ? 'mute' : 'unmute' }),
+          '*'
+        );
+      } catch (err) {}
+    }
+  };
+
+  const seekVideo = (targetSeconds: number) => {
+    const clamped = Math.max(0, Math.min(targetSeconds, Math.max(1, duration)));
+    setCurrentTime(clamped);
+
+    if (isDirectLessonVideo && videoRef.current) {
+      videoRef.current.currentTime = clamped;
+    } else if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'seekTo',
+            args: [clamped, true]
+          }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: 'setCurrentTime', value: clamped }),
+          '*'
+        );
+      } catch (err) {}
+    }
+  };
+
+  const handleTimelineInteraction = (clientX: number) => {
+    if (!lmsTimelineTrackRef.current) return;
+    const rect = lmsTimelineTrackRef.current.getBoundingClientRect();
+    const percent = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+    const targetSeconds = Math.floor(percent * Math.max(1, duration));
+    seekVideo(targetSeconds);
+  };
+
+  const onIframeLoaded = () => {
+    try {
+      lmsIframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'listening', id: 1 }),
+        '*'
+      );
+    } catch (err) {}
+  };
+
+  // Reset playback and duration on lesson switch
+  useEffect(() => {
+    setIsPlaying(false);
+    setCurrentTime(0);
+    setDuration(0);
+    hasRestoredPosRef.current = false;
+    setVideoLoadError(false);
+  }, [activeLesson?.id]);
+
+  // Listen for YouTube API & PlayerJS progress & state updates
+  useEffect(() => {
+    const handleWindowMessage = (e: MessageEvent) => {
+      try {
+        const data = typeof e.data === 'string' ? JSON.parse(e.data) : e.data;
+        if (data && data.event === 'infoDelivery' && data.info) {
+          if (typeof data.info.currentTime === 'number') {
+            const cur = Math.floor(data.info.currentTime);
+            setCurrentTime(cur);
+            if (activeLesson) {
+              try {
+                localStorage.setItem(`sami_lms_pos_${activeLesson.id}`, String(cur));
+              } catch (err) {}
+            }
+          }
+          if (typeof data.info.duration === 'number' && data.info.duration > 0) {
+            const dur = Math.floor(data.info.duration);
+            setDuration(dur);
+
+            // Restore saved timestamp once per lesson load
+            if (activeLesson && !hasRestoredPosRef.current) {
+              hasRestoredPosRef.current = true;
+              try {
+                const savedPos = localStorage.getItem(`sami_lms_pos_${activeLesson.id}`);
+                if (savedPos && Number(savedPos) > 5 && Number(savedPos) < dur - 10) {
+                  seekVideo(Number(savedPos));
+                }
+              } catch (err) {}
+            }
+
+            // Watch progress tracking for YouTube videos
+            if (data.info.currentTime && dur > 0) {
+              const pct = Math.min(100, Math.round((data.info.currentTime / dur) * 100));
+              if (activeLesson) {
+                setWatchProgress(prev => {
+                  const current = prev[activeLesson.id] || 0;
+                  if (pct > current) {
+                    const nextMap = { ...prev, [activeLesson.id]: pct };
+                    try {
+                      localStorage.setItem('sami_lms_watch_progress', JSON.stringify(nextMap));
+                    } catch (err) {}
+                    return nextMap;
+                  }
+                  return prev;
+                });
+                if (pct >= 90 && !completedLessons.includes(activeLesson.id)) {
+                  markLessonComplete(activeLesson.id, true);
+                }
+              }
+            }
+          }
+          if (typeof data.info.playerState === 'number') {
+            if (data.info.playerState === 1) {
+              setIsPlaying(true);
+            } else if (data.info.playerState === 2) {
+              setIsPlaying(false);
+            } else if (data.info.playerState === 0) {
+              setIsPlaying(false);
+              if (activeLesson && !completedLessons.includes(activeLesson.id)) {
+                markLessonComplete(activeLesson.id, true);
+              }
+            }
+          }
+        }
+      } catch (err) {}
+    };
+
+    window.addEventListener('message', handleWindowMessage);
+    return () => window.removeEventListener('message', handleWindowMessage);
+  }, [activeLesson, completedLessons]);
+
   const activeModule = modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || modules[0];
   const activeModuleCompletedCount = activeModule ? activeModule.lessons.filter(l => completedLessons.includes(l.id)).length : 0;
   const activeModuleTotalCount = activeModule?.lessons?.length || 1;
@@ -896,28 +1135,30 @@ export default function LmsClassroomPage() {
         <aside
           className={`fixed lg:static inset-y-0 left-0 z-50 w-[88vw] max-w-sm sm:w-84 md:w-96 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 transform ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-          } max-h-screen lg:max-h-[calc(100vh-61px)]`}
+          } h-full max-h-screen lg:max-h-[calc(100vh-61px)]`}
         >
           {/* Sidebar Top: Title & Completion Stats (Dynamic and accurate) */}
-          <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10 space-y-3">
+          <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white sticky top-0 z-10 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
                   <BookOpen size={16} />
                 </div>
                 <div>
                   <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">
                     Course Curriculum
                   </h2>
-                  <span className="text-[10px] text-slate-500 block">
+                  <span className="text-[10px] sm:text-[11px] text-slate-500 block">
                     {completedLessons.length} of {totalLessons} Lectures completed ({progressPercent}%)
                   </span>
                 </div>
               </div>
 
               <button 
+                type="button"
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
+                className="lg:hidden w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 flex items-center justify-center cursor-pointer transition-colors shadow-xs active:scale-95"
+                aria-label="Close Curriculum Drawer"
               >
                 <X size={18} />
               </button>
@@ -937,20 +1178,23 @@ export default function LmsClassroomPage() {
 
             {/* Currently On Tracker Sub-header */}
             <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
-                <span className="text-slate-600 font-semibold text-[11px]">
-                  Currently on: <strong className="text-slate-900">{activeLesson?.title?.slice(0, 15) || 'Module 1.1'}...</strong>
+              <div className="flex items-center gap-1.5 min-w-0">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0" />
+                <span className="text-slate-600 font-semibold text-[11px] truncate">
+                  Currently on: <strong className="text-slate-900">{activeLesson?.title?.slice(0, 16) || 'Module 1.1'}...</strong>
                 </span>
               </div>
-              <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md">
+              <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md shrink-0">
                 {activeModulePercent}% Mastered
               </span>
             </div>
           </div>
 
-          {/* Module List with Vertical Connecting Tree Lines */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/50">
+          {/* Module List with Vertical Connecting Tree Lines & Smooth Touch Momentum Scrolling */}
+          <div 
+            className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2.5 bg-slate-50/50 touch-pan-y"
+            style={{ WebkitOverflowScrolling: 'touch' }}
+          >
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
               const moduleCompletedCount = m.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
@@ -1253,84 +1497,19 @@ export default function LmsClassroomPage() {
                       : undefined
                   }
                 >
-                  {/* Floating Top Player Toolbar: HD Stream Badge + Smart Zoom + Protected Fullscreen */}
-                  <div className="absolute top-2.5 sm:top-3 inset-x-2.5 sm:inset-x-4 z-30 flex items-center justify-between pointer-events-none">
-                    {/* Stream Info Badge */}
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs border border-white/10 text-white text-[10px] font-bold shadow-md pointer-events-auto">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-                      <span>1080p HD • Protected</span>
-                    </div>
-
-                    {/* Right Controls: Smart Zoom + Protected Fullscreen */}
-                    <div className="flex items-center gap-2 pointer-events-auto">
-                      {/* Smart Zoom Switcher (1x / 1.25x / 1.5x) */}
-                      <div className="flex items-center bg-black/70 backdrop-blur-xs border border-white/15 rounded-xl p-0.5 text-[10px] font-bold text-white shadow-md">
-                        <span className="hidden xs:flex items-center gap-1 px-1.5 text-slate-300">
-                          <ZoomIn size={11} />
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setZoomLevel(1)}
-                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
-                            zoomLevel === 1 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
-                          }`}
-                          title="Normal Size (1.0x)"
-                        >
-                          1x
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setZoomLevel(1.25)}
-                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
-                            zoomLevel === 1.25 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
-                          }`}
-                          title="Zoom In (1.25x)"
-                        >
-                          1.25x
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setZoomLevel(1.5)}
-                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
-                            zoomLevel === 1.5 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
-                          }`}
-                          title="High Zoom (1.5x)"
-                        >
-                          1.5x
-                        </button>
-                      </div>
-
-                      {/* LMS Protected Fullscreen Button (Guarantees Watermark stays on top) */}
-                      <button
-                        type="button"
-                        onClick={togglePlayerFullscreen}
-                        className="p-1.5 rounded-xl bg-black/70 hover:bg-blue-600 text-white border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
-                        title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
-                      >
-                        {isFullscreen || isIosFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Video Stage Container with Smooth Zoom Scaling */}
+                  {/* Video Stage Container */}
                   <div
-                    className="relative w-full h-full flex items-center justify-center overflow-hidden transition-transform duration-300 origin-center"
+                    className="relative w-full h-full flex items-center justify-center overflow-hidden"
                     style={{
-                      transform: zoomLevel > 1 ? `scale(${zoomLevel})` : undefined,
                       width: isIosFullscreen ? 'min(100vw, calc(100dvh * 16 / 9))' : '100%',
                       height: isIosFullscreen ? 'min(100dvh, calc(100vw * 9 / 16))' : '100%',
                     }}
                   >
-                    {activeLesson?.videoUrl && (
-                      activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-                      activeLesson.videoUrl.includes('supabase.co/storage')
-                    ) ? (
+                    {isDirectLessonVideo ? (
                       <div className="relative w-full h-full flex items-center justify-center bg-black">
                         <video
                           ref={videoRef}
-                          key={activeLesson.id + activeLesson.videoUrl}
-                          controls
-                          controlsList="nodownload nofullscreen"
+                          key={activeLesson?.id + (activeLesson?.videoUrl || '')}
                           playsInline
                           // @ts-ignore
                           webkit-playsinline="true"
@@ -1340,26 +1519,33 @@ export default function LmsClassroomPage() {
                           onLoadedData={() => setVideoLoadError(false)}
                           onLoadedMetadata={(e) => {
                             setVideoLoadError(false);
+                            const vid = e.currentTarget;
+                            if (vid.duration && isFinite(vid.duration)) {
+                              setDuration(Math.floor(vid.duration));
+                            }
                             try {
-                              const savedPos = localStorage.getItem(`sami_lms_pos_${activeLesson.id}`);
-                              if (savedPos && Number(savedPos) > 5 && Number(savedPos) < e.currentTarget.duration - 10) {
-                                e.currentTarget.currentTime = Number(savedPos);
+                              const savedPos = localStorage.getItem(`sami_lms_pos_${activeLesson?.id}`);
+                              if (savedPos && Number(savedPos) > 5 && Number(savedPos) < vid.duration - 10) {
+                                vid.currentTime = Number(savedPos);
+                                setCurrentTime(Number(savedPos));
                               }
                             } catch (err) {}
                           }}
                           onTimeUpdate={(e) => {
                             const vid = e.currentTarget;
                             if (!vid.duration || !isFinite(vid.duration) || vid.duration <= 0) return;
+                            const cur = Math.floor(vid.currentTime);
+                            setCurrentTime(cur);
                             const pct = Math.min(100, Math.round((vid.currentTime / vid.duration) * 100));
 
                             try {
-                              localStorage.setItem(`sami_lms_pos_${activeLesson.id}`, String(Math.floor(vid.currentTime)));
+                              localStorage.setItem(`sami_lms_pos_${activeLesson?.id}`, String(cur));
                             } catch (err) {}
 
                             setWatchProgress(prev => {
-                              const current = prev[activeLesson.id] || 0;
+                              const current = prev[activeLesson?.id] || 0;
                               if (pct > current) {
-                                const nextMap = { ...prev, [activeLesson.id]: pct };
+                                const nextMap = { ...prev, [activeLesson?.id]: pct };
                                 try {
                                   localStorage.setItem('sami_lms_watch_progress', JSON.stringify(nextMap));
                                 } catch (err) {}
@@ -1373,13 +1559,14 @@ export default function LmsClassroomPage() {
                             }
                           }}
                           onEnded={() => {
+                            setIsPlaying(false);
                             if (activeLesson && !completedLessons.includes(activeLesson.id)) {
                               markLessonComplete(activeLesson.id, true);
                             }
                           }}
-                          className="w-full h-full object-contain bg-black"
+                          className="w-full h-full object-contain bg-black pointer-events-none select-none"
                         >
-                          <source src={activeLesson.videoUrl} />
+                          <source src={activeLesson?.videoUrl} />
                           Your browser does not support HTML5 video streaming.
                         </video>
 
@@ -1390,10 +1577,9 @@ export default function LmsClassroomPage() {
                             <button
                               onClick={() => {
                                 setVideoLoadError(false);
-                                const vid = document.querySelector('video');
-                                if (vid) {
-                                  vid.load();
-                                  vid.play().catch(() => {});
+                                if (videoRef.current) {
+                                  videoRef.current.load();
+                                  videoRef.current.play().catch(() => {});
                                 }
                               }}
                               className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
@@ -1405,36 +1591,132 @@ export default function LmsClassroomPage() {
                         )}
                       </div>
                     ) : (
-                      <div className="relative w-full h-full">
-                        {/* Anti-Leak Top Click Shield (Blocks clicks on YouTube Title & Share link) */}
-                        <div 
-                          className="absolute top-0 inset-x-0 h-14 z-10 bg-transparent select-none cursor-default" 
-                          onContextMenu={(e) => e.preventDefault()}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-
-                        {/* Anti-Leak Bottom-Right Click Shield (Blocks clicks on "Watch on YouTube" logo) */}
-                        <div 
-                          className="absolute bottom-0 right-0 w-28 h-12 z-10 bg-transparent select-none cursor-default" 
-                          onContextMenu={(e) => e.preventDefault()}
-                          onClick={(e) => e.stopPropagation()}
-                        />
-
+                      <div className="relative w-full h-full bg-black">
                         <iframe
+                          ref={lmsIframeRef}
                           key={activeLesson?.id + (activeLesson?.videoUrl || '')}
-                          src={getEmbedUrl(activeLesson?.videoUrl)}
+                          src={getYouTubeEmbedUrl(activeLesson?.videoUrl)}
                           title={activeLesson?.title || 'Lesson Video'}
-                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                          allowFullScreen
-                          loading="lazy"
-                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          tabIndex={-1}
+                          onLoad={onIframeLoaded}
+                          className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Zoom & Fullscreen) */}
+                  {/* Transparent Click Shield (Physically intercepts 100% of taps/clicks, zero YouTube clickthrough leaks) */}
+                  <div
+                    onClick={togglePlay}
+                    style={{ touchAction: 'manipulation' }}
+                    className="absolute inset-0 z-10 cursor-pointer"
+                    title={isPlaying ? 'Click to Pause' : 'Click to Play'}
+                  />
+
+                  {/* Center Floating Play Button (When video is paused) */}
+                  {!isPlaying && (
+                    <button
+                      type="button"
+                      aria-label="Play lecture video"
+                      onClick={startPlayback}
+                      style={{ touchAction: 'manipulation' }}
+                      className="absolute inset-0 z-20 w-full h-full flex items-center justify-center bg-black/25 backdrop-blur-[1px] cursor-pointer transition-opacity select-none group/playbtn"
+                    >
+                      <div className="relative flex items-center justify-center w-14 h-14 sm:w-16 sm:h-16">
+                        <span className="afaq-wave-ring afaq-wave-ring-1" />
+                        <span className="afaq-wave-ring afaq-wave-ring-2" />
+                        <span className="afaq-wave-ring afaq-wave-ring-3" />
+
+                        <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-gradient-to-tr from-blue-700 to-blue-500 text-white flex items-center justify-center shadow-[0_4px_25px_rgba(37,99,235,0.5)] border-2 border-white/90 hover:scale-105 active:scale-95 transition-transform duration-200">
+                          <Play className="w-6 h-6 sm:w-7 sm:h-7 ml-1 fill-white text-white pointer-events-none" />
+                        </div>
+                      </div>
+                    </button>
+                  )}
+
+                  {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Fullscreen) */}
                   <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
+
+                  {/* Custom Sleek Bottom Control Bar */}
+                  <div
+                    className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
+                      !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
+                    }`}
+                    onMouseEnter={() => setIsControlsHovered(true)}
+                    onMouseLeave={() => setIsControlsHovered(false)}
+                  >
+                    <div className="flex items-center gap-1 sm:gap-2">
+                      {/* Play / Pause Toggle Button */}
+                      <button
+                        type="button"
+                        onClick={togglePlay}
+                        style={{ touchAction: 'manipulation' }}
+                        className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
+                        title={isPlaying ? 'Pause Video' : 'Play Video'}
+                      >
+                        {isPlaying ? <Pause size={18} /> : <Play size={18} className="fill-white ml-0.5" />}
+                      </button>
+
+                      {/* Mute / Unmute Button */}
+                      <button
+                        type="button"
+                        onClick={toggleMute}
+                        style={{ touchAction: 'manipulation' }}
+                        className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
+                        title={isMuted ? 'Unmute Sound' : 'Mute Sound'}
+                      >
+                        {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                      </button>
+
+                      {/* Video Time Indicator */}
+                      <span className="text-[10.5px] sm:text-xs font-mono font-bold text-white tracking-tight whitespace-nowrap ml-1 select-none">
+                        {formatVideoTime(currentTime)} / {formatVideoTime(duration)}
+                      </span>
+                    </div>
+
+                    {/* Interactive Draggable & Tap-to-Seek Scrubber Bar */}
+                    <div
+                      ref={lmsTimelineTrackRef}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTimelineInteraction(e.clientX);
+                      }}
+                      onTouchStart={(e) => {
+                        e.stopPropagation();
+                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                      }}
+                      onTouchMove={(e) => {
+                        e.stopPropagation();
+                        if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                      }}
+                      style={{ touchAction: 'none' }}
+                      className="flex-1 mx-2 sm:mx-3 py-3 -my-3 flex items-center cursor-pointer select-none group/timeline relative"
+                      title="Drag or tap to seek"
+                    >
+                      <div className="w-full bg-white/25 group-hover/timeline:bg-white/35 rounded-full h-1.5 sm:h-2 relative overflow-visible transition-colors">
+                        <div
+                          className="bg-blue-500 h-full rounded-full transition-[width] duration-75"
+                          style={{ width: `${Math.min(100, (currentTime / Math.max(1, duration)) * 100)}%` }}
+                        />
+                        <div
+                          className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-3.5 h-3.5 sm:w-4 sm:h-4 bg-white rounded-full shadow-lg border-2 border-blue-500 transition-transform active:scale-125 group-hover/timeline:scale-110 pointer-events-none"
+                          style={{ left: `${Math.min(100, (currentTime / Math.max(1, duration)) * 100)}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    {/* Container Fullscreen Button (Watermark stays active) */}
+                    <button
+                      type="button"
+                      onClick={togglePlayerFullscreen}
+                      style={{ touchAction: 'manipulation' }}
+                      className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
+                      title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
+                    >
+                      {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                    </button>
+                  </div>
 
                   {/* iOS Fullscreen Floating Exit [X] Button */}
                   {isIosFullscreen && (
