@@ -201,7 +201,7 @@ export default function LmsClassroomPage() {
     const vId = getYouTubeId(url);
     if (!vId) return '';
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&disablekb=0&fs=1${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none&vq=hd1080${originParam}`;
   };
 
   const formatVideoTime = (secs: number) => {
@@ -1737,33 +1737,38 @@ export default function LmsClassroomPage() {
                         )}
                       </div>
                     ) : (
-                      <div className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center">
+                      <div 
+                        className="relative w-full h-full bg-black overflow-hidden"
+                        style={{
+                          transform: 'translateZ(0)',
+                          WebkitTransform: 'translateZ(0)',
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          willChange: 'transform'
+                        }}
+                      >
                         <iframe
                           ref={lmsIframeRef}
                           key={activeLesson?.id + (activeLesson?.videoUrl || '')}
                           src={getYouTubeEmbedUrl(activeLesson?.videoUrl)}
                           title={activeLesson?.title || 'Lesson Video'}
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share; fullscreen"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
                           onLoad={onIframeLoaded}
-                          width="100%"
-                          height="100%"
-                          className="w-full h-full select-none border-0"
+                          style={{
+                            transform: 'translateZ(0)',
+                            WebkitTransform: 'translateZ(0)',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden'
+                          }}
+                          className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
                     )}
                   </div>
 
-                  {/* Top Privacy Shield for YouTube: Blocks accidental taps/clicks on YouTube title/share banner while leaving video & bottom controls 100% accessible */}
-                  {hasLessonVideo && !isDirectLessonVideo && (
-                    <div 
-                      className="absolute top-0 inset-x-0 h-14 z-20 pointer-events-auto"
-                      onContextMenu={(e) => e.preventDefault()}
-                    />
-                  )}
-
-                  {/* Transparent Click Shield (For direct MP4 videos) */}
-                  {hasLessonVideo && isDirectLessonVideo && (
+                  {/* Transparent Click Shield (Physically intercepts 100% of taps/clicks, zero YouTube clickthrough leaks) */}
+                  {hasLessonVideo && (
                     <div
                       onClick={togglePlay}
                       style={{ touchAction: 'manipulation' }}
@@ -1772,8 +1777,8 @@ export default function LmsClassroomPage() {
                     />
                   )}
 
-                  {/* Center Floating Play Button (When direct video is paused) */}
-                  {hasLessonVideo && isDirectLessonVideo && !isPlaying && (
+                  {/* Center Floating Play Button (When video is paused) */}
+                  {hasLessonVideo && !isPlaying && (
                     <button
                       type="button"
                       aria-label="Play lecture video"
@@ -1796,8 +1801,8 @@ export default function LmsClassroomPage() {
                   {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Fullscreen) */}
                   <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
 
-                  {/* Custom Sleek Bottom Control Bar (For direct HTML5 videos) */}
-                  {hasLessonVideo && isDirectLessonVideo && (
+                  {/* Custom Sleek Bottom Control Bar */}
+                  {hasLessonVideo && (
                     <div
                       className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
                         !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
