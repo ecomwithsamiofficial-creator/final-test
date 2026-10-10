@@ -201,7 +201,7 @@ export default function LmsClassroomPage() {
     const vId = getYouTubeId(url);
     if (!vId) return '';
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=0&cc_load_policy=0&cc_lang_pref=none&vq=hd1080${originParam}`;
   };
 
   const formatVideoTime = (secs: number) => {
@@ -755,6 +755,14 @@ export default function LmsClassroomPage() {
           '*'
         );
         lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: ['hd1080', 'hd1080'] }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
           JSON.stringify({ method: 'play' }),
           '*'
         );
@@ -791,6 +799,14 @@ export default function LmsClassroomPage() {
         if (nextPlaying) {
           lmsIframeRef.current.contentWindow?.postMessage(
             JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+            '*'
+          );
+          lmsIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }),
+            '*'
+          );
+          lmsIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: ['hd1080', 'hd1080'] }),
             '*'
           );
         }
@@ -876,6 +892,14 @@ export default function LmsClassroomPage() {
         JSON.stringify({ event: 'listening', id: 1 }),
         '*'
       );
+      lmsIframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }),
+        '*'
+      );
+      lmsIframeRef.current?.contentWindow?.postMessage(
+        JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: ['hd1080', 'hd1080'] }),
+        '*'
+      );
     } catch (err) {}
   };
 
@@ -945,6 +969,12 @@ export default function LmsClassroomPage() {
           if (typeof data.info.playerState === 'number') {
             if (data.info.playerState === 1) {
               setIsPlaying(true);
+              try {
+                lmsIframeRef.current?.contentWindow?.postMessage(
+                  JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: ['hd1080'] }),
+                  '*'
+                );
+              } catch (err) {}
             } else if (data.info.playerState === 2) {
               setIsPlaying(false);
             } else if (data.info.playerState === 0) {
@@ -1707,7 +1737,16 @@ export default function LmsClassroomPage() {
                         )}
                       </div>
                     ) : (
-                      <div className="relative w-full h-full bg-black">
+                      <div 
+                        className="relative w-full h-full bg-black overflow-hidden"
+                        style={{
+                          transform: 'translateZ(0)',
+                          WebkitTransform: 'translateZ(0)',
+                          backfaceVisibility: 'hidden',
+                          WebkitBackfaceVisibility: 'hidden',
+                          willChange: 'transform'
+                        }}
+                      >
                         <iframe
                           ref={lmsIframeRef}
                           key={activeLesson?.id + (activeLesson?.videoUrl || '')}
@@ -1716,6 +1755,12 @@ export default function LmsClassroomPage() {
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
                           onLoad={onIframeLoaded}
+                          style={{
+                            transform: 'translateZ(0)',
+                            WebkitTransform: 'translateZ(0)',
+                            backfaceVisibility: 'hidden',
+                            WebkitBackfaceVisibility: 'hidden'
+                          }}
                           className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
