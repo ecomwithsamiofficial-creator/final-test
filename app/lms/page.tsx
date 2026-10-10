@@ -34,7 +34,8 @@ import {
   FileSpreadsheet, 
   Circle,
   Maximize2,
-  Minimize2
+  Minimize2,
+  Settings
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -53,12 +54,25 @@ export default function LmsClassroomPage() {
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [detectedDurations, setDetectedDurations] = useState<{ [lessonId: string]: string }>({});
+  const [videoQuality, setVideoQuality] = useState<'auto' | '1080p' | '720p' | '480p' | '360p'>('auto');
+  const [playbackSpeed, setPlaybackSpeed] = useState<number>(1);
+  const [showSettingsMenu, setShowSettingsMenu] = useState<boolean>(false);
+  const [settingsActiveView, setSettingsActiveView] = useState<'quality' | 'speed'>('quality');
+  const [qualityFeedback, setQualityFeedback] = useState<string>('');
 
   useEffect(() => {
     try {
       const saved = localStorage.getItem('sami_lms_durations');
       if (saved) {
         setDetectedDurations(JSON.parse(saved));
+      }
+      const savedQ = localStorage.getItem('sami_lms_pref_quality') as any;
+      if (savedQ && ['auto', '1080p', '720p', '480p', '360p'].includes(savedQ)) {
+        setVideoQuality(savedQ);
+      }
+      const savedS = localStorage.getItem('sami_lms_pref_speed');
+      if (savedS && !isNaN(Number(savedS))) {
+        setPlaybackSpeed(Number(savedS));
       }
     } catch (e) {}
   }, []);
@@ -762,6 +776,10 @@ export default function LmsClassroomPage() {
   };
 
   const togglePlay = (e?: React.SyntheticEvent) => {
+    if (showSettingsMenu) {
+      setShowSettingsMenu(false);
+      return;
+    }
     if (e) {
       e.stopPropagation();
       const now = Date.now();
@@ -869,12 +887,117 @@ export default function LmsClassroomPage() {
     seekVideo(targetSeconds);
   };
 
+  const applyVideoQuality = (q: 'auto' | '1080p' | '720p' | '480p' | '360p') => {
+    setVideoQuality(q);
+    try {
+      localStorage.setItem('sami_lms_pref_quality', q);
+    } catch (e) {}
+
+    const ytQualityMap: Record<string, string> = {
+      'auto': 'auto',
+      '1080p': 'hd1080',
+      '720p': 'hd720',
+      '480p': 'large',
+      '360p': 'medium'
+    };
+    const ytQ = ytQualityMap[q] || 'auto';
+
+    if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setPlaybackQuality',
+            args: [ytQ]
+          }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setPlaybackQualityRange',
+            args: [ytQ, ytQ]
+          }),
+          '*'
+        );
+
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: 'setQuality', value: q === 'auto' ? 'auto' : q }),
+          '*'
+        );
+        const resMap: Record<string, number> = { '1080p': 1080, '720p': 720, '480p': 480, '360p': 360 };
+        if (resMap[q]) {
+          lmsIframeRef.current.contentWindow?.postMessage(
+            JSON.stringify({ method: 'setResolution', value: resMap[q] }),
+            '*'
+          );
+        }
+      } catch (err) {}
+    }
+
+    setQualityFeedback(q === 'auto' ? 'Quality: Auto' : `Quality: ${q}`);
+    setTimeout(() => setQualityFeedback(''), 2500);
+  };
+
+  const applyPlaybackSpeed = (speed: number) => {
+    setPlaybackSpeed(speed);
+    try {
+      localStorage.setItem('sami_lms_pref_speed', String(speed));
+    } catch (e) {}
+
+    if (isDirectLessonVideo && videoRef.current) {
+      videoRef.current.playbackRate = speed;
+    } else if (lmsIframeRef.current) {
+      try {
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({
+            event: 'command',
+            func: 'setPlaybackRate',
+            args: [speed]
+          }),
+          '*'
+        );
+        lmsIframeRef.current.contentWindow?.postMessage(
+          JSON.stringify({ method: 'setPlaybackRate', value: speed }),
+          '*'
+        );
+      } catch (err) {}
+    }
+
+    setQualityFeedback(`Speed: ${speed}x`);
+    setTimeout(() => setQualityFeedback(''), 2000);
+  };
+
   const onIframeLoaded = () => {
     try {
       lmsIframeRef.current?.contentWindow?.postMessage(
         JSON.stringify({ event: 'listening', id: 1 }),
         '*'
       );
+      if (videoQuality) {
+        const ytQualityMap: Record<string, string> = {
+          'auto': 'auto',
+          '1080p': 'hd1080',
+          '720p': 'hd720',
+          '480p': 'large',
+          '360p': 'medium'
+        };
+        const ytQ = ytQualityMap[videoQuality] || 'auto';
+        lmsIframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: [ytQ] }),
+          '*'
+        );
+        lmsIframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: [ytQ, ytQ] }),
+          '*'
+        );
+      }
+      if (playbackSpeed && playbackSpeed !== 1) {
+        lmsIframeRef.current?.contentWindow?.postMessage(
+          JSON.stringify({ event: 'command', func: 'setPlaybackRate', args: [playbackSpeed] }),
+          '*'
+        );
+      }
     } catch (err) {}
   };
 
@@ -1755,11 +1878,19 @@ export default function LmsClassroomPage() {
                   {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Fullscreen) */}
                   <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
 
+                  {/* Dynamic Quality & Speed Feedback Toast */}
+                  {qualityFeedback && (
+                    <div className="absolute top-4 left-4 z-40 bg-black/85 text-white text-xs font-bold px-3 py-1.5 rounded-xl border border-white/20 shadow-2xl backdrop-blur-md animate-in fade-in flex items-center gap-2 pointer-events-none select-none">
+                      <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+                      <span>{qualityFeedback}</span>
+                    </div>
+                  )}
+
                   {/* Custom Sleek Bottom Control Bar */}
                   {hasLessonVideo && (
                     <div
                       className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
-                        !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
+                        !isPlaying || isControlsHovered || showSettingsMenu ? 'opacity-100' : 'opacity-85 hover:opacity-100'
                       }`}
                       onMouseEnter={() => setIsControlsHovered(true)}
                       onMouseLeave={() => setIsControlsHovered(false)}
@@ -1824,16 +1955,160 @@ export default function LmsClassroomPage() {
                       </div>
                     </div>
 
-                    {/* Container Fullscreen Button (Watermark stays active) */}
-                    <button
-                      type="button"
-                      onClick={togglePlayerFullscreen}
-                      style={{ touchAction: 'manipulation' }}
-                      className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
-                      title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
-                    >
-                      {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
-                    </button>
+                    <div className="flex items-center gap-1 sm:gap-1.5 flex-shrink-0">
+                      {/* Video Settings / Quality Button & Popover */}
+                      <div className="relative">
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setShowSettingsMenu(prev => !prev);
+                          }}
+                          style={{ touchAction: 'manipulation' }}
+                          className={`text-white hover:text-blue-400 active:scale-90 transition-all px-2 h-8 sm:h-9 rounded-lg flex items-center gap-1.5 cursor-pointer select-none ${
+                            showSettingsMenu ? 'bg-white/20 text-blue-400 ring-1 ring-blue-400/40' : 'hover:bg-white/10'
+                          }`}
+                          title="Video Quality & Speed Settings"
+                        >
+                          <Settings size={16} className={showSettingsMenu ? 'rotate-90 transition-transform duration-300 text-blue-400' : 'transition-transform duration-300'} />
+                          <span className="text-[10px] font-bold text-slate-300 hidden sm:inline uppercase">
+                            {videoQuality}
+                          </span>
+                        </button>
+
+                        {/* Settings Popover Menu */}
+                        {showSettingsMenu && (
+                          <div
+                            onClick={(e) => e.stopPropagation()}
+                            className="absolute bottom-full right-0 mb-3 z-50 w-52 sm:w-56 bg-slate-950/95 backdrop-blur-2xl border border-white/20 rounded-2xl p-2.5 shadow-2xl text-white space-y-2 select-none animate-in fade-in zoom-in-95 origin-bottom-right"
+                          >
+                            {/* Navigation Tabs Header */}
+                            <div className="flex items-center justify-between pb-2 border-b border-white/10 px-1">
+                              <div className="flex items-center gap-1 bg-black/50 p-0.5 rounded-lg text-[10px] font-bold">
+                                <button
+                                  type="button"
+                                  onClick={() => setSettingsActiveView('quality')}
+                                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                                    settingsActiveView === 'quality' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  Quality
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={() => setSettingsActiveView('speed')}
+                                  className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
+                                    settingsActiveView === 'speed' ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-400 hover:text-white'
+                                  }`}
+                                >
+                                  Speed
+                                </button>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setShowSettingsMenu(false)}
+                                className="text-slate-400 hover:text-white p-1 rounded-md transition-colors cursor-pointer"
+                              >
+                                <X size={13} />
+                              </button>
+                            </div>
+
+                            {/* Quality Options */}
+                            {settingsActiveView === 'quality' && (
+                              <div className="space-y-1">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">
+                                  Video Quality
+                                </div>
+                                {[
+                                  { id: 'auto', label: 'Auto', badge: 'Optimal' },
+                                  { id: '1080p', label: '1080p', badge: 'Full HD' },
+                                  { id: '720p', label: '720p', badge: 'HD' },
+                                  { id: '480p', label: '480p', badge: 'SD' },
+                                  { id: '360p', label: '360p', badge: 'Data Saver' },
+                                ].map((item) => {
+                                  const isSelected = videoQuality === item.id;
+                                  return (
+                                    <button
+                                      key={item.id}
+                                      type="button"
+                                      onClick={() => {
+                                        applyVideoQuality(item.id as any);
+                                        setShowSettingsMenu(false);
+                                      }}
+                                      className={`w-full px-2.5 py-1.5 rounded-xl text-left flex items-center justify-between transition-colors cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-blue-600 text-white font-bold'
+                                          : 'hover:bg-white/10 text-slate-200'
+                                      }`}
+                                    >
+                                      <div className="flex items-center gap-2 min-w-0">
+                                        <div className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center shrink-0 ${
+                                          isSelected ? 'border-white bg-white text-blue-600' : 'border-slate-500'
+                                        }`}>
+                                          {isSelected && <Check size={10} strokeWidth={3} />}
+                                        </div>
+                                        <div className="truncate">
+                                          <div className="text-xs font-bold leading-tight flex items-center gap-1.5">
+                                            <span>{item.label}</span>
+                                            <span className={`text-[9px] px-1.5 py-0.2 rounded font-normal ${
+                                              isSelected ? 'bg-white/20 text-white' : 'bg-white/10 text-slate-300'
+                                            }`}>
+                                              {item.badge}
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+
+                            {/* Playback Speed Options */}
+                            {settingsActiveView === 'speed' && (
+                              <div className="space-y-1">
+                                <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider px-2 py-0.5">
+                                  Playback Speed
+                                </div>
+                                {[0.75, 1, 1.25, 1.5, 2].map((spd) => {
+                                  const isSelected = playbackSpeed === spd;
+                                  return (
+                                    <button
+                                      key={spd}
+                                      type="button"
+                                      onClick={() => {
+                                        applyPlaybackSpeed(spd);
+                                        setShowSettingsMenu(false);
+                                      }}
+                                      className={`w-full px-2.5 py-1.5 rounded-xl text-left flex items-center justify-between text-xs transition-colors cursor-pointer ${
+                                        isSelected
+                                          ? 'bg-blue-600 text-white font-bold'
+                                          : 'hover:bg-white/10 text-slate-200'
+                                      }`}
+                                    >
+                                      <span>{spd === 1 ? '1x (Normal)' : `${spd}x`}</span>
+                                      {isSelected && <Check size={13} strokeWidth={3} />}
+                                    </button>
+                                  );
+                                })}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+
+                      {/* Container Fullscreen Button (Watermark stays active) */}
+                      <button
+                        type="button"
+                        onClick={togglePlayerFullscreen}
+                        style={{ touchAction: 'manipulation' }}
+                        className="text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10"
+                        title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
+                      >
+                        {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
+                      </button>
+                    </div>
                   </div>
                   )}
 
