@@ -108,11 +108,6 @@ export default function LmsClassroomPage() {
   // DRM & Anti-Piracy Security System State
   const [showDrmModal, setShowDrmModal] = useState(false);
 
-  // Player Settings & Quality Control State
-  const [showSettingsMenu, setShowSettingsMenu] = useState(false);
-  const [selectedQuality, setSelectedQuality] = useState<'auto' | '1080p' | '720p' | '480p' | '360p'>('1080p');
-  const [qualityFeedback, setQualityFeedback] = useState<string | null>(null);
-
   // Fullscreen Player & Watermark State
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isIos, setIsIos] = useState(false);
@@ -611,15 +606,6 @@ export default function LmsClassroomPage() {
   }, []);
 
   useEffect(() => {
-    try {
-      const savedQ = localStorage.getItem('sami_lms_pref_quality') as any;
-      if (savedQ && ['auto', '1080p', '720p', '480p', '360p'].includes(savedQ)) {
-        setSelectedQuality(savedQ);
-      }
-    } catch (e) {}
-  }, []);
-
-  useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isIosFullscreen) {
         toggleIosFullscreen();
@@ -784,47 +770,7 @@ export default function LmsClassroomPage() {
     }
   };
 
-  const handleQualityChange = (q: 'auto' | '1080p' | '720p' | '480p' | '360p') => {
-    setSelectedQuality(q);
-    setShowSettingsMenu(false);
-    try {
-      localStorage.setItem('sami_lms_pref_quality', q);
-    } catch (e) {}
-
-    const qualityLabelMap: Record<string, string> = {
-      '1080p': '1080p Full HD',
-      '720p': '720p HD',
-      '480p': '480p Standard',
-      '360p': '360p Data Saver',
-      'auto': 'Auto (Adaptive)'
-    };
-    setQualityFeedback(qualityLabelMap[q] || q);
-    setTimeout(() => setQualityFeedback(null), 2500);
-
-    const ytQualityValue = q === 'auto' ? 'auto' : q === '1080p' ? 'hd1080' : q === '720p' ? 'hd720' : q === '480p' ? 'large' : 'medium';
-    if (lmsIframeRef.current?.contentWindow) {
-      try {
-        lmsIframeRef.current.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'setPlaybackQuality', args: [ytQualityValue] }),
-          '*'
-        );
-        lmsIframeRef.current.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'setPlaybackQualityRange', args: [ytQualityValue, ytQualityValue] }),
-          '*'
-        );
-        lmsIframeRef.current.contentWindow.postMessage(
-          JSON.stringify({ event: 'command', func: 'suggestedQuality', args: [ytQualityValue] }),
-          '*'
-        );
-      } catch (e) {}
-    }
-  };
-
   const togglePlay = (e?: React.SyntheticEvent) => {
-    if (showSettingsMenu) {
-      setShowSettingsMenu(false);
-      return;
-    }
     if (e) {
       e.stopPropagation();
       const now = Date.now();
@@ -1911,25 +1857,6 @@ export default function LmsClassroomPage() {
                       </div>
                     </div>
 
-                    {/* Settings & Quality Gear Button */}
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setShowSettingsMenu(prev => !prev);
-                      }}
-                      style={{ touchAction: 'manipulation' }}
-                      className={`text-white hover:text-blue-400 active:scale-90 transition-all w-8 h-8 sm:w-9 sm:h-9 rounded-lg flex items-center justify-center cursor-pointer select-none hover:bg-white/10 relative ${
-                        showSettingsMenu ? 'bg-white/15 text-blue-400' : ''
-                      }`}
-                      title="Video Quality Settings"
-                    >
-                      <Settings size={18} className={showSettingsMenu ? 'rotate-45 transition-transform duration-200' : 'transition-transform duration-200'} />
-                      <span className="absolute -top-1 -right-1 text-[8px] font-black bg-blue-600 text-white px-1 py-0.2 rounded-full border border-black/40">
-                        {selectedQuality === 'auto' ? 'HD' : selectedQuality}
-                      </span>
-                    </button>
-
                     {/* Container Fullscreen Button (Watermark stays active) */}
                     <button
                       type="button"
@@ -1941,62 +1868,6 @@ export default function LmsClassroomPage() {
                       {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                     </button>
                   </div>
-                  )}
-
-                  {/* Sleek Floating Quality Settings Popover Menu */}
-                  {hasLessonVideo && showSettingsMenu && (
-                    <div 
-                      onClick={(e) => e.stopPropagation()}
-                      className="absolute bottom-14 right-2 sm:right-6 z-40 bg-slate-900/95 backdrop-blur-xl border border-slate-700/80 rounded-2xl shadow-2xl p-2 w-52 sm:w-56 animate-in fade-in zoom-in-95 duration-150 select-none"
-                    >
-                      <div className="flex items-center justify-between px-2.5 py-1.5 border-b border-slate-800 mb-1.5">
-                        <span className="text-[11px] font-bold text-slate-200 flex items-center gap-1.5">
-                          <Settings size={12} className="text-blue-400" />
-                          <span>Playback Quality</span>
-                        </span>
-                        <span className="text-[10px] font-mono font-bold text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded-full border border-blue-500/20">
-                          {selectedQuality.toUpperCase()}
-                        </span>
-                      </div>
-
-                      <div className="space-y-1">
-                        {[
-                          { key: '1080p', label: '1080p Full HD', badge: '1080p', desc: 'Highest definition' },
-                          { key: '720p', label: '720p HD', badge: '720p', desc: 'Standard high-res' },
-                          { key: '480p', label: '480p Standard', badge: '480p', desc: 'Good clarity' },
-                          { key: '360p', label: '360p Data Saver', badge: '360p', desc: 'Saves mobile data' },
-                          { key: 'auto', label: 'Auto (Recommended)', badge: 'Auto', desc: 'Adaptive network' },
-                        ].map((opt) => {
-                          const isSelected = selectedQuality === opt.key;
-                          return (
-                            <button
-                              key={opt.key}
-                              type="button"
-                              onClick={() => handleQualityChange(opt.key as any)}
-                              className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-left transition-all cursor-pointer ${
-                                isSelected 
-                                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 font-bold' 
-                                  : 'text-slate-300 hover:bg-slate-800/80 hover:text-white'
-                              }`}
-                            >
-                              <div className="flex flex-col">
-                                <span className="text-xs leading-tight font-medium">{opt.label}</span>
-                                <span className={`text-[9.5px] ${isSelected ? 'text-blue-100' : 'text-slate-500'}`}>{opt.desc}</span>
-                              </div>
-                              {isSelected && <Check size={14} className="text-white shrink-0 ml-1.5" />}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Quality Change Toast Notification */}
-                  {hasLessonVideo && qualityFeedback && (
-                    <div className="absolute top-4 left-1/2 -translate-x-1/2 z-40 bg-slate-900/90 backdrop-blur-md border border-blue-500/40 text-white text-xs font-bold px-3.5 py-1.5 rounded-full shadow-2xl flex items-center gap-2 animate-in fade-in duration-200">
-                      <span className="w-2 h-2 rounded-full bg-blue-400 animate-ping" />
-                      <span>Quality set to {qualityFeedback}</span>
-                    </div>
                   )}
 
                   {/* iOS Fullscreen Floating Exit [X] Button */}
