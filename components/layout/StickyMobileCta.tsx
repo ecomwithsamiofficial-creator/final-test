@@ -19,8 +19,8 @@ export function StickyMobileCta() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Hide on admin and checkout/enrollment pages
-  if (pathname.startsWith('/admin') || pathname === '/enrollment' || pathname === '/checkout') {
+  // Hide on admin, LMS, and checkout/enrollment pages
+  if (pathname.startsWith('/admin') || pathname.startsWith('/lms') || pathname === '/enrollment' || pathname === '/checkout') {
     return null;
   }
 

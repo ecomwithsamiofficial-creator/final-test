@@ -1,49 +1,35 @@
 'use client';
 
 import React, { useState, useEffect, useRef } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
   Play, 
   CheckCircle2, 
   BookOpen, 
   Download, 
-  Phone, 
   LogOut, 
   ChevronDown, 
   ChevronRight, 
-  Award, 
-  Sparkles, 
   Clock, 
   FileText, 
   ShoppingBag, 
   MessageSquare, 
   Search, 
-  ExternalLink, 
   ChevronLeft, 
   Menu, 
   X, 
-  Zap, 
-  Globe2, 
   ShieldCheck, 
   Check, 
-  ListVideo,
-  AlertCircle,
-  RotateCcw,
-  Lock,
-  Cloud,
-  Loader2,
-  Shield,
-  ShieldAlert,
-  AlertTriangle,
-  Bell,
-  Pin,
-  Radio,
-  Bookmark,
-  Share2,
-  FileSpreadsheet,
-  Layers,
-  Circle
+  AlertCircle, 
+  RotateCcw, 
+  Lock, 
+  Cloud, 
+  Loader2, 
+  Shield, 
+  Pin, 
+  Radio, 
+  FileSpreadsheet, 
+  Circle 
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -72,8 +58,6 @@ export default function LmsClassroomPage() {
   const [watchProgress, setWatchProgress] = useState<{ [lessonId: string]: number }>({});
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
   const [syncFeedback, setSyncFeedback] = useState<string>('');
-  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
-  const [shareToast, setShareToast] = useState<string>('');
 
   const markUpdatesAsRead = () => {
     if (communityUpdates.length > 0) {
@@ -99,7 +83,6 @@ export default function LmsClassroomPage() {
   const lastToggleRef = useRef(0);
   const playerContainerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const topLayerWatermarkRef = useRef<HTMLDivElement>(null);
 
   const toggleIosFullscreen = () => {
     const now = Date.now();
@@ -276,7 +259,7 @@ export default function LmsClassroomPage() {
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
         (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ||
         (/Macintosh/.test(navigator.userAgent) && 'ontouchend' in document);
-      setIsIos(isApple);
+      setIsApple(isApple);
       isIosRef.current = isApple;
     }
 
@@ -521,37 +504,14 @@ export default function LmsClassroomPage() {
     };
   }, []);
 
+  const setIsApple = (val: boolean) => {
+    setIsIos(val);
+  };
+
   useEffect(() => {
-    const showTopWatermark = () => {
-      try {
-        if (topLayerWatermarkRef.current && typeof (topLayerWatermarkRef.current as any).showPopover === 'function') {
-          if (!(topLayerWatermarkRef.current as any).matches(':popover-open')) {
-            (topLayerWatermarkRef.current as any).showPopover();
-          }
-        }
-      } catch (e) {}
-    };
-
-    const hideTopWatermark = () => {
-      try {
-        if (topLayerWatermarkRef.current && typeof (topLayerWatermarkRef.current as any).hidePopover === 'function') {
-          if ((topLayerWatermarkRef.current as any).matches(':popover-open')) {
-            (topLayerWatermarkRef.current as any).hidePopover();
-          }
-        }
-      } catch (e) {}
-    };
-
     const handleFsChange = () => {
       const fsElem = document.fullscreenElement || (document as any).webkitFullscreenElement;
-      const isFs = Boolean(fsElem);
-      setIsFullscreen(isFs);
-
-      if (isFs) {
-        showTopWatermark();
-      } else {
-        hideTopWatermark();
-      }
+      setIsFullscreen(Boolean(fsElem));
     };
 
     const handleWindowMessage = (event: MessageEvent) => {
@@ -567,7 +527,6 @@ export default function LmsClassroomPage() {
             } catch (e) {}
           } else {
             setIsFullscreen(true);
-            showTopWatermark();
           }
         } else if (data.event === 'exitfullscreen') {
           if (isIosRef.current) {
@@ -577,7 +536,6 @@ export default function LmsClassroomPage() {
             } catch (e) {}
           } else {
             setIsFullscreen(false);
-            hideTopWatermark();
           }
         }
       } catch (e) {}
@@ -675,13 +633,14 @@ export default function LmsClassroomPage() {
     markLessonComplete(lessonId);
   };
 
-  const allLessons = modules.flatMap(m => m.lessons);
+  // 100% Dynamic Lesson & Module Calculations (Zero Hardcoding)
+  const allLessons = modules.flatMap(m => m.lessons || []);
   const currentLessonIndex = allLessons.findIndex(l => l.id === activeLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
 
-  const totalLessons = allLessons.length || 29;
-  const progressPercent = Math.round((completedLessons.length / totalLessons) * 100);
+  const totalLessons = allLessons.length;
+  const progressPercent = totalLessons > 0 ? Math.round((completedLessons.length / totalLessons) * 100) : 0;
 
   const isCurrentDone = activeLesson ? completedLessons.includes(activeLesson.id) : false;
   const currentLessonWatchPct = activeLesson 
@@ -694,10 +653,9 @@ export default function LmsClassroomPage() {
     )
   );
 
-  // Active module calculation for badge
-  const activeModule = modules.find(m => m.lessons.some(l => l.id === activeLesson?.id)) || modules[0];
+  const activeModule = modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || modules[0];
   const activeModuleCompletedCount = activeModule ? activeModule.lessons.filter(l => completedLessons.includes(l.id)).length : 0;
-  const activeModuleTotalCount = activeModule?.lessons.length || 1;
+  const activeModuleTotalCount = activeModule?.lessons?.length || 1;
   const activeModulePercent = Math.round((activeModuleCompletedCount / activeModuleTotalCount) * 100);
 
   const filteredSuppliers = suppliers.filter(s => {
@@ -707,19 +665,6 @@ export default function LmsClassroomPage() {
                          s.city.toLowerCase().includes(supplierSearch.toLowerCase());
     return matchesCountry && matchesQuery;
   });
-
-  const handleShare = () => {
-    if (typeof window !== 'undefined') {
-      try {
-        navigator.clipboard.writeText(window.location.href);
-        setShareToast('Link copied to clipboard!');
-        setTimeout(() => setShareToast(''), 3000);
-      } catch (e) {
-        setShareToast('Share link: ' + window.location.href);
-        setTimeout(() => setShareToast(''), 3000);
-      }
-    }
-  };
 
   if (accountRevoked) {
     return (
@@ -771,7 +716,7 @@ export default function LmsClassroomPage() {
       {/* TOP HEADER BAR (Ultra-Clean Light & Royal Blue Theme) */}
       {/* ========================================================================= */}
       <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs">
-        {/* Left Branding & Mobile Trigger */}
+        {/* Left Branding (Non-clickable: Student stays inside LMS classroom) */}
         <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
@@ -782,8 +727,8 @@ export default function LmsClassroomPage() {
             <span className="hidden xs:inline">Modules</span>
           </button>
 
-          <Link href="/" className="flex items-center gap-2.5 group">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-700 flex items-center justify-center font-black text-white text-base shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
+          <div className="flex items-center gap-2.5 select-none">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-700 flex items-center justify-center font-black text-white text-base shadow-sm shadow-blue-500/30">
               S
             </div>
             <div>
@@ -794,7 +739,7 @@ export default function LmsClassroomPage() {
                 Mastery Mentorship
               </span>
             </div>
-          </Link>
+          </div>
 
           {/* DRM Secure Badge */}
           <button
@@ -870,7 +815,7 @@ export default function LmsClassroomPage() {
         {/* Right Status, Progress & Profile */}
         <div className="flex items-center gap-2.5 sm:gap-4">
           
-          {/* Progress Tracker Strip */}
+          {/* Progress Tracker Strip (Dynamic & Accurate) */}
           <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs">
             <span className="text-slate-500 font-medium text-[11px]">Progress:</span>
             <div className="w-20 md:w-28 bg-slate-200/90 rounded-full h-2 overflow-hidden">
@@ -913,7 +858,7 @@ export default function LmsClassroomPage() {
 
             <button
               onClick={handleLogout}
-              className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200/80 transition-colors"
+              className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200/80 transition-colors cursor-pointer"
               title="Log Out of Classroom"
             >
               <LogOut size={15} />
@@ -944,7 +889,7 @@ export default function LmsClassroomPage() {
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
           } max-h-screen lg:max-h-[calc(100vh-61px)]`}
         >
-          {/* Sidebar Top: Title & Completion Stats */}
+          {/* Sidebar Top: Title & Completion Stats (Dynamic and accurate) */}
           <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10 space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -963,7 +908,7 @@ export default function LmsClassroomPage() {
 
               <button 
                 onClick={() => setSidebarOpen(false)}
-                className="lg:hidden text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+                className="lg:hidden text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 cursor-pointer"
               >
                 <X size={18} />
               </button>
@@ -999,9 +944,9 @@ export default function LmsClassroomPage() {
           <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/50">
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
-              const moduleCompletedCount = m.lessons.filter(l => completedLessons.includes(l.id)).length;
-              const isAllCompleted = moduleCompletedCount === m.lessons.length && m.lessons.length > 0;
-              const isActiveModule = m.lessons.some(l => l.id === activeLesson?.id);
+              const moduleCompletedCount = m.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
+              const isAllCompleted = moduleCompletedCount === m.lessons?.length && (m.lessons?.length || 0) > 0;
+              const isActiveModule = m.lessons?.some(l => l.id === activeLesson?.id);
 
               return (
                 <div 
@@ -1017,15 +962,21 @@ export default function LmsClassroomPage() {
                   >
                     <div className="flex items-center gap-2.5 text-xs font-bold text-slate-800 min-w-0">
                       {isAllCompleted ? (
-                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                        <div 
+                          style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
+                          className="w-6 h-6 min-w-[24px] min-h-[24px] rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 aspect-square"
+                        >
                           <CheckCircle2 size={15} />
                         </div>
                       ) : (
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
-                          isActiveModule 
-                            ? 'bg-blue-600 text-white shadow-xs' 
-                            : 'bg-slate-100 text-slate-600 border border-slate-200'
-                        }`}>
+                        <div 
+                          style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
+                          className={`w-6 h-6 min-w-[24px] min-h-[24px] rounded-full flex items-center justify-center text-xs font-bold shrink-0 aspect-square ${
+                            isActiveModule 
+                              ? 'bg-blue-600 text-white shadow-xs' 
+                              : 'bg-slate-100 text-slate-600 border border-slate-200'
+                          }`}
+                        >
                           {m.id}
                         </div>
                       )}
@@ -1040,7 +991,7 @@ export default function LmsClassroomPage() {
                           ? 'bg-blue-50 text-blue-700 border border-blue-200' 
                           : 'bg-slate-100 text-slate-600'
                       }`}>
-                        {moduleCompletedCount}/{m.lessons.length} {isActiveModule ? 'Active' : ''}
+                        {moduleCompletedCount}/{m.lessons?.length || 0} {isActiveModule ? 'Active' : ''}
                       </span>
                       {isOpen ? (
                         <ChevronDown size={14} className="text-slate-400" />
@@ -1056,7 +1007,7 @@ export default function LmsClassroomPage() {
                       {/* Vertical Connecting Line Container */}
                       <div className="relative pl-5 ml-3 border-l-2 border-blue-200/90 space-y-2 py-1">
                         {m.lessons
-                          .filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                          ?.filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()))
                           .map((lesson) => {
                             const isDone = completedLessons.includes(lesson.id);
                             const isCurrent = activeLesson?.id === lesson.id;
@@ -1077,30 +1028,36 @@ export default function LmsClassroomPage() {
                               >
                                 {/* Tree Branch Connector Line Node */}
                                 <div 
-                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 ${
+                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 pointer-events-none ${
                                     isCurrent ? 'bg-blue-500' : 'bg-blue-200'
                                   }`} 
                                 />
 
                                 <div className="flex items-center gap-2.5 min-w-0">
-                                  {/* Play Icon or Complete Checkmark */}
+                                  {/* Play Icon or 100% Round SVG Circle (Zero Stretching into Ovals on iPhone / Android) */}
                                   {isCurrent ? (
-                                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs shadow-blue-500/40">
+                                    <div 
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-blue-500/40"
+                                    >
                                       <Play size={10} className="fill-white ml-0.5" />
                                     </div>
                                   ) : isDone ? (
                                     <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         toggleLessonComplete(lesson.id);
                                       }}
-                                      className="text-emerald-600 hover:text-emerald-700 flex-shrink-0"
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-600 hover:text-emerald-700 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
                                       title="Completed (Click to Toggle)"
                                     >
-                                      <CheckCircle2 size={16} />
+                                      <CheckCircle2 size={18} className="shrink-0 aspect-square" />
                                     </button>
                                   ) : (
                                     <button
+                                      type="button"
                                       onClick={(e) => {
                                         e.stopPropagation();
                                         if (isAdmin || isDone) {
@@ -1110,9 +1067,12 @@ export default function LmsClassroomPage() {
                                           setTimeout(() => setSyncFeedback(''), 3000);
                                         }
                                       }}
-                                      className="w-4 h-4 rounded-full border border-slate-300 hover:border-blue-500 flex-shrink-0"
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-300 hover:text-blue-500 cursor-pointer p-0 m-0 border-0 bg-transparent"
                                       title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
-                                    />
+                                    >
+                                      <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
+                                    </button>
                                   )}
 
                                   <div className="truncate">
@@ -1259,7 +1219,7 @@ export default function LmsClassroomPage() {
                   </div>
                 </div>
 
-                {/* 16:9 Responsive Video Player Container */}
+                {/* 16:9 Responsive Video Player Container (Watermark STRICTLY locked inside) */}
                 <div
                   ref={playerContainerRef}
                   className={`bg-slate-950 flex items-center justify-center transition-all ${
@@ -1369,7 +1329,7 @@ export default function LmsClassroomPage() {
                                   vid.play().catch(() => {});
                                 }
                               }}
-                              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white flex items-center gap-1.5 transition-colors shadow-lg"
+                              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white flex items-center gap-1.5 transition-colors shadow-lg cursor-pointer"
                             >
                               <RotateCcw size={13} />
                               <span>Reload Video Stream</span>
@@ -1389,10 +1349,8 @@ export default function LmsClassroomPage() {
                       />
                     )}
 
-                    {/* Dynamic Forensic Watermark Overlay (100% on Video Stage) */}
-                    {(!isFullscreen || isIosFullscreen) && (
-                      <DynamicForensicWatermark user={user} isFullscreen={isIosFullscreen} />
-                    )}
+                    {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas) */}
+                    <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
 
                     {/* iOS Fullscreen Floating Exit [X] Button */}
                     {isIosFullscreen && (
@@ -1402,7 +1360,7 @@ export default function LmsClassroomPage() {
                           e.preventDefault();
                           toggleIosFullscreen();
                         }}
-                        className="absolute top-3 right-3 z-[9999999] p-2.5 rounded-full bg-black/80 hover:bg-red-600 text-white border border-white/20 shadow-2xl backdrop-blur-md active:scale-95 flex items-center justify-center cursor-pointer"
+                        className="absolute top-3 right-3 z-30 p-2.5 rounded-full bg-black/80 hover:bg-red-600 text-white border border-white/20 shadow-2xl backdrop-blur-md active:scale-95 flex items-center justify-center cursor-pointer"
                         title="Exit Fullscreen"
                       >
                         <X size={18} className="text-white" />
@@ -1413,50 +1371,20 @@ export default function LmsClassroomPage() {
 
                 {/* Lecture Info Card (Below Video Player) */}
                 <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs space-y-4">
-                  {/* Badges & Action Buttons */}
-                  <div className="flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                        CURRENT LECTURE • MODULE {activeModule?.id || 1}
-                      </span>
-                      <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <Clock size={12} className="text-slate-500" />
-                        <span>{activeLesson?.duration || '12:40 mins'}</span>
-                      </span>
-                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                        <ShieldCheck size={12} className="text-emerald-600" />
-                        <span>Mentorship Verified</span>
-                      </span>
-                    </div>
-
-                    <div className="flex items-center gap-2">
-                      <button
-                        onClick={() => setIsBookmarked(!isBookmarked)}
-                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                          isBookmarked 
-                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                            : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
-                        }`}
-                      >
-                        <Bookmark size={14} className={isBookmarked ? 'fill-blue-600' : ''} />
-                        <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
-                      </button>
-
-                      <button
-                        onClick={handleShare}
-                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
-                      >
-                        <Share2 size={14} />
-                        <span>Share</span>
-                      </button>
-                    </div>
+                  {/* Badges Strip (Share & Bookmark removed as requested) */}
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                      CURRENT LECTURE • MODULE {activeModule?.id || 1}
+                    </span>
+                    <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <Clock size={12} className="text-slate-500" />
+                      <span>{activeLesson?.duration || '12:40 mins'}</span>
+                    </span>
+                    <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                      <ShieldCheck size={12} className="text-emerald-600" />
+                      <span>Mentorship Verified</span>
+                    </span>
                   </div>
-
-                  {shareToast && (
-                    <div className="p-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl animate-in fade-in">
-                      {shareToast}
-                    </div>
-                  )}
 
                   {/* Main Lecture Title */}
                   <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
@@ -1508,10 +1436,11 @@ export default function LmsClassroomPage() {
                         </div>
 
                         <a
-                          href="/apps/WithSamiLMS_Windows_1.0.13.exe"
-                          download
-                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors"
-                          title="Download Resource"
+                          href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20send%20the%20cheatsheet%20PDF%20file."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors cursor-pointer"
+                          title="Get Resource File"
                         >
                           <Download size={16} />
                         </a>
@@ -1534,10 +1463,11 @@ export default function LmsClassroomPage() {
                         </div>
 
                         <a
-                          href="/apps/WithSamiLMS_Windows_1.0.13.exe"
-                          download
-                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors"
-                          title="Download Resource"
+                          href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20send%20the%20Unit%20Economics%20calculator%20sheet."
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors cursor-pointer"
+                          title="Get Resource File"
                         >
                           <Download size={16} />
                         </a>
@@ -1598,7 +1528,7 @@ export default function LmsClassroomPage() {
                     href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20have%20a%20question%20for%20the%20live%20session."
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all whitespace-nowrap self-start sm:self-auto"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer"
                   >
                     Join Discussion
                   </a>
@@ -1691,7 +1621,7 @@ export default function LmsClassroomPage() {
                         href={s.whatsappLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer"
                       >
                         <MessageSquare size={14} />
                         <span>Chat on WhatsApp with Warehouse</span>
@@ -1713,7 +1643,7 @@ export default function LmsClassroomPage() {
                       Power Bonus Resources Hub
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Premium software, custom templates, Shopify themes, and profit calculators
+                      Premium templates, Shopify themes, and profit calculators
                     </p>
                   </div>
                   <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
@@ -1736,12 +1666,13 @@ export default function LmsClassroomPage() {
                       </div>
 
                       <a
-                        href="/apps/WithSamiLMS_Windows_1.0.13.exe"
-                        download
-                        className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 hover:text-white bg-slate-100 hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors border border-slate-200 active:scale-95"
+                        href={`https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20share%20access%20to%20bonus%20resource:%20${encodeURIComponent(r.title)}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 hover:text-white bg-slate-100 hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors border border-slate-200 active:scale-95 cursor-pointer"
                       >
                         <Download size={14} />
-                        <span>Download Resource File</span>
+                        <span>Request Access Link</span>
                       </a>
                     </div>
                   ))}
@@ -1778,7 +1709,7 @@ export default function LmsClassroomPage() {
                     href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20am%20an%20active%20student%20in%20LMS%20mentorship."
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all self-start sm:self-auto"
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all self-start sm:self-auto cursor-pointer"
                   >
                     <MessageSquare size={14} />
                     <span>VIP WhatsApp Group</span>
@@ -1857,7 +1788,7 @@ export default function LmsClassroomPage() {
       >
         <button
           onClick={() => { setSidebarOpen(true); }}
-          className="flex flex-col items-center gap-1 p-1 text-slate-600 hover:text-blue-600 active:scale-95 transition-transform"
+          className="flex flex-col items-center gap-1 p-1 text-slate-600 hover:text-blue-600 active:scale-95 transition-transform cursor-pointer"
         >
           <BookOpen size={18} className="text-blue-600" />
           <span>Curriculum</span>
@@ -1865,7 +1796,7 @@ export default function LmsClassroomPage() {
 
         <button
           onClick={() => { setActiveTab('video'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform cursor-pointer ${
             activeTab === 'video' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
           }`}
         >
@@ -1875,7 +1806,7 @@ export default function LmsClassroomPage() {
 
         <button
           onClick={() => { setActiveTab('suppliers'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform cursor-pointer ${
             activeTab === 'suppliers' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
           }`}
         >
@@ -1885,7 +1816,7 @@ export default function LmsClassroomPage() {
 
         <button
           onClick={() => { setActiveTab('resources'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform cursor-pointer ${
             activeTab === 'resources' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
           }`}
         >
@@ -1899,7 +1830,7 @@ export default function LmsClassroomPage() {
             setSidebarOpen(false); 
             markUpdatesAsRead(); 
           }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative ${
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative cursor-pointer ${
             activeTab === 'community' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
           }`}
         >
@@ -1928,44 +1859,13 @@ export default function LmsClassroomPage() {
         }}
       />
 
-      {/* Fullscreen Forensic Watermark Popover */}
-      <div
-        ref={topLayerWatermarkRef}
-        // @ts-ignore
-        popover="manual"
-        className="fixed inset-0 w-screen h-screen bg-transparent pointer-events-none overflow-hidden"
-        style={{
-          background: 'transparent',
-          backgroundColor: 'transparent',
-          border: 'none',
-          outline: 'none',
-          boxShadow: 'none',
-          width: '100vw',
-          height: '100vh',
-          pointerEvents: 'none',
-        }}
-      >
-        {isFullscreen && !isIosFullscreen && (
-          <div className="relative w-full h-full flex items-center justify-center pointer-events-none">
-            <div
-              style={{
-                width: 'min(100vw, calc(100vh * 16 / 9))',
-                height: 'min(100vh, calc(100vw * 9 / 16))',
-              }}
-              className="relative pointer-events-none overflow-hidden"
-            >
-              <DynamicForensicWatermark user={user} isFullscreen={true} />
-            </div>
-          </div>
-        )}
-      </div>
-
     </div>
   );
 }
 
 // =============================================================================
 // SUBCOMPONENT: Dynamic Moving Forensic Watermark Overlay
+// Strictly locked within the Video Player canvas with z-10 (NEVER leaks outside)
 // =============================================================================
 function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; isFullscreen?: boolean }) {
   const [sector, setSector] = useState(0);
@@ -2015,7 +1915,7 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   const ipAddress = user?.ip || 'Verified Session';
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none z-[999999] overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none select-none z-10 overflow-hidden">
       <div
         className={`absolute transition-all duration-1000 ease-in-out px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/45 backdrop-blur-[1px] border border-white/10 text-white/60 shadow-md ${
           isFullscreen ? 'max-w-[220px] sm:max-w-[290px]' : 'max-w-[190px] sm:max-w-[250px]'

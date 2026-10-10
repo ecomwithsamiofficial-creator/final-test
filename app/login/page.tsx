@@ -9,8 +9,6 @@ import {
   Mail, 
   ArrowRight, 
   AlertCircle,
-  Laptop, 
-  Smartphone,
   CheckCircle2
 } from 'lucide-react';
 import { useContactConfig } from '@/utils/contactConfig';
@@ -175,30 +173,6 @@ export default function LoginPage() {
               <Link href="/enrollment" className="text-[#00A0DF] font-bold hover:underline">
                 Enroll Today for PKR 3,799
               </Link>
-            </div>
-          </div>
-
-          {/* Download Native Apps Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-3xl p-5 sm:p-6 text-white text-center">
-            <h3 className="text-sm sm:text-base font-bold mb-1">Download Dedicated LMS Applications</h3>
-            <p className="text-xs text-slate-400 mb-4">Learn on your Windows Desktop or Android Mobile phone</p>
-            <div className="grid grid-cols-2 gap-3">
-              <a
-                href="/apps/WithSamiLMS_Windows_1.0.13.exe"
-                download
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold border border-slate-700 transition-colors"
-              >
-                <Laptop size={14} className="text-[#00A0DF]" />
-                <span>Windows .EXE</span>
-              </a>
-              <a
-                href="/apps/WithSamiLMS_v10.apk"
-                download
-                className="flex items-center justify-center gap-2 py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold border border-slate-700 transition-colors"
-              >
-                <Smartphone size={14} className="text-emerald-400" />
-                <span>Android .APK</span>
-              </a>
             </div>
           </div>
 
