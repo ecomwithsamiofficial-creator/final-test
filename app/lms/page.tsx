@@ -29,7 +29,10 @@ import {
   Pin, 
   Radio, 
   FileSpreadsheet, 
-  Circle 
+  Circle,
+  Maximize2,
+  Minimize2,
+  ZoomIn
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -43,6 +46,7 @@ export default function LmsClassroomPage() {
   const [authChecking, setAuthChecking] = useState(true);
   const [accountRevoked, setAccountRevoked] = useState<string | null>(null);
   const [activeLesson, setActiveLesson] = useState<any>(null);
+  const [zoomLevel, setZoomLevel] = useState<number>(1);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
@@ -149,7 +153,8 @@ export default function LmsClassroomPage() {
   };
 
   const getEmbedUrl = (url?: string) => {
-    if (!url) return 'https://www.youtube.com/embed/dQw4w9WgXcQ';
+    const secParams = 'enablejsapi=1&rel=0&modestbranding=1&iv_load_policy=3&playsinline=1&fs=0';
+    if (!url) return `https://www.youtube.com/embed/dQw4w9WgXcQ?${secParams}`;
     let clean = url.trim();
 
     if (clean.includes('<iframe')) {
@@ -159,16 +164,20 @@ export default function LmsClassroomPage() {
       }
     }
 
+    let videoId = '';
     if (clean.includes('youtube.com/watch?v=')) {
-      const vId = clean.split('v=')[1]?.split('&')[0];
-      if (vId) return `https://www.youtube.com/embed/${vId}`;
-    }
-    if (clean.includes('youtu.be/')) {
-      const vId = clean.split('youtu.be/')[1]?.split('?')[0];
-      if (vId) return `https://www.youtube.com/embed/${vId}`;
+      videoId = clean.split('v=')[1]?.split('&')[0];
+    } else if (clean.includes('youtu.be/')) {
+      videoId = clean.split('youtu.be/')[1]?.split('?')[0];
+    } else if (clean.includes('youtube.com/embed/')) {
+      videoId = clean.split('youtube.com/embed/')[1]?.split('?')[0];
     }
 
-    return clean;
+    if (videoId) {
+      return `https://www.youtube.com/embed/${videoId}?${secParams}`;
+    }
+
+    return clean.includes('?') ? `${clean}&${secParams}` : `${clean}?${secParams}`;
   };
 
   const handleImmediateForceLogout = (reason = 'Your student access has been suspended or rejected by the administrator.') => {
@@ -1222,7 +1231,8 @@ export default function LmsClassroomPage() {
                 {/* 16:9 Responsive Video Player Container (Watermark STRICTLY locked inside) */}
                 <div
                   ref={playerContainerRef}
-                  className={`bg-slate-950 flex items-center justify-center transition-all ${
+                  onContextMenu={(e) => e.preventDefault()}
+                  className={`bg-slate-950 flex items-center justify-center transition-all select-none ${
                     isIosFullscreen
                       ? 'fixed inset-0 z-[999999] w-screen h-screen max-w-none max-h-none m-0 p-0 rounded-none border-0 shadow-none'
                       : 'relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-300 shadow-xl'
@@ -1243,16 +1253,73 @@ export default function LmsClassroomPage() {
                       : undefined
                   }
                 >
+                  {/* Floating Top Player Toolbar: HD Stream Badge + Smart Zoom + Protected Fullscreen */}
+                  <div className="absolute top-2.5 sm:top-3 inset-x-2.5 sm:inset-x-4 z-30 flex items-center justify-between pointer-events-none">
+                    {/* Stream Info Badge */}
+                    <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-black/60 backdrop-blur-xs border border-white/10 text-white text-[10px] font-bold shadow-md pointer-events-auto">
+                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+                      <span>1080p HD • Protected</span>
+                    </div>
+
+                    {/* Right Controls: Smart Zoom + Protected Fullscreen */}
+                    <div className="flex items-center gap-2 pointer-events-auto">
+                      {/* Smart Zoom Switcher (1x / 1.25x / 1.5x) */}
+                      <div className="flex items-center bg-black/70 backdrop-blur-xs border border-white/15 rounded-xl p-0.5 text-[10px] font-bold text-white shadow-md">
+                        <span className="hidden xs:flex items-center gap-1 px-1.5 text-slate-300">
+                          <ZoomIn size={11} />
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setZoomLevel(1)}
+                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                            zoomLevel === 1 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                          }`}
+                          title="Normal Size (1.0x)"
+                        >
+                          1x
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setZoomLevel(1.25)}
+                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                            zoomLevel === 1.25 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                          }`}
+                          title="Zoom In (1.25x)"
+                        >
+                          1.25x
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setZoomLevel(1.5)}
+                          className={`px-2 py-0.5 rounded-lg transition-all cursor-pointer ${
+                            zoomLevel === 1.5 ? 'bg-blue-600 text-white shadow-xs' : 'text-slate-300 hover:text-white'
+                          }`}
+                          title="High Zoom (1.5x)"
+                        >
+                          1.5x
+                        </button>
+                      </div>
+
+                      {/* LMS Protected Fullscreen Button (Guarantees Watermark stays on top) */}
+                      <button
+                        type="button"
+                        onClick={togglePlayerFullscreen}
+                        className="p-1.5 rounded-xl bg-black/70 hover:bg-blue-600 text-white border border-white/15 shadow-md transition-all active:scale-95 cursor-pointer flex items-center justify-center"
+                        title={isFullscreen || isIosFullscreen ? 'Exit Fullscreen' : 'Protected Fullscreen (Watermark Active)'}
+                      >
+                        {isFullscreen || isIosFullscreen ? <Minimize2 size={13} /> : <Maximize2 size={13} />}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Video Stage Container with Smooth Zoom Scaling */}
                   <div
-                    className="relative w-full h-full flex items-center justify-center overflow-hidden"
-                    style={
-                      isIosFullscreen
-                        ? {
-                            width: 'min(100vw, calc(100dvh * 16 / 9))',
-                            height: 'min(100dvh, calc(100vw * 9 / 16))',
-                          }
-                        : undefined
-                    }
+                    className="relative w-full h-full flex items-center justify-center overflow-hidden transition-transform duration-300 origin-center"
+                    style={{
+                      transform: zoomLevel > 1 ? `scale(${zoomLevel})` : undefined,
+                      width: isIosFullscreen ? 'min(100vw, calc(100dvh * 16 / 9))' : '100%',
+                      height: isIosFullscreen ? 'min(100dvh, calc(100vw * 9 / 16))' : '100%',
+                    }}
                   >
                     {activeLesson?.videoUrl && (
                       activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
@@ -1338,35 +1405,51 @@ export default function LmsClassroomPage() {
                         )}
                       </div>
                     ) : (
-                      <iframe
-                        key={activeLesson?.id + (activeLesson?.videoUrl || '')}
-                        src={getEmbedUrl(activeLesson?.videoUrl)}
-                        title={activeLesson?.title || 'Lesson Video'}
-                        allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                        allowFullScreen
-                        loading="lazy"
-                        className="w-full h-full border-0"
-                      />
-                    )}
+                      <div className="relative w-full h-full">
+                        {/* Anti-Leak Top Click Shield (Blocks clicks on YouTube Title & Share link) */}
+                        <div 
+                          className="absolute top-0 inset-x-0 h-14 z-10 bg-transparent select-none cursor-default" 
+                          onContextMenu={(e) => e.preventDefault()}
+                          onClick={(e) => e.stopPropagation()}
+                        />
 
-                    {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas) */}
-                    <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
+                        {/* Anti-Leak Bottom-Right Click Shield (Blocks clicks on "Watch on YouTube" logo) */}
+                        <div 
+                          className="absolute bottom-0 right-0 w-28 h-12 z-10 bg-transparent select-none cursor-default" 
+                          onContextMenu={(e) => e.preventDefault()}
+                          onClick={(e) => e.stopPropagation()}
+                        />
 
-                    {/* iOS Fullscreen Floating Exit [X] Button */}
-                    {isIosFullscreen && (
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          toggleIosFullscreen();
-                        }}
-                        className="absolute top-3 right-3 z-30 p-2.5 rounded-full bg-black/80 hover:bg-red-600 text-white border border-white/20 shadow-2xl backdrop-blur-md active:scale-95 flex items-center justify-center cursor-pointer"
-                        title="Exit Fullscreen"
-                      >
-                        <X size={18} className="text-white" />
-                      </button>
+                        <iframe
+                          key={activeLesson?.id + (activeLesson?.videoUrl || '')}
+                          src={getEmbedUrl(activeLesson?.videoUrl)}
+                          title={activeLesson?.title || 'Lesson Video'}
+                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                          allowFullScreen
+                          loading="lazy"
+                          className="w-full h-full border-0"
+                        />
+                      </div>
                     )}
                   </div>
+
+                  {/* Dynamic Forensic Watermark Overlay (STRICTLY within video canvas at z-20, persists on Zoom & Fullscreen) */}
+                  <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
+
+                  {/* iOS Fullscreen Floating Exit [X] Button */}
+                  {isIosFullscreen && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        toggleIosFullscreen();
+                      }}
+                      className="absolute top-3 right-3 z-30 p-2.5 rounded-full bg-black/80 hover:bg-red-600 text-white border border-white/20 shadow-2xl backdrop-blur-md active:scale-95 flex items-center justify-center cursor-pointer"
+                      title="Exit Fullscreen"
+                    >
+                      <X size={18} className="text-white" />
+                    </button>
+                  )}
                 </div>
 
                 {/* Lecture Info Card (Below Video Player) */}
@@ -1915,23 +1998,23 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   const ipAddress = user?.ip || 'Verified Session';
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none z-10 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none select-none z-20 overflow-hidden">
       <div
-        className={`absolute transition-all duration-1000 ease-in-out px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/45 backdrop-blur-[1px] border border-white/10 text-white/60 shadow-md ${
-          isFullscreen ? 'max-w-[220px] sm:max-w-[290px]' : 'max-w-[190px] sm:max-w-[250px]'
+        className={`absolute transition-all duration-1000 ease-in-out px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-black/65 backdrop-blur-xs border border-white/20 text-white shadow-xl ${
+          isFullscreen ? 'max-w-[240px] sm:max-w-[300px]' : 'max-w-[200px] sm:max-w-[260px]'
         } ${sectorClasses[sector]}`}
       >
-        <div className="flex items-center gap-1 text-[7.5px] sm:text-[9px] font-black tracking-wider text-cyan-400 uppercase leading-none mb-0.5">
-          <Shield size={9} className="flex-shrink-0" />
+        <div className="flex items-center gap-1.5 text-[8px] sm:text-[9.5px] font-black tracking-wider text-cyan-300 uppercase leading-none mb-1">
+          <Shield size={10} className="text-cyan-400 flex-shrink-0" />
           <span>SAMI DRM • {studentId}</span>
         </div>
-        <div className="text-[8px] sm:text-[9.5px] font-mono font-bold leading-tight truncate text-white/80">
+        <div className="text-[9px] sm:text-[10.5px] font-mono font-bold leading-tight truncate text-white">
           {studentName}
         </div>
-        <div className="text-[7px] sm:text-[8px] font-mono leading-none text-white/50 mt-0.5 truncate">
+        <div className="text-[7.5px] sm:text-[8.5px] font-mono leading-none text-slate-300 mt-0.5 truncate">
           {maskedPhone ? `${maskedPhone} • ` : ''}IP: {ipAddress}
         </div>
-        <div className="text-[6.5px] sm:text-[7.5px] font-mono text-white/40 leading-none mt-0.5">
+        <div className="text-[7px] sm:text-[8px] font-mono text-cyan-200/90 leading-none mt-1">
           {clock}
         </div>
       </div>
