@@ -152,6 +152,7 @@ export default function AdminCmsPage() {
   const [selectedVideoSize, setSelectedVideoSize] = useState('');
   const [videoUploadSuccess, setVideoUploadSuccess] = useState(false);
   const [uploadError, setUploadError] = useState('');
+  const [syncingCurriculum, setSyncingCurriculum] = useState(false);
   const uploadXhrRef = useRef<XMLHttpRequest | null>(null);
   const uploadAbortRef = useRef<AbortController | null>(null);
 
@@ -629,6 +630,30 @@ export default function AdminCmsPage() {
     }
   };
 
+  const handleSyncFromHomepageCurriculum = async () => {
+    if (!confirm('Are you sure you want to synchronize all 8 modules and 45 lectures from Homepage Curriculum to LMS?\n\n• Homepage curriculum will remain 100% intact.\n• All 8 modules & 45 lectures will be populated into LMS.\n• Existing lecture videos will be preserved if lecture titles match.\n• Blank lectures will be created for any missing lectures so you can paste your video links.')) return;
+
+    setSyncingCurriculum(true);
+    try {
+      const res = await fetch('/api/lms/modules', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'SYNC_FROM_HOMEPAGE' })
+      });
+      const data = await res.json();
+      if (data.success && Array.isArray(data.modules)) {
+        setModules(data.modules);
+        alert(data.message || 'LMS successfully synced with Homepage Curriculum!');
+      } else {
+        alert(data.message || 'Failed to sync curriculum.');
+      }
+    } catch (err: any) {
+      alert('Error syncing curriculum: ' + (err.message || 'Network error'));
+    } finally {
+      setSyncingCurriculum(false);
+    }
+  };
+
   const openEditModule = (mod: Module) => {
     setEditingModule({
       id: mod.id,
@@ -787,11 +812,6 @@ export default function AdminCmsPage() {
     if (editingLesson.mode === 'embed' && editingLesson.embedCode.trim()) {
       const parsed = parseEmbedInput(editingLesson.embedCode);
       if (parsed) finalVideoUrl = parsed;
-    }
-
-    if (!finalVideoUrl) {
-      setEditLessonError('Please provide a video URL or embed code');
-      return;
     }
 
     if (finalVideoUrl.includes('youtube.com/watch?v=')) {
@@ -1135,11 +1155,6 @@ export default function AdminCmsPage() {
     if (lessonVideoMode === 'embed' && newLessonEmbedCode.trim()) {
       const parsed = parseEmbedInput(newLessonEmbedCode);
       if (parsed) finalVideoUrl = parsed;
-    }
-
-    if (!finalVideoUrl) {
-      setUploadError('Please upload a video file, paste a video URL, or paste Bunny.net embed code');
-      return;
     }
 
     if (finalVideoUrl.includes('youtube.com/watch?v=')) {
@@ -2362,7 +2377,17 @@ export default function AdminCmsPage() {
                 </p>
               </div>
 
-              <div className="flex items-center gap-2 w-full sm:w-auto">
+              <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+                <button
+                  type="button"
+                  onClick={handleSyncFromHomepageCurriculum}
+                  disabled={syncingCurriculum}
+                  className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-[#00A0DF] hover:from-blue-700 hover:to-[#008ec7] disabled:opacity-50 text-xs font-black text-white shadow-lg shadow-blue-600/20 transition-all active:scale-95"
+                  title="Synchronize all 8 modules and 45 lectures from Homepage Curriculum into LMS"
+                >
+                  <RotateCcw size={13} className={syncingCurriculum ? "animate-spin" : ""} />
+                  <span>{syncingCurriculum ? "Syncing..." : "🔄 Sync From Homepage"}</span>
+                </button>
                 <button
                   onClick={() => setShowAddModuleModal(true)}
                   className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95"
@@ -2774,7 +2799,7 @@ export default function AdminCmsPage() {
                               <button
                                 type="button"
                                 onClick={() => handleAddLesson(m.id)}
-                                disabled={uploadingVideo || !newLessonTitle || (!newLessonUrl && !newLessonEmbedCode)}
+                                disabled={uploadingVideo || !newLessonTitle.trim()}
                                 className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 disabled:opacity-40 disabled:hover:bg-emerald-600 text-xs font-black text-white active:scale-95 transition-all shadow-md shadow-emerald-600/30 flex items-center gap-1.5"
                               >
                                 {uploadingVideo ? (
@@ -2984,7 +3009,7 @@ export default function AdminCmsPage() {
                     <button
                       type="button"
                       onClick={handleUpdateLesson}
-                      disabled={editLessonSaving || !editingLesson.title || !editingLesson.videoUrl}
+                      disabled={editLessonSaving || !editingLesson.title?.trim()}
                       className="px-5 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] disabled:opacity-40 text-xs font-black text-white transition-all shadow-md flex items-center gap-1.5"
                     >
                       {editLessonSaving ? (

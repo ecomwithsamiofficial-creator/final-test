@@ -961,84 +961,100 @@ export const defaultCmsContent: CmsContentSchema = {
   },
   homepage_curriculum: {
     tag: 'COMPLETE COURSE CURRICULUM',
-    title: 'Everything You Get Inside the Course',
-    subtitle: 'From beginner dropshipping to white label and private label scaling, step by step.',
+    title: 'Everything You Get Inside the Mentorship',
+    subtitle: 'Start from zero and build your e-commerce journey step by step — from your first product to a scalable e-commerce business.',
     modules: [
       {
-        id: 'mod_1',
-        title: 'Module 1: E-Commerce Business Fundamentals & The 4-Stage Scaling Roadmap',
+        id: 'mod_1789846805851_15ir',
+        title: 'Module 1: E-Commerce Launch Secrets (2026-27 Beginner Blueprint)',
         lessons: [
-          '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences',
-          '1.2 Mindset, Capital Requirements & Operating Remotely from Pakistan',
-          '1.3 Market Selection: Pakistan Domestic vs UAE (AED) vs Saudi Arabia (SAR)'
+          'The 2026-27 E-Commerce Opportunity Window',
+          'Dropshipping Decoded - What Nobody Explains Properly',
+          'The White Label Secret Most Beginners Never Discover',
+          'Shopify Setup - The Right Way From Day 1',
+          'Which Business Model Pays in Pakistan',
+          'My Exact Roadmap: Zero to First Sale'
         ]
       },
       {
-        id: 'mod_2',
-        title: 'Module 2: High-Converting Shopify Store Architecture',
+        id: 'mod_1789846939892_zytn',
+        title: 'Module 2: Winning Product & Supplier Secrets',
         lessons: [
-          '2.1 Shopify Account Creation & Partner Store Architecture',
-          '2.2 Installing the Free High-Converting Custom Theme',
-          '2.3 1-Click Fast COD Form & WhatsApp Confirmation Funnel',
-          '2.4 Currency Converters & Multi-Language Optimization'
+          'My Private Winning-Product Formula',
+          'How I Spot Winning Creatives Before Everyone Else',
+          'Creative Testing - The Step 99% of Sellers Skip',
+          'My Exact Creative Formula, Word-for-Word',
+          'The 3-Step Test Before You Risk a Single Rupee',
+          'Insider Supplier Sourcing - Who I Actually Trust'
         ]
       },
       {
-        id: 'mod_3',
-        title: 'Module 3: Winning Product Hunting & Validation Criteria',
+        id: 'mod_1789847053628_zgax',
+        title: 'Module 3: CRO Store Secrets (Built to Convert)',
         lessons: [
-          '3.1 The 15-Point Winning Product Matrix for High Profit Margins',
-          '3.2 Spying on Competitors via TikTok Ads Library & Ad Spy Tools',
-          '3.3 Product Margin & Break-Even ROAS Calculation Formula'
+          'Paid Themes for Free - The Method Nobody Shares',
+          'The Landing-Page Formula That Quickly Prints Sales',
+          'Homepage Psychology - Why Visitors Trust You Instantly',
+          'My Product Page Blueprint, Copy Ready',
+          'Speed Secrets - What\'s Silently Killing Your Sales',
+          'The COD Trust Trick Most Stores Get Wrong'
         ]
       },
       {
-        id: 'mod_4',
-        title: 'Module 4: Verified Suppliers & Sourcing Framework',
+        id: 'mod_1789847135988_s3e0',
+        title: 'Module 4: Pixel Integration - The Right Way',
         lessons: [
-          '4.1 How to Source Winning Products from Verified Local & Global Suppliers',
-          '4.2 Utilizing the Private Verified Suppliers Directory Included in Course',
-          '4.3 Handling Stock Availability, Quality Checks & Packaging Standards'
+          'Pixel & Signal Setup - Most Beginners Get Wrong',
+          'Hidden Parameter Errors - Every Wrong Signal You\'re Sending to TikTok & Meta',
+          'Why This Creates \'Blind Targeting?',
+          'My Consistent-Sales Signal Formula',
+          'Most Sellers Think Their Pixel is Working - It Isn\'t'
         ]
       },
       {
-        id: 'mod_5',
-        title: 'Module 5: TikTok Ads Mastery & The 3-Shift Scaling Formula™',
+        id: 'mod_1789847249651_y5fn',
+        title: 'Module 5: TikTok Ads - The Untold Playbook',
         lessons: [
-          '5.1 Creating TikTok Agency Ad Accounts Without Bans',
-          '5.2 TikTok Pixel & Events API Setup via Google Tag Manager',
-          '5.3 The CBO Testing Framework (The 3-Shift Scaling Formula™ & Order Booster System)',
-          '5.4 High-Converting UGC Video Ad Scripts & Hook Formulas'
+          'Pixel & Signal Setup - Most Beginners Get Wrong',
+          'Business Center setup - The Right Way, Not the YouTube Way',
+          'Free Agency Account - My Exact Method',
+          'Launching Your First Ad Without Wasting Budget',
+          'My Low-Budget, High-Sales Formula - Real Numbers',
+          'Verification Secrets to Avoid Getting Restricted'
         ]
       },
       {
-        id: 'mod_6',
-        title: 'Module 6: Meta (Facebook & Instagram) Ads Scaling Engine',
+        id: 'mod_1789847476051_4e9f',
+        title: 'Module 6: Meta Ads - The Insider System',
         lessons: [
-          '6.1 Meta Business Manager Verification & Pixel Setup',
-          '6.2 Advantage+ Shopping Campaigns vs Manual Broad Targeting',
-          '6.3 Retargeting Sequences & Dynamic Product Ads (DPA)',
-          '6.4 Scaling Winning Ad Sets to 5-Figure Daily Revenue Safely'
+          'Beginners\' Luck Doesn\'t Exist - This is What Nobody Explains',
+          'Free Creation Of Whole Meta  Adds Account - My Exact Method',
+          'Creatives & Audiences - Things That Actually Connect',
+          'My Proven Method to Launch and Scale Adds Fastly',
+          'My Low-Budget, High-Sales Formula ( Spend Only Just 300PKR )',
+          'The Scaling Decision that Changed Everything'
         ]
       },
       {
-        id: 'mod_7',
-        title: 'Module 7: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
+        id: 'mod_1789847859603_aj9j',
+        title: 'Module 7: Live Store Case Study (Real Numbers, No Theory)',
         lessons: [
-          '7.1 Courier Onboarding & Setup with Verified Delivery Partners',
-          '7.2 Tracking COD Remittances & Withdrawing PKR to Pakistani Banks',
-          '7.3 WhatsApp Order Confirmation Flows to Slash Cancellations & RTO'
+          'A Real Store, Fully Exposed - Start to Finish',
+          'The Exact Order & Profit Breakdown',
+          'Why My This Selected Product Won - The Untold Reason',
+          'Real Mistakes I Made (So You Don\'t Have To)'
         ]
       },
       {
-        id: 'mod_8',
-        title: 'Module 8: Transitioning to White Label, Private Label & International Scaling',
+        id: 'mod_1789847954266_f9rr',
+        title: 'Module 8: VIP Lifetime Access & Inner Circle',
         lessons: [
-          '8.1 When and How to Transition from Dropshipping into White Label',
-          '8.2 Custom Branded Packaging, Unboxing Experience & Local Warehousing',
-          '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation',
-          '8.4 Financial Management, P&L Spreadsheet Mastery & VA Team Hiring',
-          '8.5 Expanding Tested Brands into UAE, Saudi Arabia (GCC) & Global Markets'
+          'Lifetime LMS Access - Yours Forever',
+          'Private 1-on-1 Mentorship Session With Me ( On Demand )',
+          'VIP Community - Network With Real Sellers',
+          'Weekly Live Sessions - Direct Access to Me',
+          'Direct WhatsApp Line - Real Support Real Fast',
+          'Every Future Update, Free, Forever ( Winning Products & Market Trends )'
         ]
       }
     ]

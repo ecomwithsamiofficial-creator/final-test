@@ -142,11 +142,11 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
       // Ignore seed error
     }
 
-    // Auto-seed initialModules once if lms_seeded flag is not set
+    // Auto-seed latest initialModules (matching homepage curriculum) once
     try {
-      const [seedFlag]: any = await p.query(`SELECT \`key\` FROM cms_settings WHERE \`key\` = 'lms_seeded_v2_8mods' LIMIT 1`);
+      const [seedFlag]: any = await p.query(`SELECT \`key\` FROM cms_settings WHERE \`key\` = 'lms_seeded_homepage_sync_v2' LIMIT 1`);
       if (!Array.isArray(seedFlag) || seedFlag.length === 0) {
-        // Clean out legacy modules 9, 10, 11 from old template if any exist
+        // Clean out legacy modules from old template if any exist
         try {
           await p.query(`DELETE FROM lms_modules WHERE id > 8`);
         } catch {}
@@ -164,7 +164,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
             [mod.id, mod.title, mod.duration, mod.description, JSON.stringify(mod.lessons || [])]
           );
         }
-        await p.query(`INSERT INTO cms_settings (\`key\`, \`value_json\`) VALUES ('lms_seeded_v2_8mods', 'true') ON DUPLICATE KEY UPDATE \`value_json\` = 'true'`);
+        await p.query(`INSERT INTO cms_settings (\`key\`, \`value_json\`) VALUES ('lms_seeded_homepage_sync_v2', 'true') ON DUPLICATE KEY UPDATE \`value_json\` = 'true'`);
       }
     } catch {}
 
@@ -896,9 +896,46 @@ export async function mysqlBulkDeleteModules(ids: number[]): Promise<boolean> {
     } catch (err) {
       console.error('mysqlBulkDeleteModules error:', err);
     }
-
   }
   return false;
+}
+
+/**
+ * Bulk replaces or sets all LMS modules in Hostinger MySQL.
+ */
+export async function mysqlSetAllModules(modules: Module[]): Promise<Module[]> {
+  cachedModules = null;
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const maxId = modules.length;
+      if (maxId > 0) {
+        await pool.query(`DELETE FROM lms_modules WHERE id > ?`, [maxId]);
+      } else {
+        await pool.query(`DELETE FROM lms_modules`);
+      }
+
+      for (const mod of modules) {
+        const lessonsJson = JSON.stringify(mod.lessons || []);
+        await pool.query(
+          `INSERT INTO lms_modules (\`id\`, \`title\`, \`duration\`, \`description\`, \`lessons_json\`, \`updated_at\`)
+           VALUES (?, ?, ?, ?, ?, NOW())
+           ON DUPLICATE KEY UPDATE 
+             \`title\` = VALUES(\`title\`),
+             \`duration\` = VALUES(\`duration\`),
+             \`description\` = VALUES(\`description\`),
+             \`lessons_json\` = VALUES(\`lessons_json\`),
+             \`updated_at\` = NOW()`,
+          [mod.id, mod.title || '', mod.duration || '', mod.description || '', lessonsJson]
+        );
+      }
+      cachedModules = { data: modules, expiresAt: Date.now() + 30000 };
+      return modules;
+    } catch (err) {
+      console.error('mysqlSetAllModules error:', err);
+    }
+  }
+  return modules;
 }
 
 // =============================================================================

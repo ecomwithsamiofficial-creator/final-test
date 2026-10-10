@@ -6,10 +6,13 @@ import {
   dbUpdateModule, 
   dbDeleteModule, 
   dbBulkDeleteModules,
+  dbSetAllModules,
+  dbGetCmsSettings,
   dbAddLesson, 
   dbUpdateLesson, 
   dbDeleteLesson 
 } from '@/lib/database';
+import { Module, Lesson } from '@/utils/db';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -57,6 +60,56 @@ export async function POST(request: NextRequest) {
         success: true,
         message: `${targetIds.length} modules permanently deleted!`,
         modules: await dbGetModules()
+      }, { headers: NO_CACHE_HEADERS });
+    }
+
+    // Action: Sync LMS modules from Homepage Curriculum
+    if (action === 'SYNC_FROM_HOMEPAGE') {
+      const cms = await dbGetCmsSettings();
+      const hpModules = cms.homepage_curriculum?.modules || [];
+      const currentModules = await dbGetModules();
+
+      // Map existing lecture video URLs by title so we don't lose videos if already entered
+      const existingVideosByTitle = new Map<string, string>();
+      for (const m of currentModules) {
+        for (const l of (m.lessons || [])) {
+          if (l.title && l.videoUrl) {
+            existingVideosByTitle.set(l.title.trim().toLowerCase(), l.videoUrl);
+          }
+        }
+      }
+
+      const syncedModules: Module[] = hpModules.map((m: any, mIdx: number) => {
+        const modId = mIdx + 1;
+        const lessonList: Lesson[] = (m.lessons || []).map((lTitle: string, lIdx: number) => {
+          const cleanTitle = typeof lTitle === 'string' ? lTitle.trim() : `Lecture ${lIdx + 1}`;
+          const existingUrl = existingVideosByTitle.get(cleanTitle.toLowerCase()) || '';
+          return {
+            id: `m${modId}_l${lIdx + 1}`,
+            title: cleanTitle,
+            duration: '',
+            videoUrl: existingUrl,
+            notes: ''
+          };
+        });
+
+        return {
+          id: modId,
+          title: m.title || `Module ${modId}`,
+          duration: m.badge || '45 mins',
+          description: m.description || m.subtitle || 'Step-by-step practical training.',
+          lessons: lessonList
+        };
+      });
+
+      const saved = await dbSetAllModules(syncedModules);
+      triggerRevalidate();
+
+      const totalLessons = saved.reduce((acc, m) => acc + (m.lessons?.length || 0), 0);
+      return NextResponse.json({
+        success: true,
+        message: `Successfully synchronized ${saved.length} modules and ${totalLessons} lectures from Homepage Curriculum!`,
+        modules: saved
       }, { headers: NO_CACHE_HEADERS });
     }
 

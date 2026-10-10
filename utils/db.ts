@@ -164,95 +164,111 @@ export const initialEnrollments: Enrollment[] = [
 export const initialModules: Module[] = [
   {
     id: 1,
-    title: 'Module 1: E-Commerce Business Fundamentals & The 4-Stage Scaling Roadmap',
+    title: 'Module 1: E-Commerce Launch Secrets (2026-27 Beginner Blueprint)',
     duration: '45 mins',
-    description: 'Understand the core economics of e-commerce: starting with low-budget dropshipping, moving to white label, scaling to private label, and international market expansion.',
+    description: 'Master the 2026-27 e-commerce opportunity window, dropshipping fundamentals, Shopify setup, and your exact zero to first sale roadmap.',
     lessons: [
-      { id: 'm1_l1', title: '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences', duration: '12:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm1_l2', title: '1.2 Mindset, Capital Requirements & Operating Remotely from Pakistan', duration: '15:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm1_l3', title: '1.3 Market Selection: Pakistan Domestic vs UAE (AED) vs Saudi Arabia (SAR)', duration: '17:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm1_l1', title: '1.1 The 2026-27 E-Commerce Opportunity Window', duration: '', videoUrl: '' },
+      { id: 'm1_l2', title: '1.2 Dropshipping Decoded - What Nobody Explains Properly', duration: '', videoUrl: '' },
+      { id: 'm1_l3', title: '1.3 The White Label Secret Most Beginners Never Discover', duration: '', videoUrl: '' },
+      { id: 'm1_l4', title: '1.4 Shopify Setup - The Right Way From Day 1', duration: '', videoUrl: '' },
+      { id: 'm1_l5', title: '1.5 Which Business Model Pays in Pakistan', duration: '', videoUrl: '' },
+      { id: 'm1_l6', title: '1.6 My Exact Roadmap: Zero to First Sale', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 2,
-    title: 'Module 2: High-Converting Shopify Store Architecture',
-    duration: '60 mins',
-    description: 'Building an ultra-fast, mobile-first Shopify storefront optimized for local and international buyers with 1-click Cash on Delivery (COD) checkouts.',
+    title: 'Module 2: Winning Product & Supplier Secrets',
+    duration: '50 mins',
+    description: 'Discover winning products using Sardar Samiullah’s private formula, competitor creative spying, 3-step risk validation, and trusted supplier sourcing.',
     lessons: [
-      { id: 'm2_l1', title: '2.1 Shopify Account Creation & Partner Store Architecture', duration: '14:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm2_l2', title: '2.2 Installing the Free High-Converting Custom Theme', duration: '18:50', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm2_l3', title: '2.3 1-Click Fast COD Form & WhatsApp Confirmation Funnel', duration: '16:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm2_l4', title: '2.4 Currency Converters & Multi-Language Optimization', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm2_l1', title: '2.1 My Private Winning-Product Formula', duration: '', videoUrl: '' },
+      { id: 'm2_l2', title: '2.2 How I Spot Winning Creatives Before Everyone Else', duration: '', videoUrl: '' },
+      { id: 'm2_l3', title: '2.3 Creative Testing - The Step 99% of Sellers Skip', duration: '', videoUrl: '' },
+      { id: 'm2_l4', title: '2.4 My Exact Creative Formula, Word-for-Word', duration: '', videoUrl: '' },
+      { id: 'm2_l5', title: '2.5 The 3-Step Test Before You Risk a Single Rupee', duration: '', videoUrl: '' },
+      { id: 'm2_l6', title: '2.6 Insider Supplier Sourcing - Who I Actually Trust', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 3,
-    title: 'Module 3: Winning Product Hunting & Validation Criteria',
+    title: 'Module 3: CRO Store Secrets (Built to Convert)',
     duration: '55 mins',
-    description: 'Master the 15-point criteria checklist to discover high-margin, viral winning products using TikTok Creative Center, PiPiADS, and Facebook Ad Library.',
+    description: 'Build a high-converting storefront with premium themes, landing page formulas, homepage psychology, copy-ready blueprints, and COD trust funnels.',
     lessons: [
-      { id: 'm3_l1', title: '3.1 The 15-Point Winning Product Matrix for High Profit Margins', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm3_l2', title: '3.2 Spying on Competitors via TikTok Ads Library & Ad Spy Tools', duration: '20:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm3_l3', title: '3.3 Product Margin & Break-Even ROAS Calculation Formula', duration: '15:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm3_l1', title: '3.1 Paid Themes for Free - The Method Nobody Shares', duration: '', videoUrl: '' },
+      { id: 'm3_l2', title: '3.2 The Landing-Page Formula That Quickly Prints Sales', duration: '', videoUrl: '' },
+      { id: 'm3_l3', title: '3.3 Homepage Psychology - Why Visitors Trust You Instantly', duration: '', videoUrl: '' },
+      { id: 'm3_l4', title: '3.4 My Product Page Blueprint, Copy Ready', duration: '', videoUrl: '' },
+      { id: 'm3_l5', title: '3.5 Speed Secrets - What\'s Silently Killing Your Sales', duration: '', videoUrl: '' },
+      { id: 'm3_l6', title: '3.6 The COD Trust Trick Most Stores Get Wrong', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 4,
-    title: 'Module 4: Verified Suppliers & Sourcing Framework',
-    duration: '50 mins',
-    description: 'Connect directly with wholesale warehouses in Pakistan, UAE (Deira), and Saudi Arabia for fast COD delivery with zero upfront stock risk.',
+    title: 'Module 4: Pixel Integration - The Right Way',
+    duration: '40 mins',
+    description: 'Set up Meta and TikTok pixels correctly, eliminate hidden parameter errors and blind targeting, and master the consistent-sales signal formula.',
     lessons: [
-      { id: 'm4_l1', title: '4.1 How to Source Winning Products from Verified Local & Global Suppliers', duration: '16:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm4_l2', title: '4.2 Utilizing the Private Verified Suppliers Directory Included in Course', duration: '18:40', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm4_l3', title: '4.3 Handling Stock Availability, Quality Checks & Packaging Standards', duration: '15:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm4_l1', title: '4.1 Pixel & Signal Setup - Most Beginners Get Wrong', duration: '', videoUrl: '' },
+      { id: 'm4_l2', title: '4.2 Hidden Parameter Errors - Every Wrong Signal You\'re Sending to TikTok & Meta', duration: '', videoUrl: '' },
+      { id: 'm4_l3', title: '4.3 Why This Creates \'Blind Targeting?', duration: '', videoUrl: '' },
+      { id: 'm4_l4', title: '4.4 My Consistent-Sales Signal Formula', duration: '', videoUrl: '' },
+      { id: 'm4_l5', title: '4.5 Most Sellers Think Their Pixel is Working - It Isn\'t', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 5,
-    title: 'Module 5: TikTok Ads Mastery & The 3-Shift Scaling Formula™',
-    duration: '75 mins',
-    description: 'Master TikTok Business Center from Pakistan, agency ad accounts, custom conversions, and Sardar Samiullah’s proprietary 3-Shift Scaling Formula / Order Booster System.',
+    title: 'Module 5: TikTok Ads - The Untold Playbook',
+    duration: '60 mins',
+    description: 'Master TikTok Business Center setup, unbannable agency ad accounts, low-budget high-sales campaign launches, and account verification secrets.',
     lessons: [
-      { id: 'm5_l1', title: '5.1 Creating TikTok Agency Ad Accounts Without Bans', duration: '22:15', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm5_l2', title: '5.2 TikTok Pixel & Events API Setup via Google Tag Manager', duration: '20:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm5_l3', title: '5.3 The CBO Testing Framework (The 3-Shift Scaling Formula™ & Order Booster System)', duration: '18:15', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm5_l4', title: '5.4 High-Converting UGC Video Ad Scripts & Hook Formulas', duration: '14:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm5_l1', title: '5.1 Pixel & Signal Setup - Most Beginners Get Wrong', duration: '', videoUrl: '' },
+      { id: 'm5_l2', title: '5.2 Business Center setup - The Right Way, Not the YouTube Way', duration: '', videoUrl: '' },
+      { id: 'm5_l3', title: '5.3 Free Agency Account - My Exact Method', duration: '', videoUrl: '' },
+      { id: 'm5_l4', title: '5.4 Launching Your First Ad Without Wasting Budget', duration: '', videoUrl: '' },
+      { id: 'm5_l5', title: '5.5 My Low-Budget, High-Sales Formula - Real Numbers', duration: '', videoUrl: '' },
+      { id: 'm5_l6', title: '5.6 Verification Secrets to Avoid Getting Restricted', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 6,
-    title: 'Module 6: Meta (Facebook & Instagram) Ads Scaling Engine',
+    title: 'Module 6: Meta Ads - The Insider System',
     duration: '65 mins',
-    description: 'Structuring Advantage+ shopping campaigns, custom audience lookalikes, Arabic and Urdu copywriting hooks, and retargeting high-intent visitors.',
+    description: 'Master Meta Ads manager creation, high-converting creatives, audiences, fast scaling methodologies, and the 300 PKR low-budget testing formula.',
     lessons: [
-      { id: 'm6_l1', title: '6.1 Meta Business Manager Verification & Pixel Setup', duration: '18:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm6_l2', title: '6.2 Advantage+ Shopping Campaigns vs Manual Broad Targeting', duration: '21:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm6_l3', title: '6.3 Retargeting Sequences & Dynamic Product Ads (DPA)', duration: '16:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm6_l4', title: '6.4 Scaling Winning Ad Sets to 5-Figure Daily Revenue Safely', duration: '10:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm6_l1', title: '6.1 Beginners\' Luck Doesn\'t Exist - This is What Nobody Explains', duration: '', videoUrl: '' },
+      { id: 'm6_l2', title: '6.2 Free Creation Of Whole Meta  Adds Account - My Exact Method', duration: '', videoUrl: '' },
+      { id: 'm6_l3', title: '6.3 Creatives & Audiences - Things That Actually Connect', duration: '', videoUrl: '' },
+      { id: 'm6_l4', title: '6.4 My Proven Method to Launch and Scale Adds Fastly', duration: '', videoUrl: '' },
+      { id: 'm6_l5', title: '6.5 My Low-Budget, High-Sales Formula ( Spend Only Just 300PKR )', duration: '', videoUrl: '' },
+      { id: 'm6_l6', title: '6.6 The Scaling Decision that Changed Everything', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 7,
-    title: 'Module 7: Courier Logistics, COD Remittance & Return Rate (RTO) Control',
-    duration: '50 mins',
-    description: 'Partnering with courier delivery services, managing COD cash remittances to bank accounts, automated WhatsApp confirmation funnels, and slashing return rates.',
+    title: 'Module 7: Live Store Case Study (Real Numbers, No Theory)',
+    duration: '45 mins',
+    description: 'Full transparency breakdown of a real profitable e-commerce store, order metrics, net profit margins, why the product won, and key mistakes to avoid.',
     lessons: [
-      { id: 'm7_l1', title: '7.1 Courier Onboarding & Setup with Verified Delivery Partners', duration: '16:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm7_l2', title: '7.2 Tracking Remittances & Withdrawing PKR to Pakistani Banks', duration: '18:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm7_l3', title: '7.3 WhatsApp Order Confirmation Flows to Slash Cancellations & RTO', duration: '15:50', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm7_l1', title: '7.1 A Real Store, Fully Exposed - Start to Finish', duration: '', videoUrl: '' },
+      { id: 'm7_l2', title: '7.2 The Exact Order & Profit Breakdown', duration: '', videoUrl: '' },
+      { id: 'm7_l3', title: '7.3 Why My This Selected Product Won - The Untold Reason', duration: '', videoUrl: '' },
+      { id: 'm7_l4', title: '7.4 Real Mistakes I Made (So You Don\'t Have To)', duration: '', videoUrl: '' }
     ]
   },
   {
     id: 8,
-    title: 'Module 8: Transitioning to White Label, Private Label & International Scaling',
-    duration: '60 mins',
-    description: 'Transitioning from beginner dropshipping to custom branded packaging, trademark registration, long-term brand equity, P&L margin management, and international expansion into UAE & Saudi Arabia.',
+    title: 'Module 8: VIP Lifetime Access & Inner Circle',
+    duration: '35 mins',
+    description: 'Lifetime LMS updates, 1-on-1 private mentorship sessions on demand, VIP seller networking community, weekly live coaching, and direct WhatsApp support.',
     lessons: [
-      { id: 'm8_l1', title: '8.1 When and How to Transition from Dropshipping into White Label', duration: '17:30', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l2', title: '8.2 Custom Branded Packaging, Unboxing Experience & Local Warehousing', duration: '18:10', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l3', title: '8.3 Building Brand Equity, Trademark Registration & Enterprise Valuation', duration: '19:20', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l4', title: '8.4 Financial Management, P&L Spreadsheet Mastery & VA Team Hiring', duration: '15:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' },
-      { id: 'm8_l5', title: '8.5 Scaling Tested Brands into UAE, Saudi Arabia & Global Markets', duration: '20:00', videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ' }
+      { id: 'm8_l1', title: '8.1 Lifetime LMS Access - Yours Forever', duration: '', videoUrl: '' },
+      { id: 'm8_l2', title: '8.2 Private 1-on-1 Mentorship Session With Me ( On Demand )', duration: '', videoUrl: '' },
+      { id: 'm8_l3', title: '8.3 VIP Community - Network With Real Sellers', duration: '', videoUrl: '' },
+      { id: 'm8_l4', title: '8.4 Weekly Live Sessions - Direct Access to Me', duration: '', videoUrl: '' },
+      { id: 'm8_l5', title: '8.5 Direct WhatsApp Line - Real Support Real Fast', duration: '', videoUrl: '' },
+      { id: 'm8_l6', title: '8.6 Every Future Update, Free, Forever ( Winning Products & Market Trends )', duration: '', videoUrl: '' }
     ]
   }
 ];

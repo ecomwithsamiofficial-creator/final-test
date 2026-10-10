@@ -662,6 +662,7 @@ export default function LmsClassroomPage() {
   const currentLessonWatchPct = activeLesson 
     ? (isCurrentDone ? 100 : (watchProgress[activeLesson.id] || 0)) 
     : 0;
+  const hasLessonVideo = Boolean(activeLesson?.videoUrl && activeLesson.videoUrl.trim());
   const isDirectLessonVideo = Boolean(
     activeLesson?.videoUrl && (
       activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
@@ -1505,7 +1506,22 @@ export default function LmsClassroomPage() {
                       height: isIosFullscreen ? 'min(100dvh, calc(100vw * 9 / 16))' : '100%',
                     }}
                   >
-                    {isDirectLessonVideo ? (
+                    {!hasLessonVideo ? (
+                      <div className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-900 via-slate-950 to-black select-none">
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#00A0DF]/10 border border-[#00A0DF]/30 flex items-center justify-center mb-4 shadow-lg shadow-[#00A0DF]/10 animate-pulse">
+                          <Play className="w-8 h-8 sm:w-10 sm:h-10 text-[#00A0DF] ml-1 opacity-80" />
+                        </div>
+                        <span className="px-3 py-1 rounded-full bg-[#00A0DF]/15 border border-[#00A0DF]/30 text-[#00A0DF] text-xs font-bold uppercase tracking-wider mb-2">
+                          Lecture Video
+                        </span>
+                        <h3 className="text-base sm:text-xl font-bold text-white max-w-md line-clamp-2 mb-2">
+                          {activeLesson?.title || 'Video Lecture'}
+                        </h3>
+                        <p className="text-xs sm:text-sm text-slate-400 max-w-sm">
+                          Lecture video stream link will be uploaded soon by Mentor Sardar Samiullah.
+                        </p>
+                      </div>
+                    ) : isDirectLessonVideo ? (
                       <div className="relative w-full h-full flex items-center justify-center bg-black">
                         <video
                           ref={videoRef}
@@ -1607,15 +1623,17 @@ export default function LmsClassroomPage() {
                   </div>
 
                   {/* Transparent Click Shield (Physically intercepts 100% of taps/clicks, zero YouTube clickthrough leaks) */}
-                  <div
-                    onClick={togglePlay}
-                    style={{ touchAction: 'manipulation' }}
-                    className="absolute inset-0 z-10 cursor-pointer"
-                    title={isPlaying ? 'Click to Pause' : 'Click to Play'}
-                  />
+                  {hasLessonVideo && (
+                    <div
+                      onClick={togglePlay}
+                      style={{ touchAction: 'manipulation' }}
+                      className="absolute inset-0 z-10 cursor-pointer"
+                      title={isPlaying ? 'Click to Pause' : 'Click to Play'}
+                    />
+                  )}
 
                   {/* Center Floating Play Button (When video is paused) */}
-                  {!isPlaying && (
+                  {hasLessonVideo && !isPlaying && (
                     <button
                       type="button"
                       aria-label="Play lecture video"
@@ -1639,13 +1657,14 @@ export default function LmsClassroomPage() {
                   <DynamicForensicWatermark user={user} isFullscreen={isFullscreen || isIosFullscreen} />
 
                   {/* Custom Sleek Bottom Control Bar */}
-                  <div
-                    className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
-                      !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
-                    }`}
-                    onMouseEnter={() => setIsControlsHovered(true)}
-                    onMouseLeave={() => setIsControlsHovered(false)}
-                  >
+                  {hasLessonVideo && (
+                    <div
+                      className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/90 via-black/55 to-transparent px-3 py-2.5 sm:px-4 sm:py-3 flex items-center justify-between gap-2.5 transition-opacity duration-200 ${
+                        !isPlaying || isControlsHovered ? 'opacity-100' : 'opacity-85 hover:opacity-100'
+                      }`}
+                      onMouseEnter={() => setIsControlsHovered(true)}
+                      onMouseLeave={() => setIsControlsHovered(false)}
+                    >
                     <div className="flex items-center gap-1 sm:gap-2">
                       {/* Play / Pause Toggle Button */}
                       <button
@@ -1717,6 +1736,7 @@ export default function LmsClassroomPage() {
                       {isFullscreen || isIosFullscreen ? <Minimize2 size={18} /> : <Maximize2 size={18} />}
                     </button>
                   </div>
+                  )}
 
                   {/* iOS Fullscreen Floating Exit [X] Button */}
                   {isIosFullscreen && (

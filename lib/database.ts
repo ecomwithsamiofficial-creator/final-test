@@ -6,6 +6,7 @@ import {
   mysqlUpdateModule, 
   mysqlDeleteModule, 
   mysqlBulkDeleteModules,
+  mysqlSetAllModules,
   mysqlGetEnrollments,
   mysqlAddEnrollment,
   mysqlUpdateEnrollmentStatus,
@@ -443,6 +444,15 @@ export async function dbBulkDeleteModules(ids: number[]): Promise<boolean> {
   } catch (e) {
     console.error('Hostinger MySQL bulk delete modules error:', e);
     return false;
+  }
+}
+
+export async function dbSetAllModules(modules: Module[]): Promise<Module[]> {
+  try {
+    return await mysqlSetAllModules(modules);
+  } catch (e) {
+    console.error('Hostinger MySQL set all modules error:', e);
+    return modules;
   }
 }
 
