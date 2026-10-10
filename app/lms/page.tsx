@@ -147,10 +147,19 @@ export default function LmsClassroomPage() {
   };
 
   const togglePlayerFullscreen = () => {
-    if (isIosRef.current) {
+    // On mobile devices (iOS, Android, tablets), use seamless in-app CSS fullscreen
+    // This completely eliminates Android Chrome's annoying "To exit full screen..." system bubble!
+    const isMobileDevice = typeof window !== 'undefined' && (
+      isIosRef.current || 
+      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+      window.innerWidth < 1024
+    );
+
+    if (isMobileDevice) {
       toggleIosFullscreen();
       return;
     }
+
     if (!playerContainerRef.current) return;
     const isCurrentlyFs = Boolean(document.fullscreenElement || (document as any).webkitFullscreenElement || isFullscreen);
 
@@ -165,11 +174,6 @@ export default function LmsClassroomPage() {
       } else if (elem.msRequestFullscreen) {
         elem.msRequestFullscreen();
       }
-      try {
-        if (screen.orientation && (screen.orientation as any).lock) {
-          (screen.orientation as any).lock('landscape').catch(() => {});
-        }
-      } catch (e) {}
       setIsFullscreen(true);
     } else {
       if (document.exitFullscreen) {
@@ -177,11 +181,6 @@ export default function LmsClassroomPage() {
       } else if ((document as any).webkitExitFullscreen) {
         (document as any).webkitExitFullscreen();
       }
-      try {
-        if (screen.orientation && (screen.orientation as any).unlock) {
-          (screen.orientation as any).unlock();
-        }
-      } catch (e) {}
       setIsFullscreen(false);
     }
   };
@@ -1737,16 +1736,7 @@ export default function LmsClassroomPage() {
                         )}
                       </div>
                     ) : (
-                      <div 
-                        className="relative w-full h-full bg-black overflow-hidden"
-                        style={{
-                          transform: 'translateZ(0)',
-                          WebkitTransform: 'translateZ(0)',
-                          backfaceVisibility: 'hidden',
-                          WebkitBackfaceVisibility: 'hidden',
-                          willChange: 'transform'
-                        }}
-                      >
+                      <div className="relative w-full h-full bg-black overflow-hidden flex items-center justify-center">
                         <iframe
                           ref={lmsIframeRef}
                           key={activeLesson?.id + (activeLesson?.videoUrl || '')}
@@ -1755,12 +1745,8 @@ export default function LmsClassroomPage() {
                           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                           tabIndex={-1}
                           onLoad={onIframeLoaded}
-                          style={{
-                            transform: 'translateZ(0)',
-                            WebkitTransform: 'translateZ(0)',
-                            backfaceVisibility: 'hidden',
-                            WebkitBackfaceVisibility: 'hidden'
-                          }}
+                          width="100%"
+                          height="100%"
                           className="w-full h-full pointer-events-none select-none border-0"
                         />
                       </div>
