@@ -769,7 +769,7 @@ export default function AdminCmsPage() {
     setAddingLessonForModuleId(moduleId);
     setOpenModuleId(moduleId);
     setNewLessonTitle('');
-    setNewLessonDuration('15:00');
+    setNewLessonDuration('');
     setNewLessonUrl('');
     setNewLessonEmbedCode('');
     setLessonVideoMode('upload');
@@ -793,8 +793,8 @@ export default function AdminCmsPage() {
       moduleId,
       lessonId: lesson.id,
       title: lesson.title,
-      duration: lesson.duration || '15:00',
-      videoUrl: lesson.videoUrl,
+      duration: (lesson.duration && lesson.duration !== '15:00' && lesson.duration !== '12m') ? lesson.duration : '',
+      videoUrl: lesson.videoUrl || '',
       mode: isEmbed ? 'embed' : 'url',
       embedCode: isEmbed ? lesson.videoUrl : ''
     });
@@ -835,7 +835,7 @@ export default function AdminCmsPage() {
           lessonId: editingLesson.lessonId,
           patch: {
             title: editingLesson.title.trim(),
-            duration: '',
+            duration: editingLesson.duration?.trim() || '',
             videoUrl: finalVideoUrl
           }
         })
@@ -1174,7 +1174,7 @@ export default function AdminCmsPage() {
           moduleId,
           lesson: {
             title: newLessonTitle.trim(),
-            duration: '',
+            duration: newLessonDuration.trim() || '',
             videoUrl: finalVideoUrl
           }
         })
@@ -2482,9 +2482,23 @@ export default function AdminCmsPage() {
                             </div>
                             <div className="min-w-0 flex-1">
                               <h3 className="text-xs sm:text-base font-bold text-white leading-snug break-words">{m.title}</h3>
-                              <p className="text-[11px] sm:text-xs text-slate-400 mt-0.5">
-                                {m.lessons.length} Lectures Included
-                              </p>
+                              <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                                <span className="text-[11px] sm:text-xs text-slate-400">
+                                  {m.lessons.length} Lectures Included
+                                </span>
+                                {(() => {
+                                  const activeCount = m.lessons.filter(l => Boolean(l.videoUrl && l.videoUrl.trim())).length;
+                                  return (
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                                      activeCount > 0
+                                        ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
+                                        : 'bg-slate-800 text-slate-400 border border-white/5'
+                                    }`}>
+                                      {activeCount}/{m.lessons.length} Active
+                                    </span>
+                                  );
+                                })()}
+                              </div>
                             </div>
                           </button>
                         </div>
@@ -2568,18 +2582,32 @@ export default function AdminCmsPage() {
                               </div>
                             </div>
 
-                            {/* Lecture Title Input */}
-                            <div>
-                              <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                                Lecture Title
-                              </label>
-                              <input
-                                type="text"
-                                placeholder="e.g. 1.4 Setting Up Business Manager & Pixel"
-                                value={newLessonTitle}
-                                onChange={(e) => setNewLessonTitle(e.target.value)}
-                                className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                              />
+                            {/* Lecture Title & Duration Input */}
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                              <div className="sm:col-span-2">
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                  Lecture Title
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. 1.4 Setting Up Business Manager & Pixel"
+                                  value={newLessonTitle}
+                                  onChange={(e) => setNewLessonTitle(e.target.value)}
+                                  className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                                  Duration <span className="text-slate-500 font-normal lowercase">(optional)</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  placeholder="e.g. 14:25 mins"
+                                  value={newLessonDuration}
+                                  onChange={(e) => setNewLessonDuration(e.target.value)}
+                                  className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                                />
+                              </div>
                             </div>
 
                             {/* SOURCE 1: UPLOAD FROM LAPTOP / COMPUTER */}
@@ -2857,7 +2885,27 @@ export default function AdminCmsPage() {
                                         </span>
                                       )}
                                     </div>
-                                    <div className="text-[10px] text-slate-400 font-mono truncate">{l.videoUrl}</div>
+                                    <div className="flex items-center gap-2 mt-1 flex-wrap">
+                                      {l.videoUrl && l.videoUrl.trim() ? (
+                                        <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                                          Active
+                                        </span>
+                                      ) : (
+                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-800 border border-white/5 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                          Upcoming (No Video)
+                                        </span>
+                                      )}
+                                      {l.duration && l.duration !== '15:00' && l.duration !== '12m' && (
+                                        <span className="text-[10px] text-slate-300 font-medium">
+                                          ⏱️ {l.duration}
+                                        </span>
+                                      )}
+                                      {l.videoUrl && (
+                                        <span className="text-[10px] text-slate-500 font-mono truncate max-w-xs">{l.videoUrl}</span>
+                                      )}
+                                    </div>
                                   </div>
                                 </div>
 
@@ -2908,16 +2956,30 @@ export default function AdminCmsPage() {
                   </div>
 
                   <div className="space-y-3">
-                    <div>
-                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                        Lecture Title
-                      </label>
-                      <input
-                        type="text"
-                        value={editingLesson.title}
-                        onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
-                        className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                      />
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div className="sm:col-span-2">
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Lecture Title
+                        </label>
+                        <input
+                          type="text"
+                          value={editingLesson.title}
+                          onChange={(e) => setEditingLesson({ ...editingLesson, title: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
+                          Duration <span className="text-slate-500 font-normal lowercase">(optional)</span>
+                        </label>
+                        <input
+                          type="text"
+                          placeholder="e.g. 14:25 mins"
+                          value={editingLesson.duration || ''}
+                          onChange={(e) => setEditingLesson({ ...editingLesson, duration: e.target.value })}
+                          className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                        />
+                      </div>
                     </div>
 
                     {/* Video Mode Selection */}

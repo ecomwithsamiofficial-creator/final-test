@@ -52,6 +52,28 @@ export default function LmsClassroomPage() {
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
+  const [detectedDurations, setDetectedDurations] = useState<{ [lessonId: string]: string }>({});
+
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem('sami_lms_durations');
+      if (saved) {
+        setDetectedDurations(JSON.parse(saved));
+      }
+    } catch (e) {}
+  }, []);
+
+  const saveDetectedDuration = (lessonId: string, label: string) => {
+    if (!lessonId || !label) return;
+    setDetectedDurations(prev => {
+      if (prev[lessonId] === label) return prev;
+      const next = { ...prev, [lessonId]: label };
+      try {
+        localStorage.setItem('sami_lms_durations', JSON.stringify(next));
+      } catch (e) {}
+      return next;
+    });
+  };
   const [isControlsHovered, setIsControlsHovered] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
@@ -186,6 +208,19 @@ export default function LmsClassroomPage() {
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m < 10 ? '0' : ''}${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const formatDurationLabel = (secs: number) => {
+    if (!secs || isNaN(secs) || secs <= 0) return '';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s} mins`;
+  };
+
+  const isFakeTimer = (d?: string | null) => {
+    if (!d) return true;
+    const trimmed = d.trim().toLowerCase();
+    return trimmed === '12m' || trimmed === '15:00' || trimmed === '12:40 mins' || trimmed === '12:40' || trimmed === '00:00';
   };
 
   const handleImmediateForceLogout = (reason = 'Your student access has been suspended or rejected by the administrator.') => {
@@ -870,6 +905,9 @@ export default function LmsClassroomPage() {
           if (typeof data.info.duration === 'number' && data.info.duration > 0) {
             const dur = Math.floor(data.info.duration);
             setDuration(dur);
+            if (activeLesson) {
+              saveDetectedDuration(activeLesson.id, formatDurationLabel(dur));
+            }
 
             // Restore saved timestamp once per lesson load
             if (activeLesson && !hasRestoredPosRef.current) {
@@ -1230,7 +1268,9 @@ export default function LmsClassroomPage() {
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
               const moduleCompletedCount = m.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
-              const isAllCompleted = moduleCompletedCount === m.lessons?.length && (m.lessons?.length || 0) > 0;
+              const activeLessonsCount = m.lessons?.filter(l => Boolean(l.videoUrl && l.videoUrl.trim())).length || 0;
+              const totalLessonsCount = m.lessons?.length || 0;
+              const isAllCompleted = moduleCompletedCount === totalLessonsCount && totalLessonsCount > 0;
               const isActiveModule = m.lessons?.some(l => l.id === activeLesson?.id);
 
               return (
@@ -1270,13 +1310,11 @@ export default function LmsClassroomPage() {
 
                     <div className="flex items-center gap-2 text-[10px] text-slate-500 flex-shrink-0">
                       <span className={`px-2 py-0.5 rounded-full font-bold ${
-                        isAllCompleted 
+                        activeLessonsCount > 0
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : isActiveModule 
-                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
-                          : 'bg-slate-100 text-slate-600'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200/60'
                       }`}>
-                        {moduleCompletedCount}/{m.lessons?.length || 0} {isActiveModule ? 'Active' : ''}
+                        {activeLessonsCount}/{totalLessonsCount} Active
                       </span>
                       {isOpen ? (
                         <ChevronDown size={14} className="text-slate-400" />
@@ -1367,11 +1405,37 @@ export default function LmsClassroomPage() {
                                   </div>
                                 </div>
 
-                                <span className={`text-[10px] flex-shrink-0 font-semibold px-2 py-0.5 rounded-md ${
-                                  isCurrent ? 'bg-blue-200/70 text-blue-900' : 'text-slate-400 bg-slate-100'
-                                }`}>
-                                  {lesson.duration || '12m'}
-                                </span>
+                                {(() => {
+                                  const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
+                                  const detectedDur = detectedDurations[lesson.id];
+                                  const validDbDuration = lesson.duration && !isFakeTimer(lesson.duration) ? lesson.duration : '';
+                                  const currentActiveDur = isCurrent && duration > 0 ? formatDurationLabel(duration) : '';
+                                  const displayDuration = currentActiveDur || detectedDur || validDbDuration;
+
+                                  if (!hasVideo) {
+                                    return (
+                                      <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-100 border border-slate-200/50">
+                                        Upcoming
+                                      </span>
+                                    );
+                                  }
+
+                                  return (
+                                    <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                      isCurrent 
+                                        ? 'bg-blue-600 text-white shadow-xs' 
+                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                    }`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-emerald-500 animate-pulse'}`} />
+                                      <span>Active</span>
+                                      {displayDuration && (
+                                        <span className={`font-medium ${isCurrent ? 'text-blue-100' : 'text-emerald-800'}`}>
+                                          • {displayDuration}
+                                        </span>
+                                      )}
+                                    </span>
+                                  );
+                                })()}
                               </div>
                             );
                           })}
@@ -1567,8 +1631,12 @@ export default function LmsClassroomPage() {
                           onLoadedMetadata={(e) => {
                             setVideoLoadError(false);
                             const vid = e.currentTarget;
-                            if (vid.duration && isFinite(vid.duration)) {
-                              setDuration(Math.floor(vid.duration));
+                            if (vid.duration && isFinite(vid.duration) && vid.duration > 0) {
+                              const dur = Math.floor(vid.duration);
+                              setDuration(dur);
+                              if (activeLesson) {
+                                saveDetectedDuration(activeLesson.id, formatDurationLabel(dur));
+                              }
                             }
                             try {
                               const savedPos = localStorage.getItem(`sami_lms_pos_${activeLesson?.id}`);
@@ -1787,15 +1855,37 @@ export default function LmsClassroomPage() {
 
                 {/* Lecture Info Card (Below Video Player) */}
                 <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs space-y-4">
-                  {/* Badges Strip (Share & Bookmark removed as requested) */}
+                  {/* Badges Strip */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
                       CURRENT LECTURE • MODULE {activeModule?.id || 1}
                     </span>
-                    <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
-                      <Clock size={12} className="text-slate-500" />
-                      <span>{activeLesson?.duration || '12:40 mins'}</span>
-                    </span>
+                    {hasLessonVideo ? (
+                      <>
+                        <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                          <span>Active Lecture</span>
+                        </span>
+                        {(() => {
+                          const detectedDur = activeLesson?.id ? detectedDurations[activeLesson.id] : '';
+                          const validDbDur = activeLesson?.duration && !isFakeTimer(activeLesson.duration) ? activeLesson.duration : '';
+                          const liveDur = duration > 0 ? formatDurationLabel(duration) : '';
+                          const displayDur = liveDur || detectedDur || validDbDur;
+                          if (!displayDur) return null;
+                          return (
+                            <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                              <Clock size={12} className="text-slate-500" />
+                              <span>{displayDur}</span>
+                            </span>
+                          );
+                        })()}
+                      </>
+                    ) : (
+                      <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <Clock size={12} className="text-amber-600" />
+                        <span>Upcoming • Video Stream Soon</span>
+                      </span>
+                    )}
                     <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
                       <ShieldCheck size={12} className="text-emerald-600" />
                       <span>Mentorship Verified</span>
