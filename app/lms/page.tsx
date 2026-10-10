@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -38,7 +38,12 @@ import {
   AlertTriangle,
   Bell,
   Pin,
-  Radio
+  Radio,
+  Bookmark,
+  Share2,
+  FileSpreadsheet,
+  Layers,
+  Circle
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -56,6 +61,8 @@ export default function LmsClassroomPage() {
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
   const [activeTab, setActiveTab] = useState<'video' | 'suppliers' | 'resources' | 'community'>('video');
+  const [subTab, setSubTab] = useState<'notes' | 'discussion'>('notes');
+  const [autoProceed, setAutoProceed] = useState<boolean>(true);
   const [communityUpdates, setCommunityUpdates] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
@@ -65,6 +72,8 @@ export default function LmsClassroomPage() {
   const [watchProgress, setWatchProgress] = useState<{ [lessonId: string]: number }>({});
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'synced'>('idle');
   const [syncFeedback, setSyncFeedback] = useState<string>('');
+  const [isBookmarked, setIsBookmarked] = useState<boolean>(false);
+  const [shareToast, setShareToast] = useState<string>('');
 
   const markUpdatesAsRead = () => {
     if (communityUpdates.length > 0) {
@@ -76,8 +85,8 @@ export default function LmsClassroomPage() {
     }
   };
 
-  const isLoggingOutRef = React.useRef(false);
-  const tabIdRef = React.useRef(typeof window !== 'undefined' ? Math.random().toString(36).substring(2, 9) : 'tab');
+  const isLoggingOutRef = useRef(false);
+  const tabIdRef = useRef(typeof window !== 'undefined' ? Math.random().toString(36).substring(2, 9) : 'tab');
 
   // DRM & Anti-Piracy Security System State
   const [showDrmModal, setShowDrmModal] = useState(false);
@@ -86,11 +95,11 @@ export default function LmsClassroomPage() {
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [isIos, setIsIos] = useState(false);
   const [isIosFullscreen, setIsIosFullscreen] = useState(false);
-  const isIosRef = React.useRef(false);
-  const lastToggleRef = React.useRef(0);
-  const playerContainerRef = React.useRef<HTMLDivElement>(null);
-  const videoRef = React.useRef<HTMLVideoElement>(null);
-  const topLayerWatermarkRef = React.useRef<HTMLDivElement>(null);
+  const isIosRef = useRef(false);
+  const lastToggleRef = useRef(0);
+  const playerContainerRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const topLayerWatermarkRef = useRef<HTMLDivElement>(null);
 
   const toggleIosFullscreen = () => {
     const now = Date.now();
@@ -160,7 +169,6 @@ export default function LmsClassroomPage() {
     if (!url) return 'https://www.youtube.com/embed/dQw4w9WgXcQ';
     let clean = url.trim();
 
-    // If raw iframe HTML or embed snippet was provided, extract the src URL
     if (clean.includes('<iframe')) {
       const match = clean.match(/<iframe[^>]+src=["']([^"']+)["']/i);
       if (match && match[1]) {
@@ -184,13 +192,11 @@ export default function LmsClassroomPage() {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
 
-    // 1. Immediately render Full-Screen Lockout Overlay in 0ms (works universally across iPhone, Android, Desktop)
     setAccountRevoked(reason);
     setUser(null);
     setActiveLesson(null);
     setAuthChecking(true);
 
-    // 2. Explicitly pause & detach all HTML5 media elements (releases iOS Safari Media Session)
     try {
       const mediaElements = document.querySelectorAll('video, audio');
       mediaElements.forEach((m: any) => {
@@ -202,12 +208,10 @@ export default function LmsClassroomPage() {
       });
     } catch (e) {}
 
-    // 3. Clear server auth session
     try {
       fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
     } catch (e) {}
 
-    // 4. Wipe all authentication cookies with explicit past expires
     try {
       const pastDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
       document.cookie = `sami_student_auth=; path=/; expires=${pastDate}; max-age=0;`;
@@ -215,14 +219,12 @@ export default function LmsClassroomPage() {
       document.cookie = `sami_admin_auth=; path=/; expires=${pastDate}; max-age=0;`;
     } catch (e) {}
 
-    // 5. Wipe client storage caches
     try {
       localStorage.removeItem('sami_student_auth');
       localStorage.removeItem('sami_lms_completed_cache');
       localStorage.removeItem('sami_lms_watch_progress');
     } catch (e) {}
 
-    // 6. Broadcast to all other open tabs (using tabId to prevent Safari loopback)
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         const channel = new BroadcastChannel('sami_auth_sync');
@@ -234,7 +236,6 @@ export default function LmsClassroomPage() {
       localStorage.setItem('sami_force_logout_signal', `${Date.now()}_${tabIdRef.current}`);
     } catch (e) {}
 
-    // 7. Multi-strategy Navigation for iOS Safari, Chrome, Android, Mac, Windows
     const targetUrl = `/login?reason=rejected&msg=${encodeURIComponent(reason)}&t=${Date.now()}`;
     if (typeof window !== 'undefined') {
       try {
@@ -246,8 +247,6 @@ export default function LmsClassroomPage() {
           window.location.replace(targetUrl);
         }
       }
-
-      // Fallback timer for iOS Safari
       setTimeout(() => {
         try {
           window.location.href = targetUrl;
@@ -272,7 +271,6 @@ export default function LmsClassroomPage() {
   };
 
   useEffect(() => {
-    // Detect iOS / iPhone / iPad WebKit for Apple AVPlayer prevention
     if (typeof window !== 'undefined' && typeof navigator !== 'undefined') {
       const isApple = 
         /iPad|iPhone|iPod/.test(navigator.userAgent) ||
@@ -282,7 +280,6 @@ export default function LmsClassroomPage() {
       isIosRef.current = isApple;
     }
 
-    // 0. Instant restore from LocalStorage so refresh has 0ms delay and no 0% reset
     try {
       const cached = localStorage.getItem('sami_lms_completed_cache');
       if (cached) {
@@ -295,6 +292,10 @@ export default function LmsClassroomPage() {
       if (watchCache) {
         setWatchProgress(JSON.parse(watchCache));
       }
+      const savedAuto = localStorage.getItem('sami_lms_auto_proceed');
+      if (savedAuto !== null) {
+        setAutoProceed(savedAuto === 'true');
+      }
     } catch (e) {}
 
     let realtimeChannel: any = null;
@@ -302,7 +303,6 @@ export default function LmsClassroomPage() {
     let heartbeatInterval: any = null;
     let bc: BroadcastChannel | null = null;
 
-    // 1. Cross-tab instant synchronization (loopback-protected)
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
         bc = new BroadcastChannel('sami_auth_sync');
@@ -328,7 +328,6 @@ export default function LmsClassroomPage() {
 
     const timestamp = Date.now();
 
-    // 2. Strict Authentication Check with Supabase Realtime Hookup
     fetch(`/api/auth/me?t=${timestamp}`, {
       cache: 'no-store',
       headers: {
@@ -363,7 +362,6 @@ export default function LmsClassroomPage() {
           } catch (e) {}
           setAuthChecking(false);
 
-          // 3. Supabase Real-Time WebSocket Push (Instant 0ms Logout on Reject/Suspend)
           if (supabase && res.user.id) {
             try {
               realtimeChannel = supabase
@@ -421,7 +419,6 @@ export default function LmsClassroomPage() {
             } catch (err) {}
           }
         } else {
-          // If unauthenticated or rejected, immediately force logout (no cookie bypass)
           handleImmediateForceLogout(res.message || 'Please log in with an active student account.');
         }
       })
@@ -429,7 +426,6 @@ export default function LmsClassroomPage() {
         handleImmediateForceLogout('Network connection error verifying credentials.');
       });
 
-    // 4. Real-Time Security Heartbeat (Runs every 2.5 seconds across all devices)
     heartbeatInterval = setInterval(() => {
       fetch(`/api/auth/me?t=${Date.now()}`, {
         cache: 'no-store',
@@ -461,6 +457,7 @@ export default function LmsClassroomPage() {
           setModules(res.modules);
           if (res.modules[0]?.lessons[0]) {
             setActiveLesson(res.modules[0].lessons[0]);
+            setOpenModuleId(res.modules[0].id);
           }
         }
       });
@@ -597,7 +594,6 @@ export default function LmsClassroomPage() {
     };
   }, []);
 
-  // Keyboard Escape listener & body overflow cleanup for iOS Viewport Fullscreen
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isIosFullscreen) {
@@ -635,9 +631,8 @@ export default function LmsClassroomPage() {
     
     setCompletedLessons(updated);
     setSyncStatus('syncing');
-    setSyncFeedback('⚡ Syncing to Cloud Database...');
+    setSyncFeedback('Syncing progress...');
 
-    // Save to localStorage immediately
     try {
       localStorage.setItem('sami_lms_completed_cache', JSON.stringify(updated));
       if (user?.email) {
@@ -659,8 +654,14 @@ export default function LmsClassroomPage() {
       const data = await res.json();
       if (data.success) {
         setSyncStatus('synced');
-        setSyncFeedback(newStatus ? '✓ Saved to Supabase Cloud' : 'Progress updated');
+        setSyncFeedback(newStatus ? '✓ Saved to Cloud' : 'Progress updated');
         setTimeout(() => setSyncFeedback(''), 4000);
+
+        if (newStatus && autoProceed && nextLesson) {
+          setTimeout(() => {
+            setActiveLesson(nextLesson);
+          }, 1200);
+        }
       } else {
         setSyncStatus('idle');
       }
@@ -674,13 +675,12 @@ export default function LmsClassroomPage() {
     markLessonComplete(lessonId);
   };
 
-  // Find all lessons in flat list for next/prev navigation
   const allLessons = modules.flatMap(m => m.lessons);
   const currentLessonIndex = allLessons.findIndex(l => l.id === activeLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
 
-  const totalLessons = allLessons.length || 36;
+  const totalLessons = allLessons.length || 29;
   const progressPercent = Math.round((completedLessons.length / totalLessons) * 100);
 
   const isCurrentDone = activeLesson ? completedLessons.includes(activeLesson.id) : false;
@@ -694,6 +694,12 @@ export default function LmsClassroomPage() {
     )
   );
 
+  // Active module calculation for badge
+  const activeModule = modules.find(m => m.lessons.some(l => l.id === activeLesson?.id)) || modules[0];
+  const activeModuleCompletedCount = activeModule ? activeModule.lessons.filter(l => completedLessons.includes(l.id)).length : 0;
+  const activeModuleTotalCount = activeModule?.lessons.length || 1;
+  const activeModulePercent = Math.round((activeModuleCompletedCount / activeModuleTotalCount) * 100);
+
   const filteredSuppliers = suppliers.filter(s => {
     const matchesCountry = supplierCountryFilter === 'ALL' || s.country === supplierCountryFilter;
     const matchesQuery = s.name.toLowerCase().includes(supplierSearch.toLowerCase()) || 
@@ -702,9 +708,22 @@ export default function LmsClassroomPage() {
     return matchesCountry && matchesQuery;
   });
 
+  const handleShare = () => {
+    if (typeof window !== 'undefined') {
+      try {
+        navigator.clipboard.writeText(window.location.href);
+        setShareToast('Link copied to clipboard!');
+        setTimeout(() => setShareToast(''), 3000);
+      } catch (e) {
+        setShareToast('Share link: ' + window.location.href);
+        setTimeout(() => setShareToast(''), 3000);
+      }
+    }
+  };
+
   if (accountRevoked) {
     return (
-      <div className="fixed inset-0 z-50 bg-[#0B0F19] text-white flex flex-col items-center justify-center p-4 sm:p-6 text-center animate-in fade-in duration-200">
+      <div className="fixed inset-0 z-50 bg-slate-900 text-white flex flex-col items-center justify-center p-4 sm:p-6 text-center animate-in fade-in duration-200">
         <div className="w-20 h-20 rounded-3xl bg-red-500/10 border-2 border-red-500/30 text-red-500 flex items-center justify-center mx-auto mb-6 shadow-2xl shadow-red-500/20">
           <Lock size={40} className="text-red-400" />
         </div>
@@ -716,10 +735,10 @@ export default function LmsClassroomPage() {
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
             Account Revoked
           </h1>
-          <p className="text-xs sm:text-sm text-slate-400 leading-relaxed">
+          <p className="text-xs sm:text-sm text-slate-300 leading-relaxed">
             {accountRevoked}
           </p>
-          <p className="text-[11px] text-slate-500">
+          <p className="text-[11px] text-slate-400">
             If you already submitted your enrollment fee, please verify your payment proof slip with Mentor Sardar Samiullah on WhatsApp.
           </p>
 
@@ -746,389 +765,507 @@ export default function LmsClassroomPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0B0F19] text-white flex flex-col font-sans selection:bg-[#00A0DF] selection:text-white pb-16 lg:pb-0">
+    <div className="min-h-screen bg-[#F8FAFC] text-slate-900 flex flex-col font-sans selection:bg-blue-600 selection:text-white pb-16 lg:pb-0">
       
-      {/* Top Header Bar */}
-      <header className="sticky top-0 z-40 bg-[#111827] border-b border-white/10 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-lg">
-        <div className="flex items-center gap-2.5">
+      {/* ========================================================================= */}
+      {/* TOP HEADER BAR (Ultra-Clean Light & Royal Blue Theme) */}
+      {/* ========================================================================= */}
+      <header className="sticky top-0 z-40 bg-white/95 backdrop-blur-md border-b border-slate-200/90 px-3 sm:px-6 py-2.5 sm:py-3 flex items-center justify-between shadow-xs">
+        {/* Left Branding & Mobile Trigger */}
+        <div className="flex items-center gap-3">
           <button
             onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="lg:hidden p-2 rounded-xl bg-slate-800 text-[#00A0DF] hover:bg-slate-700 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
+            className="lg:hidden p-2 rounded-xl bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-600 border border-slate-200 active:scale-95 transition-all flex items-center gap-1.5 text-xs font-bold"
+            aria-label="Toggle Curriculum Sidebar"
           >
-            {sidebarOpen ? <X size={18} /> : <ListVideo size={18} />}
-            <span className="hidden xs:inline">Lectures</span>
+            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            <span className="hidden xs:inline">Modules</span>
           </button>
 
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-black text-white text-sm shadow-md shadow-[#00A0DF]/30">
+          <Link href="/" className="flex items-center gap-2.5 group">
+            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 to-blue-700 flex items-center justify-center font-black text-white text-base shadow-sm shadow-blue-500/30 group-hover:scale-105 transition-transform">
               S
             </div>
             <div>
-              <span className="font-extrabold text-xs sm:text-sm text-white tracking-tight block leading-none">
+              <span className="font-extrabold text-xs sm:text-sm text-slate-900 tracking-tight block leading-tight">
                 Ecom With Sami
               </span>
-              <span className="text-[9px] sm:text-[10px] text-[#00A0DF] font-bold uppercase tracking-wider">
-                LMS Classroom
+              <span className="text-[10px] text-blue-600 font-bold uppercase tracking-wider block">
+                Mastery Mentorship
               </span>
             </div>
           </Link>
-        </div>
 
-        {/* Center Progress Bar */}
-        <div className="flex items-center gap-2 sm:gap-3 bg-[#0B0F19] border border-white/10 rounded-xl px-2.5 sm:px-4 py-1 text-xs">
-          <span className="text-slate-400 font-medium hidden sm:inline">Progress:</span>
-          <div className="w-16 sm:w-28 md:w-32 bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700">
-            <div
-              className="bg-gradient-to-r from-[#00A0DF] to-emerald-400 h-full rounded-full transition-all duration-300"
-              style={{ width: `${progressPercent}%` }}
-            />
-          </div>
-          <strong className="text-[#00A0DF] font-bold text-[11px] sm:text-xs">{progressPercent}%</strong>
-          <span className="text-slate-500 text-[10px] hidden md:inline">({completedLessons.length}/{totalLessons})</span>
-          {syncStatus === 'syncing' && (
-            <span className="flex items-center gap-1 text-[10px] text-amber-400 font-semibold animate-pulse ml-0.5">
-              <Loader2 size={10} className="animate-spin" />
-              <span className="hidden xs:inline">Syncing...</span>
-            </span>
-          )}
-          {syncStatus === 'synced' && (
-            <span className="flex items-center gap-1 text-[10px] text-emerald-400 font-bold ml-0.5" title="Permanently saved to Supabase Cloud Database">
-              <Cloud size={11} />
-              <span className="hidden xs:inline">Cloud Saved</span>
-            </span>
-          )}
-        </div>
-
-        {/* Community Broadcasts Notification Bell */}
-        <button
-          onClick={() => {
-            setActiveTab('community');
-            markUpdatesAsRead();
-          }}
-          className="relative p-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-[#00A0DF] hover:text-white border border-[#00A0DF]/30 transition-all cursor-pointer flex items-center justify-center active:scale-95"
-          title="Community Announcements & Broadcasts"
-        >
-          <Bell size={15} />
-          {unreadCount > 0 && (
-            <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[9px] w-4 h-4 rounded-full flex items-center justify-center animate-pulse shadow-md shadow-red-500/50">
-              {unreadCount > 9 ? '9+' : unreadCount}
-            </span>
-          )}
-        </button>
-
-        {/* DRM Security Status Indicator Badge */}
-        <button
-          onClick={() => setShowDrmModal(true)}
-          className="hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-slate-800/90 hover:bg-slate-700 text-[#00A0DF] hover:text-white border border-[#00A0DF]/30 text-[11px] font-bold transition-all shadow-sm cursor-pointer"
-          title="Click to view Anti-Piracy DRM Policy"
-        >
-          <Shield size={12} className="text-[#00A0DF]" />
-          <span>DRM Active</span>
-        </button>
-
-        {/* User Profile & Sign Out */}
-        <div className="flex items-center gap-2">
-          <div className="text-right hidden sm:block">
-            <div className="text-xs font-bold text-white flex items-center justify-end gap-1">
-              <span>{user?.name || 'Student'}</span>
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
-            </div>
-            <div className="text-[10px] text-slate-400">{user?.email || 'student@samiecom.com'}</div>
-          </div>
+          {/* DRM Secure Badge */}
           <button
-            onClick={handleLogout}
-            className="p-2 rounded-xl bg-[#1E293B] hover:bg-red-500/20 text-slate-400 hover:text-red-400 transition-colors border border-white/5"
-            title="Log Out"
+            onClick={() => setShowDrmModal(true)}
+            className="hidden md:flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border border-emerald-200 text-[11px] font-semibold transition-all shadow-xs cursor-pointer ml-1"
+            title="Content Protection Active"
           >
-            <LogOut size={15} />
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            <ShieldCheck size={13} className="text-emerald-600" />
+            <span>DRM Protected &amp; Secure</span>
           </button>
+        </div>
+
+        {/* Center Navigation Pills (Desktop) */}
+        <div className="hidden lg:flex items-center bg-slate-100/90 p-1 rounded-2xl border border-slate-200/80 text-xs font-semibold">
+          <button
+            onClick={() => setActiveTab('video')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'video'
+                ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+          >
+            <Play size={13} className={activeTab === 'video' ? 'fill-white' : ''} />
+            <span>Curriculum</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('suppliers')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'suppliers'
+                ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+          >
+            <ShoppingBag size={13} />
+            <span>GCC Suppliers</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('resources')}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer ${
+              activeTab === 'resources'
+                ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+          >
+            <Download size={13} />
+            <span>Bonuses</span>
+          </button>
+
+          <button
+            onClick={() => {
+              setActiveTab('community');
+              markUpdatesAsRead();
+            }}
+            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer relative ${
+              activeTab === 'community'
+                ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+            }`}
+          >
+            <Radio size={13} className={unreadCount > 0 ? 'text-amber-500 animate-pulse' : ''} />
+            <span>Community</span>
+            {unreadCount > 0 && (
+              <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
+                {unreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+
+        {/* Right Status, Progress & Profile */}
+        <div className="flex items-center gap-2.5 sm:gap-4">
+          
+          {/* Progress Tracker Strip */}
+          <div className="hidden sm:flex items-center gap-2.5 bg-slate-50 border border-slate-200/90 rounded-xl px-3 py-1.5 text-xs">
+            <span className="text-slate-500 font-medium text-[11px]">Progress:</span>
+            <div className="w-20 md:w-28 bg-slate-200/90 rounded-full h-2 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 h-full rounded-full transition-all duration-300"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+            <strong className="text-blue-700 font-bold text-xs">{progressPercent}%</strong>
+            <span className="text-slate-400 text-[10px]">({completedLessons.length}/{totalLessons})</span>
+            
+            {syncStatus === 'syncing' && (
+              <span className="flex items-center gap-1 text-[10px] text-amber-600 font-semibold animate-pulse ml-1">
+                <Loader2 size={11} className="animate-spin" />
+              </span>
+            )}
+            {syncStatus === 'synced' && (
+              <span className="flex items-center gap-1 text-[10px] text-emerald-600 font-bold ml-1" title="Cloud Synced">
+                <Cloud size={12} />
+              </span>
+            )}
+          </div>
+
+          {/* User Profile Pill & Logout */}
+          <div className="flex items-center gap-2 pl-1 sm:pl-2 border-l border-slate-200">
+            <div className="flex items-center gap-2 text-left">
+              <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs flex items-center justify-center uppercase shadow-xs">
+                {user?.name ? user.name.slice(0, 2).toUpperCase() : 'ST'}
+              </div>
+              <div className="hidden md:block leading-tight">
+                <div className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                  <span className="truncate max-w-[110px]">{user?.name || 'Student'}</span>
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Online" />
+                </div>
+                <div className="text-[10px] text-slate-400 truncate max-w-[120px]">
+                  {user?.email || 'student@samiecom.com'}
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleLogout}
+              className="p-2 rounded-xl bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 border border-slate-200/80 transition-colors"
+              title="Log Out of Classroom"
+            >
+              <LogOut size={15} />
+            </button>
+          </div>
+
         </div>
       </header>
 
-      {/* Main LMS Container */}
+      {/* ========================================================================= */}
+      {/* MAIN LAYOUT: SIDEBAR + MAIN CONTENT AREA */}
+      {/* ========================================================================= */}
       <div className="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
         
         {/* Mobile Backdrop Overlay */}
         {sidebarOpen && (
           <div 
             onClick={() => setSidebarOpen(false)}
-            className="fixed inset-0 z-40 bg-black/80 backdrop-blur-sm lg:hidden transition-opacity"
+            className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
           />
         )}
 
-        {/* Left Side: 8 Modules Sidebar Drawer */}
+        {/* ========================================================================= */}
+        {/* LEFT COLUMN: COURSE CURRICULUM ACCORDION & CONNECTING TREE LINES */}
+        {/* ========================================================================= */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-50 w-[85vw] max-w-sm sm:w-80 md:w-96 bg-[#111827] border-r border-white/10 flex flex-col transition-transform duration-300 transform ${
+          className={`fixed lg:static inset-y-0 left-0 z-50 w-[88vw] max-w-sm sm:w-84 md:w-96 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 transform ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-          } max-h-screen lg:max-h-[calc(100vh-57px)]`}
+          } max-h-screen lg:max-h-[calc(100vh-61px)]`}
         >
-          {/* Sidebar Top Search */}
-          <div className="p-3 sm:p-4 border-b border-white/10 bg-[#111827] sticky top-0 z-10 space-y-2.5">
+          {/* Sidebar Top: Title & Completion Stats */}
+          <div className="p-4 border-b border-slate-200 bg-white sticky top-0 z-10 space-y-3">
             <div className="flex items-center justify-between">
-              <h2 className="text-xs sm:text-sm font-black text-white flex items-center gap-2">
-                <BookOpen size={16} className="text-[#00A0DF]" />
-                <span>8 Modules Curriculum</span>
-              </h2>
               <div className="flex items-center gap-2">
-                <span className="text-[10px] bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full font-bold border border-emerald-500/20">
-                  {completedLessons.length}/{totalLessons} Done
-                </span>
-                <button 
-                  onClick={() => setSidebarOpen(false)}
-                  className="lg:hidden text-slate-400 hover:text-white p-1"
-                >
-                  <X size={18} />
-                </button>
+                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center">
+                  <BookOpen size={16} />
+                </div>
+                <div>
+                  <h2 className="text-xs sm:text-sm font-extrabold text-slate-900 leading-tight">
+                    Course Curriculum
+                  </h2>
+                  <span className="text-[10px] text-slate-500 block">
+                    {completedLessons.length} of {totalLessons} Lectures completed ({progressPercent}%)
+                  </span>
+                </div>
               </div>
+
+              <button 
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100"
+              >
+                <X size={18} />
+              </button>
             </div>
 
+            {/* Curriculum Search Bar */}
             <div className="relative">
               <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
               <input
                 type="text"
-                placeholder="Search lectures..."
+                placeholder="Search lessons, topics, tools..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                className="w-full pl-9 pr-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all"
               />
+            </div>
+
+            {/* Currently On Tracker Sub-header */}
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs">
+              <div className="flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+                <span className="text-slate-600 font-semibold text-[11px]">
+                  Currently on: <strong className="text-slate-900">{activeLesson?.title?.slice(0, 15) || 'Module 1.1'}...</strong>
+                </span>
+              </div>
+              <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md">
+                {activeModulePercent}% Mastered
+              </span>
             </div>
           </div>
 
-          {/* Module List Accordion */}
-          <div className="flex-1 overflow-y-auto p-2.5 sm:p-3 space-y-2">
+          {/* Module List with Vertical Connecting Tree Lines */}
+          <div className="flex-1 overflow-y-auto p-3 space-y-2.5 bg-slate-50/50">
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
               const moduleCompletedCount = m.lessons.filter(l => completedLessons.includes(l.id)).length;
               const isAllCompleted = moduleCompletedCount === m.lessons.length && m.lessons.length > 0;
+              const isActiveModule = m.lessons.some(l => l.id === activeLesson?.id);
 
               return (
-                <div key={m.id} className="border border-white/5 rounded-2xl bg-[#0B0F19]/60 overflow-hidden">
+                <div 
+                  key={m.id} 
+                  className={`border rounded-2xl bg-white transition-all shadow-xs ${
+                    isActiveModule ? 'border-blue-300 ring-1 ring-blue-100' : 'border-slate-200'
+                  }`}
+                >
+                  {/* Module Header Button */}
                   <button
                     onClick={() => setOpenModuleId(isOpen ? 0 : m.id)}
-                    className="w-full p-2.5 sm:p-3 text-left flex items-center justify-between gap-2 hover:bg-[#1E293B]/50 transition-colors"
+                    className="w-full p-3 text-left flex items-center justify-between gap-2.5 hover:bg-slate-50/80 rounded-2xl transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center gap-2 text-xs font-bold text-white min-w-0">
+                    <div className="flex items-center gap-2.5 text-xs font-bold text-slate-800 min-w-0">
                       {isAllCompleted ? (
-                        <CheckCircle2 size={15} className="text-emerald-400 flex-shrink-0" />
+                        <div className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center flex-shrink-0">
+                          <CheckCircle2 size={15} />
+                        </div>
                       ) : (
-                        <div className="w-4 h-4 rounded-full border border-slate-600 flex items-center justify-center text-[9px] text-slate-400 flex-shrink-0">
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${
+                          isActiveModule 
+                            ? 'bg-blue-600 text-white shadow-xs' 
+                            : 'bg-slate-100 text-slate-600 border border-slate-200'
+                        }`}>
                           {m.id}
                         </div>
                       )}
-                      <span className="truncate">{m.title}</span>
+                      <span className="truncate text-slate-900 font-bold">{m.title}</span>
                     </div>
-                    <div className="flex items-center gap-1 text-[10px] text-slate-400 flex-shrink-0">
-                      <span>{moduleCompletedCount}/{m.lessons.length}</span>
-                      {isOpen ? <ChevronDown size={14} /> : <ChevronRight size={14} />}
+
+                    <div className="flex items-center gap-2 text-[10px] text-slate-500 flex-shrink-0">
+                      <span className={`px-2 py-0.5 rounded-full font-bold ${
+                        isAllCompleted 
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : isActiveModule 
+                          ? 'bg-blue-50 text-blue-700 border border-blue-200' 
+                          : 'bg-slate-100 text-slate-600'
+                      }`}>
+                        {moduleCompletedCount}/{m.lessons.length} {isActiveModule ? 'Active' : ''}
+                      </span>
+                      {isOpen ? (
+                        <ChevronDown size={14} className="text-slate-400" />
+                      ) : (
+                        <ChevronRight size={14} className="text-slate-400" />
+                      )}
                     </div>
                   </button>
 
+                  {/* Collapsed Lectures Tree (Vertical Connector Line Branching out) */}
                   {isOpen && (
-                    <div className="p-1 sm:p-1.5 space-y-1 bg-[#111827] border-t border-white/5">
-                      {m.lessons
-                        .filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()))
-                        .map((lesson) => {
-                          const isDone = completedLessons.includes(lesson.id);
-                          const isCurrent = activeLesson?.id === lesson.id;
+                    <div className="px-3 pb-3 pt-1 border-t border-slate-100">
+                      {/* Vertical Connecting Line Container */}
+                      <div className="relative pl-5 ml-3 border-l-2 border-blue-200/90 space-y-2 py-1">
+                        {m.lessons
+                          .filter(l => l.title.toLowerCase().includes(searchQuery.toLowerCase()))
+                          .map((lesson) => {
+                            const isDone = completedLessons.includes(lesson.id);
+                            const isCurrent = activeLesson?.id === lesson.id;
 
-                          return (
-                            <div
-                              key={lesson.id}
-                              onClick={() => {
-                                setActiveLesson(lesson);
-                                setActiveTab('video');
-                                setSidebarOpen(false);
-                              }}
-                              className={`p-2 rounded-xl cursor-pointer flex items-center justify-between gap-2 text-xs transition-colors ${
-                                isCurrent
-                                  ? 'bg-[#00A0DF] text-white font-bold shadow-md shadow-[#00A0DF]/30'
-                                  : 'text-slate-300 hover:bg-[#1E293B]'
-                              }`}
-                            >
-                              <div className="flex items-center gap-2 min-w-0">
-                                <button
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    const lessonWatch = watchProgress[lesson.id] || 0;
-                                    const isDirect = Boolean(
-                                      lesson.videoUrl && (
-                                        lesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-                                        lesson.videoUrl.includes('supabase.co/storage')
-                                      )
-                                    );
-                                    if (isAdmin || isDone || !isDirect || lessonWatch >= 90) {
-                                      toggleLessonComplete(lesson.id);
-                                    } else {
-                                      setSyncFeedback('🔒 Please watch 90% of the video to complete this lecture');
-                                      setTimeout(() => setSyncFeedback(''), 4000);
-                                    }
-                                  }}
-                                  title={isDone ? 'Completed' : isAdmin ? 'Admin override toggle' : 'Watch 90% to unlock completion'}
-                                  className="flex-shrink-0 text-slate-400 hover:text-emerald-400 p-0.5"
-                                >
-                                  {isDone ? (
-                                    <CheckCircle2 size={14} className="text-emerald-400" />
+                            return (
+                              <div
+                                key={lesson.id}
+                                onClick={() => {
+                                  setActiveLesson(lesson);
+                                  setActiveTab('video');
+                                  setSidebarOpen(false);
+                                }}
+                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 text-xs transition-all ${
+                                  isCurrent
+                                    ? 'bg-blue-50/90 text-blue-950 font-bold border-2 border-blue-400 shadow-xs'
+                                    : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/70 hover:border-slate-300'
+                                }`}
+                              >
+                                {/* Tree Branch Connector Line Node */}
+                                <div 
+                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 ${
+                                    isCurrent ? 'bg-blue-500' : 'bg-blue-200'
+                                  }`} 
+                                />
+
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {/* Play Icon or Complete Checkmark */}
+                                  {isCurrent ? (
+                                    <div className="w-5 h-5 rounded-full bg-blue-600 text-white flex items-center justify-center flex-shrink-0 shadow-xs shadow-blue-500/40">
+                                      <Play size={10} className="fill-white ml-0.5" />
+                                    </div>
+                                  ) : isDone ? (
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleLessonComplete(lesson.id);
+                                      }}
+                                      className="text-emerald-600 hover:text-emerald-700 flex-shrink-0"
+                                      title="Completed (Click to Toggle)"
+                                    >
+                                      <CheckCircle2 size={16} />
+                                    </button>
                                   ) : (
-                                    <div className="w-3.5 h-3.5 rounded border border-slate-500 hover:border-[#00A0DF]" />
+                                    <button
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isAdmin || isDone) {
+                                          toggleLessonComplete(lesson.id);
+                                        } else {
+                                          setSyncFeedback('Watch 90% to complete');
+                                          setTimeout(() => setSyncFeedback(''), 3000);
+                                        }
+                                      }}
+                                      className="w-4 h-4 rounded-full border border-slate-300 hover:border-blue-500 flex-shrink-0"
+                                      title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
+                                    />
                                   )}
-                                </button>
-                                <span className="truncate">{lesson.title}</span>
+
+                                  <div className="truncate">
+                                    <span className={`block truncate text-xs ${isCurrent ? 'font-black text-blue-950' : 'font-semibold text-slate-800'}`}>
+                                      {lesson.title}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <span className={`text-[10px] flex-shrink-0 font-semibold px-2 py-0.5 rounded-md ${
+                                  isCurrent ? 'bg-blue-200/70 text-blue-900' : 'text-slate-400 bg-slate-100'
+                                }`}>
+                                  {lesson.duration || '12m'}
+                                </span>
                               </div>
-                              <span className="text-[10px] opacity-75 flex-shrink-0">{lesson.duration}</span>
-                            </div>
-                          );
-                        })}
+                            );
+                          })}
+                      </div>
                     </div>
                   )}
                 </div>
               );
             })}
           </div>
+
+          {/* Sidebar Footer Security Tag */}
+          <div className="p-3 border-t border-slate-200 bg-white flex items-center justify-between text-[11px] text-slate-500 font-medium">
+            <span className="flex items-center gap-1.5 text-slate-600">
+              <Lock size={12} className="text-blue-600" />
+              <span>Encrypted Mentorship Vault</span>
+            </span>
+            <span className="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full text-[10px] font-bold">
+              SamiLMS v2.4
+            </span>
+          </div>
         </aside>
 
-        {/* Right Stage: Main Classroom Area */}
-        <main className="flex-1 flex flex-col overflow-y-auto max-h-screen lg:max-h-[calc(100vh-57px)]">
+        {/* ========================================================================= */}
+        {/* RIGHT STAGE: MAIN CLASSROOM AREA */}
+        {/* ========================================================================= */}
+        <main className="flex-1 flex flex-col overflow-y-auto max-h-screen lg:max-h-[calc(100vh-61px)] bg-[#F8FAFC]">
           
-          {/* LMS Top DRM & Anti-Piracy Scrolling Announcement Bar */}
-          <div className="bg-gradient-to-r from-red-950/50 via-[#111827] to-slate-900 border-b border-red-500/20 px-3 sm:px-4 py-2 flex items-center gap-3 text-xs z-20 shadow-sm overflow-hidden">
-            {/* Left Pinned DRM Badge */}
-            <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-red-500/15 border border-red-500/30 text-red-400 text-[10px] font-black uppercase tracking-wider flex-shrink-0 z-10 shadow-sm">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-400 animate-ping inline-block flex-shrink-0" />
-              <ShieldAlert size={12} className="text-red-400" />
-              <span>DRM ACTIVE</span>
+          {/* Subtle Clean Notice Banner */}
+          <div className="bg-blue-50/70 border-b border-blue-100 px-4 py-2 flex items-center justify-between text-xs z-20">
+            <div className="flex items-center gap-2 text-blue-900">
+              <span className="w-2 h-2 rounded-full bg-blue-600 animate-ping inline-block" />
+              <span className="font-bold text-[11px] sm:text-xs">Dynamic Watermark Active:</span>
+              <span className="text-slate-600 text-[11px] hidden sm:inline">
+                All video streams contain encrypted forensic identification tied to your student ID.
+              </span>
             </div>
 
-            {/* Continuous Scrolling Marquee Ticker */}
-            <div className="flex-1 overflow-hidden relative flex items-center min-w-0">
-              <div className="animate-lms-marquee flex items-center gap-8 py-0.5">
-                {/* Loop 1 */}
-                <div className="flex items-center gap-6 text-[11px] sm:text-xs text-slate-300 font-medium">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-white font-bold">🔒 Content Protected:</span>
-                    <span>All course lectures are dynamically watermarked with your Student Name, ID &amp; Live IP.</span>
-                  </span>
-                  <span className="text-red-400 font-semibold flex items-center gap-1">
-                    <span>•</span>
-                    <span>Screen recording, external capture, and unauthorized sharing are strictly prohibited.</span>
-                  </span>
-                  <span className="text-cyan-400 font-medium flex items-center gap-1">
-                    <span>•</span>
-                    <span>Dynamic forensic tracking is permanently active across all video streams.</span>
-                  </span>
-                </div>
-
-                {/* Loop 2 (Identical duplicate for seamless 0% to -50% infinite loop) */}
-                <div className="flex items-center gap-6 text-[11px] sm:text-xs text-slate-300 font-medium" aria-hidden="true">
-                  <span className="flex items-center gap-1.5">
-                    <span className="text-white font-bold">🔒 Content Protected:</span>
-                    <span>All course lectures are dynamically watermarked with your Student Name, ID &amp; Live IP.</span>
-                  </span>
-                  <span className="text-red-400 font-semibold flex items-center gap-1">
-                    <span>•</span>
-                    <span>Screen recording, external capture, and unauthorized sharing are strictly prohibited.</span>
-                  </span>
-                  <span className="text-cyan-400 font-medium flex items-center gap-1">
-                    <span>•</span>
-                    <span>Dynamic forensic tracking is permanently active across all video streams.</span>
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Right Pinned "View Policy" Button */}
             <button
               onClick={() => setShowDrmModal(true)}
-              className="text-[10px] sm:text-[11px] font-bold text-[#00A0DF] hover:text-[#38bdf8] whitespace-nowrap flex-shrink-0 flex items-center gap-1 bg-[#00A0DF]/10 hover:bg-[#00A0DF]/20 px-2.5 py-1 rounded-lg border border-[#00A0DF]/30 transition-all z-10 cursor-pointer"
+              className="text-[11px] font-bold text-blue-700 hover:text-blue-800 flex items-center gap-1 hover:underline cursor-pointer"
             >
               <span>View Policy</span>
               <ChevronRight size={12} />
             </button>
           </div>
 
-          {/* Classroom Sub-Tabs */}
-          <div className="bg-[#111827] border-b border-white/10 px-3 sm:px-6 py-2 flex items-center justify-between gap-2 overflow-x-auto no-scrollbar sticky top-0 z-20">
-            <div className="flex items-center gap-1.5 sm:gap-2 text-xs font-bold">
-              <button
-                onClick={() => setActiveTab('video')}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs transition-colors ${
-                  activeTab === 'video' ? 'bg-[#00A0DF] text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Play size={13} />
-                <span>Video Lecture</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('suppliers')}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs transition-colors ${
-                  activeTab === 'suppliers' ? 'bg-[#00A0DF] text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <ShoppingBag size={13} />
-                <span>GCC Suppliers</span>
-              </button>
-              <button
-                onClick={() => setActiveTab('resources')}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs transition-colors ${
-                  activeTab === 'resources' ? 'bg-[#00A0DF] text-white' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Download size={13} />
-                <span>Bonuses</span>
-              </button>
-              <button
-                onClick={() => {
-                  setActiveTab('community');
-                  markUpdatesAsRead();
-                }}
-                className={`flex items-center gap-1.5 sm:gap-2 px-3 sm:px-3.5 py-1.5 rounded-xl whitespace-nowrap text-xs transition-colors relative ${
-                  activeTab === 'community' ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20' : 'text-slate-400 hover:text-white hover:bg-slate-800'
-                }`}
-              >
-                <Radio size={13} className={unreadCount > 0 ? 'text-amber-400 animate-pulse' : ''} />
-                <span>Community Updates</span>
-                {unreadCount > 0 && (
-                  <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse ml-0.5">
-                    {unreadCount}
-                  </span>
-                )}
-              </button>
-            </div>
-
-            <div className="hidden sm:flex items-center gap-2">
-              {prevLesson && (
-                <button
-                  onClick={() => setActiveLesson(prevLesson)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs text-slate-300 flex items-center gap-1"
-                >
-                  <ChevronLeft size={13} /> Prev
-                </button>
-              )}
-              {nextLesson && (
-                <button
-                  onClick={() => setActiveLesson(nextLesson)}
-                  className="px-2.5 py-1 rounded-lg bg-[#00A0DF] hover:bg-[#008ec7] text-xs font-bold text-white flex items-center gap-1"
-                >
-                  Next <ChevronRight size={13} />
-                </button>
-              )}
-            </div>
-          </div>
-
+          {/* ========================================================================= */}
+          {/* CONTENT ROUTING BASED ON ACTIVE TAB */}
+          {/* ========================================================================= */}
           <div className="p-3 sm:p-6 lg:p-8 flex-1">
             
-            {/* ========================================================================= */}
-            {/* TAB 1: VIDEO PLAYER */}
-            {/* ========================================================================= */}
+            {/* --------------------------------------------------------------------- */}
+            {/* TAB 1: VIDEO LECTURE / CURRICULUM */}
+            {/* --------------------------------------------------------------------- */}
             {activeTab === 'video' && (
-              <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
+              <div className="max-w-5xl mx-auto space-y-5">
                 
-                {/* Widescreen Responsive Video Player */}
+                {/* Top Action & Navigation Strip */}
+                <div className="flex flex-wrap items-center justify-between gap-3 bg-white p-3 sm:p-4 rounded-2xl border border-slate-200/90 shadow-xs">
+                  {/* Previous / Next Lecture Buttons */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => prevLesson && setActiveLesson(prevLesson)}
+                      disabled={!prevLesson}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 text-xs font-semibold text-slate-700 border border-slate-200 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <ChevronLeft size={14} />
+                      <span>Previous</span>
+                    </button>
+
+                    <button
+                      onClick={() => nextLesson && setActiveLesson(nextLesson)}
+                      disabled={!nextLesson}
+                      className="px-3.5 py-1.5 rounded-xl bg-white hover:bg-slate-50 disabled:opacity-40 text-xs font-semibold text-slate-700 border border-slate-200 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer disabled:cursor-not-allowed"
+                    >
+                      <span>Next Lecture</span>
+                      <ChevronRight size={14} />
+                    </button>
+                  </div>
+
+                  {/* Auto-proceed & Mark as Completed Button */}
+                  <div className="flex items-center gap-3">
+                    <label className="hidden sm:flex items-center gap-2 text-xs font-medium text-slate-600 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={autoProceed}
+                        onChange={(e) => {
+                          setAutoProceed(e.target.checked);
+                          try {
+                            localStorage.setItem('sami_lms_auto_proceed', String(e.target.checked));
+                          } catch (err) {}
+                        }}
+                        className="rounded border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                      />
+                      <span>Auto-proceed</span>
+                    </label>
+
+                    {/* Main Mark as Completed Button */}
+                    <button
+                      onClick={() => {
+                        if (!activeLesson) return;
+                        if (isCurrentDone) {
+                          markLessonComplete(activeLesson.id, false);
+                        } else if (!isDirectLessonVideo || currentLessonWatchPct >= 90 || isAdmin) {
+                          markLessonComplete(activeLesson.id, true);
+                        }
+                      }}
+                      disabled={!isCurrentDone && isDirectLessonVideo && currentLessonWatchPct < 90 && !isAdmin}
+                      className={`px-4 sm:px-5 py-2 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer ${
+                        isCurrentDone
+                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-600/20'
+                          : !isDirectLessonVideo || currentLessonWatchPct >= 90 || isAdmin
+                          ? 'bg-blue-600 hover:bg-blue-700 text-white shadow-blue-600/30'
+                          : 'bg-slate-100 text-slate-400 border border-slate-200 cursor-not-allowed opacity-80'
+                      }`}
+                    >
+                      {isCurrentDone ? (
+                        <>
+                          <CheckCircle2 size={16} />
+                          <span>Completed (Undo)</span>
+                        </>
+                      ) : (
+                        <>
+                          <Check size={16} />
+                          <span>Mark as Completed</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
+
+                {/* 16:9 Responsive Video Player Container */}
                 <div
                   ref={playerContainerRef}
-                  className={`bg-black flex items-center justify-center transition-all ${
+                  className={`bg-slate-950 flex items-center justify-center transition-all ${
                     isIosFullscreen
                       ? 'fixed inset-0 z-[999999] w-screen h-screen max-w-none max-h-none m-0 p-0 rounded-none border-0 shadow-none'
-                      : 'relative w-full aspect-video rounded-xl sm:rounded-3xl overflow-hidden border-2 border-white/10 shadow-2xl'
+                      : 'relative w-full aspect-video rounded-2xl sm:rounded-3xl overflow-hidden border border-slate-300 shadow-xl'
                   }`}
                   style={
                     isIosFullscreen
@@ -1146,7 +1283,6 @@ export default function LmsClassroomPage() {
                       : undefined
                   }
                 >
-                  {/* Exact 16:9 Video Stage - Keeps Watermark 100% on the video without blank border drift */}
                   <div
                     className="relative w-full h-full flex items-center justify-center overflow-hidden"
                     style={
@@ -1205,7 +1341,6 @@ export default function LmsClassroomPage() {
                               return prev;
                             });
 
-                            // Auto complete when >= 90%
                             if (pct >= 90 && activeLesson && !completedLessons.includes(activeLesson.id)) {
                               markLessonComplete(activeLesson.id, true);
                             }
@@ -1224,10 +1359,7 @@ export default function LmsClassroomPage() {
                         {videoLoadError && (
                           <div className="absolute inset-0 bg-black/90 flex flex-col items-center justify-center p-4 text-center z-20">
                             <AlertCircle size={32} className="text-amber-400 mb-2 animate-bounce" />
-                            <p className="text-sm font-bold text-white mb-1">Video stream connection loading...</p>
-                            <p className="text-xs text-slate-400 mb-4 max-w-sm">
-                              Click below to refresh the video stream buffer.
-                            </p>
+                            <p className="text-sm font-bold text-white mb-1">Video stream connection buffering...</p>
                             <button
                               onClick={() => {
                                 setVideoLoadError(false);
@@ -1237,7 +1369,7 @@ export default function LmsClassroomPage() {
                                   vid.play().catch(() => {});
                                 }
                               }}
-                              className="px-4 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008bc2] text-xs font-bold text-white flex items-center gap-1.5 transition-colors shadow-lg shadow-[#00A0DF]/30"
+                              className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-xs font-bold text-white flex items-center gap-1.5 transition-colors shadow-lg"
                             >
                               <RotateCcw size={13} />
                               <span>Reload Video Stream</span>
@@ -1257,29 +1389,9 @@ export default function LmsClassroomPage() {
                       />
                     )}
 
-                    {/* Dynamic Forensic Watermark Overlay (100% On Video - Single Instance) */}
+                    {/* Dynamic Forensic Watermark Overlay (100% on Video Stage) */}
                     {(!isFullscreen || isIosFullscreen) && (
                       <DynamicForensicWatermark user={user} isFullscreen={isIosFullscreen} />
-                    )}
-
-                    {/* iOS-Exclusive Transparent Fullscreen Button Interceptor */}
-                    {isIos && (
-                      <button
-                        type="button"
-                        aria-label={isIosFullscreen ? 'Exit Fullscreen' : 'Fullscreen'}
-                        onClick={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleIosFullscreen();
-                        }}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          toggleIosFullscreen();
-                        }}
-                        className="absolute bottom-0 right-0 z-30 w-14 h-12 bg-transparent opacity-0 cursor-pointer"
-                        style={{ touchAction: 'manipulation' }}
-                      />
                     )}
 
                     {/* iOS Fullscreen Floating Exit [X] Button */}
@@ -1288,12 +1400,6 @@ export default function LmsClassroomPage() {
                         type="button"
                         onClick={(e) => {
                           e.preventDefault();
-                          e.stopPropagation();
-                          toggleIosFullscreen();
-                        }}
-                        onTouchEnd={(e) => {
-                          e.preventDefault();
-                          e.stopPropagation();
                           toggleIosFullscreen();
                         }}
                         className="absolute top-3 right-3 z-[9999999] p-2.5 rounded-full bg-black/80 hover:bg-red-600 text-white border border-white/20 shadow-2xl backdrop-blur-md active:scale-95 flex items-center justify-center cursor-pointer"
@@ -1305,219 +1411,245 @@ export default function LmsClassroomPage() {
                   </div>
                 </div>
 
-                {/* Live Watch Verification Bar & Cloud Sync Banner */}
-                <div className="bg-[#111827] border border-white/10 rounded-2xl px-4 sm:px-5 py-3 shadow-lg flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-                  <div className="flex-1 w-full">
-                    <div className="flex items-center justify-between text-xs mb-1.5">
-                      <div className="flex items-center gap-2 font-bold text-white">
-                        <span className="w-2 h-2 rounded-full bg-[#00A0DF] animate-pulse" />
-                        <span>Lecture Watch Progress:</span>
-                        <span className={isCurrentDone ? 'text-emerald-400 font-black' : 'text-[#00A0DF] font-black'}>
-                          {isCurrentDone 
-                            ? '100% Completed' 
-                            : isDirectLessonVideo 
-                            ? `${currentLessonWatchPct}% Watched` 
-                            : 'HD Stream Ready'}
-                        </span>
-                      </div>
-                      <span className="text-[11px] text-slate-400 font-medium">
-                        {isCurrentDone 
-                          ? '✓ Verified & Cloud Saved' 
-                          : isDirectLessonVideo 
-                          ? `${Math.max(0, 90 - currentLessonWatchPct)}% more needed to complete`
-                          : 'Mark complete when finished watching'}
+                {/* Lecture Info Card (Below Video Player) */}
+                <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs space-y-4">
+                  {/* Badges & Action Buttons */}
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
+                        CURRENT LECTURE • MODULE {activeModule?.id || 1}
+                      </span>
+                      <span className="bg-slate-100 text-slate-700 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <Clock size={12} className="text-slate-500" />
+                        <span>{activeLesson?.duration || '12:40 mins'}</span>
+                      </span>
+                      <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-1 rounded-full flex items-center gap-1">
+                        <ShieldCheck size={12} className="text-emerald-600" />
+                        <span>Mentorship Verified</span>
                       </span>
                     </div>
-                    {/* Visual Progress Track */}
-                    <div className="w-full bg-slate-800 rounded-full h-2 overflow-hidden border border-slate-700/60 relative">
-                      {isDirectLessonVideo && (
-                        <div className="absolute top-0 bottom-0 left-[90%] w-0.5 bg-amber-400/80 z-10" title="90% Completion Unlock Target" />
-                      )}
-                      <div
-                        className={`h-full rounded-full transition-all duration-300 ${
-                          isCurrentDone
-                            ? 'bg-gradient-to-r from-emerald-500 to-teal-400'
-                            : !isDirectLessonVideo
-                            ? 'bg-gradient-to-r from-[#00A0DF] via-emerald-400 to-[#00A0DF]'
-                            : currentLessonWatchPct >= 90
-                            ? 'bg-gradient-to-r from-[#00A0DF] to-emerald-400'
-                            : 'bg-gradient-to-r from-[#00A0DF] to-[#0077aa]'
-                        }`}
-                        style={{ width: `${isCurrentDone ? 100 : !isDirectLessonVideo ? 100 : Math.min(100, currentLessonWatchPct)}%` }}
-                      />
-                    </div>
-                  </div>
 
-                  {/* Cloud Database Sync Status & Fullscreen Toggle */}
-                  {/* 720p Quality Badge & Cloud Database Sync Status */}
-                  <div className="flex-shrink-0 flex items-center gap-2 self-end sm:self-center">
-                    <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-300 text-[11px] font-bold">
-                      <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                      <span>720p HD Ready</span>
-                    </span>
-
-                    {syncStatus === 'syncing' ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-300 text-xs font-semibold animate-pulse">
-                        <Loader2 size={12} className="animate-spin" />
-                        <span>Saving...</span>
-                      </span>
-                    ) : syncFeedback ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 text-xs font-bold">
-                        <CheckCircle2 size={12} className="text-emerald-400" />
-                        <span>{syncFeedback}</span>
-                      </span>
-                    ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-800/80 border border-white/5 text-slate-300 text-xs">
-                        <Cloud size={12} className="text-[#00A0DF]" />
-                        <span>Saved</span>
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                {/* Mobile Next / Prev Control Buttons */}
-                <div className="flex sm:hidden items-center justify-between gap-2">
-                  <button
-                    onClick={() => prevLesson && setActiveLesson(prevLesson)}
-                    disabled={!prevLesson}
-                    className="flex-1 py-2 rounded-xl bg-slate-800 disabled:opacity-30 text-xs font-bold text-slate-300 flex items-center justify-center gap-1"
-                  >
-                    <ChevronLeft size={14} /> Prev Lecture
-                  </button>
-                  <button
-                    onClick={() => nextLesson && setActiveLesson(nextLesson)}
-                    disabled={!nextLesson}
-                    className="flex-1 py-2 rounded-xl bg-[#00A0DF] disabled:opacity-30 text-xs font-black text-white flex items-center justify-center gap-1"
-                  >
-                    Next Lecture <ChevronRight size={14} />
-                  </button>
-                </div>
-
-                {/* Lecture Control Strip */}
-                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xl">
-                  <div>
-                    <span className="text-[10px] font-extrabold uppercase tracking-wider text-[#00A0DF] block mb-0.5">
-                      CURRENT LECTURE
-                    </span>
-                    <h1 className="text-sm sm:text-xl md:text-2xl font-black text-white leading-snug">
-                      {activeLesson?.title || '1.1 GCC Dropshipping Overview'}
-                    </h1>
-                    <div className="flex items-center gap-2 sm:gap-3 text-xs text-slate-400 mt-1.5">
-                      <span className="flex items-center gap-1"><Clock size={12} /> {activeLesson?.duration || '12 mins'}</span>
-                      <span>&bull;</span>
-                      <span>1080p Ultra-HD Stream</span>
-                    </div>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
-                    {/* Admin Instant Test Toggle */}
-                    {isAdmin && (
+                    <div className="flex items-center gap-2">
                       <button
-                        onClick={() => activeLesson && markLessonComplete(activeLesson.id)}
-                        title="Admin Override: Test complete/uncomplete instantly without watching full video"
-                        className="px-3.5 py-2.5 rounded-xl text-xs font-bold bg-amber-500/20 border border-amber-500/40 text-amber-300 hover:bg-amber-500/30 active:scale-95 transition-all flex items-center justify-center gap-1.5 shadow-md"
+                        onClick={() => setIsBookmarked(!isBookmarked)}
+                        className={`px-3 py-1.5 rounded-xl border text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
+                          isBookmarked 
+                            ? 'bg-blue-50 text-blue-700 border-blue-200' 
+                            : 'bg-white hover:bg-slate-50 text-slate-600 border-slate-200'
+                        }`}
                       >
-                        <Zap size={14} className="text-amber-400 fill-amber-400" />
-                        <span>Admin Test Bypass</span>
+                        <Bookmark size={14} className={isBookmarked ? 'fill-blue-600' : ''} />
+                        <span>{isBookmarked ? 'Bookmarked' : 'Bookmark'}</span>
                       </button>
-                    )}
 
-                    {/* Main Smart Completion Button */}
+                      <button
+                        onClick={handleShare}
+                        className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-50 text-slate-600 border border-slate-200 text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer"
+                      >
+                        <Share2 size={14} />
+                        <span>Share</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {shareToast && (
+                    <div className="p-2 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 rounded-xl animate-in fade-in">
+                      {shareToast}
+                    </div>
+                  )}
+
+                  {/* Main Lecture Title */}
+                  <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
+                    {activeLesson?.title || '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences'}
+                  </h1>
+
+                  {/* Comprehensive Overview Text */}
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
+                    Master the fundamental architectural models in contemporary e-commerce. Discover the trade-offs between zero-inventory dropshipping and localized GCC &amp; Domestic private label warehousing, ad spend thresholds, and healthy cashflow runways.
+                  </p>
+
+                  {/* Sub-Tabs: Notes vs Q&A */}
+                  <div className="pt-2 border-t border-slate-100 flex items-center gap-4 text-xs font-bold">
                     <button
-                      onClick={() => {
-                        if (!activeLesson) return;
-                        if (isCurrentDone) {
-                          markLessonComplete(activeLesson.id, false);
-                        } else if (!isDirectLessonVideo || currentLessonWatchPct >= 90 || isAdmin) {
-                          markLessonComplete(activeLesson.id, true);
-                        }
-                      }}
-                      disabled={!isCurrentDone && isDirectLessonVideo && currentLessonWatchPct < 90 && !isAdmin}
-                      className={`w-full sm:w-auto px-5 py-3 rounded-xl text-xs sm:text-sm font-black flex items-center justify-center gap-2 transition-all shadow-lg ${
-                        isCurrentDone
-                          ? 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-emerald-900/40 active:scale-95 cursor-pointer'
-                          : !isDirectLessonVideo || currentLessonWatchPct >= 90 || isAdmin
-                          ? 'bg-[#00A0DF] hover:bg-[#008ec7] text-white shadow-[#00A0DF]/30 active:scale-95 cursor-pointer'
-                          : 'bg-slate-800/80 text-slate-400 border border-white/5 cursor-not-allowed opacity-80'
+                      onClick={() => setSubTab('notes')}
+                      className={`pb-2 transition-colors relative cursor-pointer ${
+                        subTab === 'notes' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'
                       }`}
                     >
-                      {isCurrentDone ? (
-                        <>
-                          <CheckCircle2 size={16} />
-                          <span>Completed (Click to Undo)</span>
-                        </>
-                      ) : !isDirectLessonVideo ? (
-                        <>
-                          <CheckCircle2 size={16} />
-                          <span>Mark as Completed</span>
-                        </>
-                      ) : currentLessonWatchPct >= 90 ? (
-                        <>
-                          <CheckCircle2 size={16} />
-                          <span>Mark as Completed ({currentLessonWatchPct}%)</span>
-                        </>
-                      ) : (
-                        <>
-                          <Lock size={15} className="text-slate-400" />
-                          <span>Watch 90% to Complete ({currentLessonWatchPct}%)</span>
-                        </>
-                      )}
+                      Lecture Notes &amp; Overview (2 Files)
+                    </button>
+                    <button
+                      onClick={() => setSubTab('discussion')}
+                      className={`pb-2 transition-colors relative cursor-pointer ${
+                        subTab === 'discussion' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'
+                      }`}
+                    >
+                      Q&amp;A Discussion (38)
                     </button>
                   </div>
+
+                  {/* Tab 1 Content: Downloadable Resource Cards */}
+                  {subTab === 'notes' && (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                      {/* PDF Resource Card */}
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-300 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center flex-shrink-0">
+                            <FileText size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900 truncate max-w-[200px]">
+                              Dropshipping_vs_PrivateLabel_Cheatsheet.pdf
+                            </h4>
+                            <span className="text-[10px] text-slate-500 block">
+                              PDF Document • 2.4 MB • Updated this week
+                            </span>
+                          </div>
+                        </div>
+
+                        <a
+                          href="/apps/WithSamiLMS_Windows_1.0.13.exe"
+                          download
+                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors"
+                          title="Download Resource"
+                        >
+                          <Download size={16} />
+                        </a>
+                      </div>
+
+                      {/* Excel Resource Card */}
+                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-300 transition-all">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0">
+                            <FileSpreadsheet size={20} />
+                          </div>
+                          <div>
+                            <h4 className="text-xs font-bold text-slate-900 truncate max-w-[200px]">
+                              Unit_Economics_Calculator_PK_UAE.xlsx
+                            </h4>
+                            <span className="text-[10px] text-slate-500 block">
+                              Spreadsheet • 860 KB • Formulation template
+                            </span>
+                          </div>
+                        </div>
+
+                        <a
+                          href="/apps/WithSamiLMS_Windows_1.0.13.exe"
+                          download
+                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors"
+                          title="Download Resource"
+                        >
+                          <Download size={16} />
+                        </a>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Tab 2 Content: Q&A Preview */}
+                  {subTab === 'discussion' && (
+                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
+                          AK
+                        </div>
+                        <div className="space-y-1">
+                          <div className="text-xs font-bold text-slate-800">
+                            Ali Khan <span className="text-[10px] font-normal text-slate-400">• 2 days ago</span>
+                          </div>
+                          <p className="text-xs text-slate-600 leading-relaxed">
+                            Mentor Sami, should I test 3 creative variations on TikTok ads before scaling the daily ad budget to 50 AED?
+                          </p>
+                          <div className="pl-3 border-l-2 border-blue-400 mt-2 space-y-0.5">
+                            <div className="text-[11px] font-bold text-blue-700">
+                              Mentor Sardar Samiullah (Instructor)
+                            </div>
+                            <p className="text-[11px] text-slate-600">
+                              Yes Ali! Always validate minimum 3 UGC hooks before raising the budget. Watch Module 5 for the exact breakdown.
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                 </div>
 
-                {/* Action Blueprint Notes */}
-                <div className="bg-[#111827]/80 border border-white/10 rounded-2xl p-4 sm:p-6 space-y-2.5">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-xs sm:text-sm font-bold text-white flex items-center gap-2">
-                      <Zap size={14} className="text-amber-400" />
-                      <span>Action Items for this Lecture:</span>
-                    </h3>
+                {/* Pinned Mentor Announcement Card */}
+                <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-blue-50/80 border border-blue-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-3.5">
+                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
+                      S
+                    </div>
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-xs font-extrabold text-blue-950">Mentor Sami</span>
+                        <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">
+                          Pinned Mentor Announcement
+                        </span>
+                        <span className="text-[10px] text-slate-400">• Updated today</span>
+                      </div>
+                      <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
+                        "Live Weekly Q&amp;A Session this Friday at 8:00 PM PKT. We will review winning product spreadsheets and troubleshoot TikTok Ad account setups. Be on time with your questions!"
+                      </p>
+                    </div>
                   </div>
-                  <ul className="list-disc list-inside space-y-1.5 text-xs sm:text-sm text-slate-300 leading-relaxed">
-                    <li>Replicate the screen clicks on your own Shopify admin panel in real-time.</li>
-                    <li>Always cross-check with the supplier directory before choosing a winning product.</li>
-                    <li>If you encounter TikTok pixel errors or account restrictions, contact mentor Sami on WhatsApp.</li>
-                  </ul>
+
+                  <a
+                    href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20have%20a%20question%20for%20the%20live%20session."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all whitespace-nowrap self-start sm:self-auto"
+                  >
+                    Join Discussion
+                  </a>
                 </div>
 
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* TAB 2: VERIFIED GCC SUPPLIERS */}
-            {/* ========================================================================= */}
+            {/* --------------------------------------------------------------------- */}
+            {/* TAB 2: VERIFIED GCC WHOLESALE SUPPLIERS */}
+            {/* --------------------------------------------------------------------- */}
             {activeTab === 'suppliers' && (
-              <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
-                
+              <div className="max-w-5xl mx-auto space-y-5 animate-in fade-in duration-200">
                 {/* Header & Filter Controls */}
-                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
                   <div>
-                    <h2 className="text-base sm:text-xl font-black text-white">Verified GCC Wholesale Suppliers</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Warehouses in Dubai, Sharjah, Riyadh &amp; Jeddah</p>
+                    <h2 className="text-base sm:text-xl font-black text-slate-900">
+                      Verified GCC Wholesale Suppliers
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Direct warehouse contacts across Dubai, Sharjah, Riyadh &amp; Jeddah
+                    </p>
                   </div>
 
-                  <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                  <div className="flex items-center gap-2 w-full sm:w-auto">
                     <button
                       onClick={() => setSupplierCountryFilter('ALL')}
-                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        supplierCountryFilter === 'ALL' ? 'bg-[#00A0DF] text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        supplierCountryFilter === 'ALL'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
                       All ({suppliers.length})
                     </button>
                     <button
                       onClick={() => setSupplierCountryFilter('UAE')}
-                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        supplierCountryFilter === 'UAE' ? 'bg-[#00A0DF] text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        supplierCountryFilter === 'UAE'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
                       UAE
                     </button>
                     <button
                       onClick={() => setSupplierCountryFilter('Saudi Arabia')}
-                      className={`flex-1 sm:flex-initial px-3 py-1.5 rounded-xl text-xs font-bold transition-colors ${
-                        supplierCountryFilter === 'Saudi Arabia' ? 'bg-[#00A0DF] text-white' : 'bg-slate-800 text-slate-400 hover:text-white'
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        supplierCountryFilter === 'Saudi Arabia'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
                       KSA
@@ -1525,24 +1657,33 @@ export default function LmsClassroomPage() {
                   </div>
                 </div>
 
-                {/* Supplier Cards */}
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-6">
+                {/* Suppliers Grid */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {filteredSuppliers.map((s) => (
-                    <div key={s.id} className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col justify-between hover:border-[#00A0DF] transition-all shadow-lg">
+                    <div 
+                      key={s.id} 
+                      className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition-all"
+                    >
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-xs font-bold text-[#00A0DF]">{s.country} &bull; {s.city}</span>
-                          <span className="text-[10px] font-bold bg-emerald-500/10 text-emerald-400 px-2 py-0.5 rounded-full border border-emerald-500/30">
+                          <span className="text-xs font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                            {s.country} • {s.city}
+                          </span>
+                          <span className="text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-full">
                             COD Enabled
                           </span>
                         </div>
-                        <h3 className="text-sm sm:text-base font-bold text-white mb-1.5">{s.name}</h3>
-                        <p className="text-xs text-slate-400 mb-3">{s.category} &bull; {s.notes}</p>
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900 mb-1">
+                          {s.name}
+                        </h3>
+                        <p className="text-xs text-slate-500 mb-3">
+                          {s.category} • {s.notes}
+                        </p>
                         
-                        <div className="space-y-1 text-xs text-slate-300 bg-[#0B0F19] p-2.5 sm:p-3 rounded-xl border border-white/5 mb-3.5">
+                        <div className="space-y-1 text-xs text-slate-700 bg-slate-50 p-3 rounded-xl border border-slate-200/80 mb-4">
                           <div><strong>MOQ:</strong> {s.minOrder}</div>
-                          <div><strong>Speed:</strong> {s.deliveryTime}</div>
-                          <div><strong>Phone:</strong> <span className="font-mono text-[#00A0DF]">{s.phone}</span></div>
+                          <div><strong>Delivery:</strong> {s.deliveryTime}</div>
+                          <div><strong>Phone:</strong> <span className="font-mono text-blue-700 font-semibold">{s.phone}</span></div>
                         </div>
                       </div>
 
@@ -1550,7 +1691,7 @@ export default function LmsClassroomPage() {
                         href={s.whatsappLink}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="w-full py-2.5 sm:py-3 px-4 rounded-xl text-xs font-black text-white bg-[#25D366] hover:bg-[#1faa53] flex items-center justify-center gap-2 transition-all shadow-md shadow-emerald-600/20 active:scale-95"
+                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95"
                       >
                         <MessageSquare size={14} />
                         <span>Chat on WhatsApp with Warehouse</span>
@@ -1561,39 +1702,43 @@ export default function LmsClassroomPage() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* TAB 3: BONUS DOWNLOADS */}
-            {/* ========================================================================= */}
+            {/* --------------------------------------------------------------------- */}
+            {/* TAB 3: BONUSES & DOWNLOADS */}
+            {/* --------------------------------------------------------------------- */}
             {activeTab === 'resources' && (
-              <div className="max-w-5xl mx-auto space-y-4 sm:space-y-6">
-                <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+              <div className="max-w-5xl mx-auto space-y-5 animate-in fade-in duration-200">
+                <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
                   <div>
-                    <h2 className="text-base sm:text-xl font-black text-white">6 Power Bonus Resources Hub</h2>
-                    <p className="text-xs text-slate-400 mt-0.5">Download free tools, themes, and calculators</p>
+                    <h2 className="text-base sm:text-xl font-black text-slate-900">
+                      Power Bonus Resources Hub
+                    </h2>
+                    <p className="text-xs text-slate-500 mt-0.5">
+                      Premium software, custom templates, Shopify themes, and profit calculators
+                    </p>
                   </div>
-                  <span className="text-xs font-bold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full border border-amber-400/20">
+                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
                     Total Value: Rs 30,000+
                   </span>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {resources.map((r) => (
-                    <div key={r.id} className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col justify-between">
+                    <div key={r.id} className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition-all">
                       <div>
                         <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold bg-[#00A0DF]/10 text-[#00A0DF] px-2.5 py-0.5 rounded-full border border-[#00A0DF]/30">
-                            {r.type} &bull; {r.size}
+                          <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
+                            {r.type} • {r.size}
                           </span>
-                          <span className="text-xs font-bold text-amber-400">{r.value}</span>
+                          <span className="text-xs font-bold text-amber-600">{r.value}</span>
                         </div>
-                        <h3 className="text-xs sm:text-sm font-bold text-white mb-1.5">{r.title}</h3>
-                        <p className="text-xs text-slate-400 leading-relaxed mb-3.5">{r.description}</p>
+                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">{r.title}</h3>
+                        <p className="text-xs text-slate-500 leading-relaxed mb-4">{r.description}</p>
                       </div>
 
                       <a
                         href="/apps/WithSamiLMS_Windows_1.0.13.exe"
                         download
-                        className="py-2.5 px-4 rounded-xl text-xs font-black text-white bg-slate-800 hover:bg-[#00A0DF] flex items-center justify-center gap-2 transition-colors border border-slate-700 active:scale-95"
+                        className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 hover:text-white bg-slate-100 hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors border border-slate-200 active:scale-95"
                       >
                         <Download size={14} />
                         <span>Download Resource File</span>
@@ -1604,176 +1749,164 @@ export default function LmsClassroomPage() {
               </div>
             )}
 
-            {/* ========================================================================= */}
-            {/* TAB 4: COMMUNITY UPDATES & ANNOUNCEMENTS */}
-            {/* ========================================================================= */}
+            {/* --------------------------------------------------------------------- */}
+            {/* TAB 4: COMMUNITY & BROADCASTS */}
+            {/* --------------------------------------------------------------------- */}
             {activeTab === 'community' && (
-              <div className="max-w-4xl mx-auto space-y-5 sm:space-y-6 animate-in fade-in duration-200">
-                {/* Header Banner */}
-                <div className="bg-gradient-to-r from-[#111827] via-[#1E293B] to-[#111827] border border-[#00A0DF]/30 rounded-2xl sm:rounded-3xl p-5 sm:p-7 relative overflow-hidden shadow-2xl">
-                  <div className="absolute top-0 right-0 w-80 h-80 bg-[#00A0DF]/10 rounded-full blur-3xl pointer-events-none" />
-                  
-                  <div className="relative z-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4 sm:gap-6">
-                    <div className="flex items-start gap-3 sm:gap-4">
-                      <div className="w-12 h-12 sm:w-14 sm:h-14 rounded-2xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-black text-white text-xl sm:text-2xl shadow-xl shadow-[#00A0DF]/30 flex-shrink-0">
-                        S
-                      </div>
-                      <div className="space-y-1">
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h2 className="text-lg sm:text-2xl font-black text-white tracking-tight">
-                            Community &amp; Broadcasts
-                          </h2>
-                          <span className="bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/40 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
-                            <span className="w-1.5 h-1.5 rounded-full bg-[#00A0DF] animate-ping" />
-                            Live Hub
-                          </span>
-                        </div>
-                        <p className="text-xs sm:text-sm text-slate-300 max-w-xl leading-relaxed">
-                          Official announcements, winning product recommendations, scaling strategies, and Zoom links directly from <strong>Mentor Sardar Samiullah</strong>.
-                        </p>
-                      </div>
+              <div className="max-w-4xl mx-auto space-y-5 animate-in fade-in duration-200">
+                <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                  <div className="flex items-start gap-4">
+                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
+                      S
                     </div>
-
-                    <a
-                      href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20am%20an%20active%20student%20in%20LMS%20mentorship."
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-4 py-2.5 sm:px-5 sm:py-3 rounded-xl sm:rounded-2xl bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/30 transition-all active:scale-95 whitespace-nowrap self-start sm:self-auto"
-                    >
-                      <MessageSquare size={15} />
-                      <span>VIP WhatsApp Group</span>
-                    </a>
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <h2 className="text-base sm:text-xl font-black text-slate-900">
+                          Community &amp; Broadcasts
+                        </h2>
+                        <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                          Live Hub
+                        </span>
+                      </div>
+                      <p className="text-xs text-slate-500 mt-1 max-w-lg leading-relaxed">
+                        Official announcements, winning product drops, and scaling guidance directly from <strong>Mentor Sardar Samiullah</strong>.
+                      </p>
+                    </div>
                   </div>
+
+                  <a
+                    href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20am%20an%20active%20student%20in%20LMS%20mentorship."
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-2 shadow-sm active:scale-95 transition-all self-start sm:self-auto"
+                  >
+                    <MessageSquare size={14} />
+                    <span>VIP WhatsApp Group</span>
+                  </a>
                 </div>
 
-                {/* Updates Feed */}
-                <div className="space-y-3 sm:space-y-4">
+                {/* Updates List */}
+                <div className="space-y-3">
                   {communityUpdates.length === 0 ? (
-                    <div className="text-center py-12 bg-[#111827] border border-white/10 rounded-2xl p-6">
-                      <Radio size={32} className="mx-auto text-slate-500 mb-2 animate-pulse" />
-                      <h3 className="text-sm font-bold text-white mb-1">No Broadcasts Yet</h3>
-                      <p className="text-xs text-slate-400">All new mentorship announcements from Mentor Sami will appear right here.</p>
+                    <div className="text-center py-12 bg-white border border-slate-200 rounded-2xl p-6">
+                      <Radio size={32} className="mx-auto text-slate-400 mb-2 animate-pulse" />
+                      <h3 className="text-sm font-bold text-slate-800 mb-1">No Broadcasts Yet</h3>
+                      <p className="text-xs text-slate-500">All new mentorship announcements will appear right here.</p>
                     </div>
                   ) : (
-                    communityUpdates.map((update: any) => {
-                      const isUrgent = update.tag === 'Urgent';
-                      const isStrategy = update.tag === 'Strategy';
-                      const isLive = update.tag === 'Live Session';
-                      
-                      const badgeBg = isUrgent
-                        ? 'bg-red-500/15 text-red-400 border-red-500/30'
-                        : isStrategy
-                        ? 'bg-purple-500/15 text-purple-400 border-purple-500/30'
-                        : isLive
-                        ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
-                        : 'bg-[#00A0DF]/15 text-[#00A0DF] border-[#00A0DF]/30';
-
-                      return (
-                        <div
-                          key={update.id}
-                          className={`bg-[#111827] border ${
-                            update.pinned ? 'border-[#00A0DF]/50 bg-gradient-to-br from-[#111827] to-[#141e30]' : 'border-white/10'
-                          } rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xl space-y-3 transition-all hover:border-white/20`}
-                        >
-                          <div className="flex flex-wrap items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              {update.pinned && (
-                                <span className="bg-amber-500/15 text-amber-400 border border-amber-500/30 text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Pin size={10} /> Pinned
-                                </span>
-                              )}
-                              <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full border ${badgeBg}`}>
-                                {update.tag || 'Announcement'}
+                    communityUpdates.map((update: any) => (
+                      <div
+                        key={update.id}
+                        className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-blue-300 transition-all"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            {update.pinned && (
+                              <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                <Pin size={10} /> Pinned
                               </span>
-                            </div>
-
-                            <span className="text-[10px] sm:text-[11px] text-slate-400 flex items-center gap-1">
-                              <Clock size={12} />
-                              {new Date(update.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
+                            )}
+                            <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                              {update.tag || 'Announcement'}
                             </span>
                           </div>
-
-                          <h3 className="text-sm sm:text-base md:text-lg font-black text-white leading-snug">
-                            {update.title}
-                          </h3>
-
-                          <div className="text-xs sm:text-sm text-slate-300 leading-relaxed whitespace-pre-wrap">
-                            {update.content}
-                          </div>
-
-                          <div className="pt-3 border-t border-white/5 flex items-center justify-between text-[11px] text-slate-400">
-                            <span className="font-semibold text-slate-300 flex items-center gap-1.5 text-[11px]">
-                              <span className="w-2 h-2 rounded-full bg-[#00A0DF]" />
-                              {update.author || 'Mentor Sardar Samiullah'}
-                            </span>
-                            <span className="text-[10px] text-emerald-400 font-bold flex items-center gap-1">
-                              <CheckCircle2 size={12} />
-                              <span>Official Broadcast</span>
-                            </span>
-                          </div>
+                          <span className="text-[11px] text-slate-400">
+                            {new Date(update.createdAt).toLocaleDateString('en-US', {
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
                         </div>
-                      );
-                    })
+
+                        <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                          {update.title}
+                        </h3>
+
+                        <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
+                          {update.content}
+                        </div>
+
+                        <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                          <span className="font-semibold text-slate-700">
+                            {update.author || 'Mentor Sardar Samiullah'}
+                          </span>
+                          <span className="text-emerald-600 font-bold flex items-center gap-1">
+                            <CheckCircle2 size={12} />
+                            <span>Official Broadcast</span>
+                          </span>
+                        </div>
+                      </div>
+                    ))
                   )}
                 </div>
               </div>
             )}
 
           </div>
+
         </main>
 
       </div>
 
-      {/* Mobile Fixed Bottom Navigation Bar */}
+      {/* ========================================================================= */}
+      {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
+      {/* ========================================================================= */}
       <div 
-        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-[#111827]/95 backdrop-blur-md border-t border-white/10 px-2 py-1.5 flex items-center justify-around text-[10px] font-bold shadow-2xl"
-        style={{ paddingBottom: 'max(0.4rem, env(safe-area-inset-bottom, 0px))' }}
+        className="lg:hidden fixed bottom-0 inset-x-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200 px-3 py-2 flex items-center justify-around text-[10px] font-bold shadow-lg"
+        style={{ paddingBottom: 'max(0.5rem, env(safe-area-inset-bottom, 0px))' }}
       >
         <button
           onClick={() => { setSidebarOpen(true); }}
-          className="flex flex-col items-center gap-1 p-1 text-slate-400 hover:text-white active:scale-95 transition-transform"
+          className="flex flex-col items-center gap-1 p-1 text-slate-600 hover:text-blue-600 active:scale-95 transition-transform"
         >
-          <BookOpen size={17} className="text-[#00A0DF]" />
-          <span>Lectures</span>
+          <BookOpen size={18} className="text-blue-600" />
+          <span>Curriculum</span>
         </button>
+
         <button
           onClick={() => { setActiveTab('video'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${activeTab === 'video' ? 'text-[#00A0DF]' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+            activeTab === 'video' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
+          }`}
         >
-          <Play size={17} />
+          <Play size={18} />
           <span>Watch</span>
         </button>
+
         <button
           onClick={() => { setActiveTab('suppliers'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${activeTab === 'suppliers' ? 'text-[#00A0DF]' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+            activeTab === 'suppliers' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
+          }`}
         >
-          <ShoppingBag size={17} />
+          <ShoppingBag size={18} />
           <span>Suppliers</span>
         </button>
+
         <button
           onClick={() => { setActiveTab('resources'); setSidebarOpen(false); }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${activeTab === 'resources' ? 'text-[#00A0DF]' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform ${
+            activeTab === 'resources' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
+          }`}
         >
-          <Download size={17} />
+          <Download size={18} />
           <span>Bonuses</span>
         </button>
+
         <button
           onClick={() => { 
             setActiveTab('community'); 
             setSidebarOpen(false); 
             markUpdatesAsRead(); 
           }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative ${activeTab === 'community' ? 'text-[#00A0DF]' : 'text-slate-400'}`}
+          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative ${
+            activeTab === 'community' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
+          }`}
         >
           <div className="relative">
-            <Radio size={17} />
+            <Radio size={18} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1.5 bg-red-500 text-white font-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
+              <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
                 {unreadCount}
               </span>
             )}
@@ -1782,7 +1915,9 @@ export default function LmsClassroomPage() {
         </button>
       </div>
 
-      {/* DRM Security Announcement Policy Modal */}
+      {/* ========================================================================= */}
+      {/* DRM POLICY & SECURITY MODAL */}
+      {/* ========================================================================= */}
       <DrmAnnouncementModal
         isOpen={showDrmModal}
         onClose={() => {
@@ -1793,12 +1928,12 @@ export default function LmsClassroomPage() {
         }}
       />
 
-      {/* Top-Layer Fullscreen Persistent Forensic Watermark (Renders directly on top of Bunny.net Fullscreen) */}
+      {/* Fullscreen Forensic Watermark Popover */}
       <div
         ref={topLayerWatermarkRef}
         // @ts-ignore
         popover="manual"
-        className="lms-fullscreen-watermark-popover fixed inset-0 w-screen h-screen bg-transparent pointer-events-none overflow-hidden"
+        className="fixed inset-0 w-screen h-screen bg-transparent pointer-events-none overflow-hidden"
         style={{
           background: 'transparent',
           backgroundColor: 'transparent',
@@ -1807,10 +1942,6 @@ export default function LmsClassroomPage() {
           boxShadow: 'none',
           width: '100vw',
           height: '100vh',
-          maxWidth: '100vw',
-          maxHeight: '100vh',
-          margin: 0,
-          padding: 0,
           pointerEvents: 'none',
         }}
       >
@@ -1841,7 +1972,6 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   const [clock, setClock] = useState('');
 
   useEffect(() => {
-    // 1. Live real-time digital clock
     const updateClock = () => {
       const now = new Date();
       const dateStr = now.toLocaleDateString('en-GB', { day: '2-digit', month: 'short' });
@@ -1851,7 +1981,6 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
     updateClock();
     const clockInterval = setInterval(updateClock, 1000);
 
-    // 2. Randomize watermark position across 9 sectors (including mid/center) every 5.5 seconds
     const moveInterval = setInterval(() => {
       setSector(prev => {
         let next = Math.floor(Math.random() * 9);
@@ -1868,17 +1997,16 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
     };
   }, []);
 
-  // 9 grid sectors covering all parts of the video (including center/mid to prevent cropping)
   const sectorClasses = [
-    'top-2.5 left-2.5 text-left',                          // 0: Top-Left
-    'top-2.5 left-1/2 -translate-x-1/2 text-center',       // 1: Top-Center
-    'top-2.5 right-2.5 text-right',                        // 2: Top-Right
-    'top-1/2 -translate-y-1/2 left-2.5 text-left',         // 3: Mid-Left
-    'top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-center', // 4: Center (Mid)
-    'top-1/2 -translate-y-1/2 right-2.5 text-right',       // 5: Mid-Right
-    'bottom-10 left-2.5 text-left',                        // 6: Bottom-Left
-    'bottom-10 left-1/2 -translate-x-1/2 text-center',     // 7: Bottom-Center
-    'bottom-10 right-2.5 text-right',                      // 8: Bottom-Right
+    'top-2.5 left-2.5 text-left',
+    'top-2.5 left-1/2 -translate-x-1/2 text-center',
+    'top-2.5 right-2.5 text-right',
+    'top-1/2 -translate-y-1/2 left-2.5 text-left',
+    'top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-center',
+    'top-1/2 -translate-y-1/2 right-2.5 text-right',
+    'bottom-10 left-2.5 text-left',
+    'bottom-10 left-1/2 -translate-x-1/2 text-center',
+    'bottom-10 right-2.5 text-right',
   ];
 
   const studentName = user?.name || 'Authorized Student';
@@ -1889,21 +2017,21 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-[999999] overflow-hidden">
       <div
-        className={`absolute transition-all duration-1000 ease-in-out px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/45 backdrop-blur-[1px] border border-white/10 text-white/55 shadow-md ${
+        className={`absolute transition-all duration-1000 ease-in-out px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg bg-black/45 backdrop-blur-[1px] border border-white/10 text-white/60 shadow-md ${
           isFullscreen ? 'max-w-[220px] sm:max-w-[290px]' : 'max-w-[190px] sm:max-w-[250px]'
         } ${sectorClasses[sector]}`}
       >
-        <div className="flex items-center gap-1 text-[7.5px] sm:text-[9px] font-black tracking-wider text-[#00A0DF]/80 uppercase leading-none mb-0.5">
+        <div className="flex items-center gap-1 text-[7.5px] sm:text-[9px] font-black tracking-wider text-cyan-400 uppercase leading-none mb-0.5">
           <Shield size={9} className="flex-shrink-0" />
           <span>SAMI DRM • {studentId}</span>
         </div>
-        <div className="text-[8px] sm:text-[9.5px] font-mono font-bold leading-tight truncate text-white/70">
+        <div className="text-[8px] sm:text-[9.5px] font-mono font-bold leading-tight truncate text-white/80">
           {studentName}
         </div>
-        <div className="text-[7px] sm:text-[8px] font-mono leading-none text-white/40 mt-0.5 truncate">
+        <div className="text-[7px] sm:text-[8px] font-mono leading-none text-white/50 mt-0.5 truncate">
           {maskedPhone ? `${maskedPhone} • ` : ''}IP: {ipAddress}
         </div>
-        <div className="text-[6.5px] sm:text-[7.5px] font-mono text-white/30 leading-none mt-0.5">
+        <div className="text-[6.5px] sm:text-[7.5px] font-mono text-white/40 leading-none mt-0.5">
           {clock}
         </div>
       </div>
@@ -1912,86 +2040,82 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
 }
 
 // =============================================================================
-// SUBCOMPONENT: DRM & Anti-Piracy Security Announcement Modal
+// SUBCOMPONENT: DRM Policy Modal
 // =============================================================================
 function DrmAnnouncementModal({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 relative">
-        {/* Close Button [X] */}
+    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 relative">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors cursor-pointer"
-          title="Dismiss Policy Notice"
+          className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
+          title="Dismiss Notice"
         >
           <X size={18} />
         </button>
 
-        {/* Header Badge */}
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-[#00A0DF]/15 border border-[#00A0DF]/30 text-[#00A0DF] flex items-center justify-center shadow-lg shadow-[#00A0DF]/20 flex-shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-sm flex-shrink-0">
             <ShieldCheck size={22} />
           </div>
           <div>
-            <span className="inline-block bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md mb-0.5">
+            <span className="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md mb-0.5">
               SECURITY ADVISORY
             </span>
-            <h2 className="text-base sm:text-lg font-black text-white tracking-tight leading-snug">
+            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
               LMS Content Protection &amp; DRM Policy
             </h2>
           </div>
         </div>
 
-        <p className="text-xs text-slate-300 leading-relaxed">
+        <p className="text-xs text-slate-600 leading-relaxed">
           Welcome to Sardar Samiullah's Mentorship LMS. All course modules, wholesale supplier directories, and Shopify assets are copyright-protected.
         </p>
 
-        {/* 3 Pillars List */}
         <div className="space-y-2.5 text-xs">
-          <div className="p-3 rounded-2xl bg-[#0B0F19] border border-white/5 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-cyan-500/10 text-cyan-400 mt-0.5 flex-shrink-0">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+            <span className="p-1.5 rounded-xl bg-blue-100 text-blue-600 mt-0.5 flex-shrink-0">
               <Shield size={15} />
             </span>
             <div>
-              <strong className="text-white block font-bold text-xs mb-0.5">Dynamic Forensic Watermarking</strong>
-              <span className="text-slate-400 text-[11px] leading-tight">
+              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Dynamic Forensic Watermarking</strong>
+              <span className="text-slate-500 text-[11px] leading-tight">
                 Your Student Name, ID, and IP address are dynamically embedded across all video frames to prevent unauthorized recording and trace content leaks.
               </span>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[#0B0F19] border border-white/5 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-amber-500/10 text-amber-400 mt-0.5 flex-shrink-0">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+            <span className="p-1.5 rounded-xl bg-amber-100 text-amber-600 mt-0.5 flex-shrink-0">
               <Lock size={15} />
             </span>
             <div>
-              <strong className="text-white block font-bold text-xs mb-0.5">Authorized Student License</strong>
-              <span className="text-slate-400 text-[11px] leading-tight">
+              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Authorized Student License</strong>
+              <span className="text-slate-500 text-[11px] leading-tight">
                 This portal is licensed exclusively for your individual learning. Sharing account credentials, downloading files, or screen capturing is strictly prohibited.
               </span>
             </div>
           </div>
 
-          <div className="p-3 rounded-2xl bg-[#0B0F19] border border-white/5 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-emerald-500/10 text-emerald-400 mt-0.5 flex-shrink-0">
+          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+            <span className="p-1.5 rounded-xl bg-emerald-100 text-emerald-600 mt-0.5 flex-shrink-0">
               <ShieldCheck size={15} />
             </span>
             <div>
-              <strong className="text-white block font-bold text-xs mb-0.5">Intellectual Property Protection</strong>
-              <span className="text-slate-400 text-[11px] leading-tight">
-                Any leaked recordings or unauthorized distribution will be forensically traced back to the offending student account, resulting in immediate termination and legal action.
+              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Intellectual Property Protection</strong>
+              <span className="text-slate-500 text-[11px] leading-tight">
+                Any leaked recordings will be forensically traced back to the offending student account, resulting in immediate termination and legal action.
               </span>
             </div>
           </div>
         </div>
 
-        {/* Agreement Action Button */}
         <div className="pt-2">
           <button
             onClick={onClose}
-            className="w-full py-2.5 sm:py-3 rounded-xl bg-gradient-to-r from-[#00A0DF] to-[#0077aa] hover:from-[#008ec7] hover:to-[#006699] text-white font-black text-xs uppercase tracking-wider shadow-lg shadow-[#00A0DF]/30 transition-all active:scale-[0.98] cursor-pointer"
+            className="w-full py-2.5 sm:py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-600/30 transition-all active:scale-[0.98] cursor-pointer"
           >
             I Understand &amp; Agree
           </button>

@@ -43,7 +43,10 @@ import {
   X,
   Zap,
   Users,
-  Image as ImageIcon
+  Image as ImageIcon,
+  Lock,
+  AlertTriangle,
+  XCircle
 } from 'lucide-react';
 import { 
   defaultCmsContent, 
