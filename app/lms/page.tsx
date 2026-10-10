@@ -97,6 +97,7 @@ export default function LmsClassroomPage() {
   const lmsTimelineTrackRef = useRef<HTMLDivElement>(null);
   const lastTouchTimeRef = useRef<number>(0);
   const hasRestoredPosRef = useRef<boolean>(false);
+  const moduleListRef = useRef<HTMLDivElement>(null);
 
   const toggleIosFullscreen = () => {
     const now = Date.now();
@@ -581,9 +582,29 @@ export default function LmsClassroomPage() {
   }, [isIosFullscreen]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (sidebarOpen) {
+      const prevOverflow = document.body.style.overflow;
+      const prevTouchAction = document.body.style.touchAction;
+      try {
+        document.body.style.overflow = 'hidden';
+        document.body.style.touchAction = 'none';
+      } catch (e) {}
+
+      return () => {
+        try {
+          document.body.style.overflow = prevOverflow || '';
+          document.body.style.touchAction = prevTouchAction || '';
+        } catch (e) {}
+      };
+    }
+  }, [sidebarOpen]);
+
+  useEffect(() => {
     return () => {
       try {
         document.body.style.overflow = '';
+        document.body.style.touchAction = '';
       } catch (e) {}
     };
   }, []);
@@ -1126,6 +1147,10 @@ export default function LmsClassroomPage() {
         {sidebarOpen && (
           <div 
             onClick={() => setSidebarOpen(false)}
+            onTouchMove={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+            }}
             className="fixed inset-0 z-40 bg-slate-900/60 backdrop-blur-xs lg:hidden transition-opacity"
           />
         )}
@@ -1134,12 +1159,13 @@ export default function LmsClassroomPage() {
         {/* LEFT COLUMN: COURSE CURRICULUM ACCORDION & CONNECTING TREE LINES */}
         {/* ========================================================================= */}
         <aside
-          className={`fixed lg:static inset-y-0 left-0 z-50 w-[88vw] max-w-sm sm:w-84 md:w-96 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 transform ${
+          className={`fixed lg:static top-0 bottom-0 left-0 z-50 w-[88vw] max-w-sm sm:w-84 md:w-96 bg-white border-r border-slate-200 flex flex-col transition-transform duration-300 transform ${
             sidebarOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full lg:translate-x-0'
-          } h-full max-h-screen lg:max-h-[calc(100vh-61px)]`}
+          } h-[100dvh] lg:h-[calc(100vh-61px)] max-h-[100dvh] lg:max-h-[calc(100vh-61px)] overscroll-contain`}
+          style={{ touchAction: 'pan-y' }}
         >
           {/* Sidebar Top: Title & Completion Stats (Dynamic and accurate) */}
-          <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white sticky top-0 z-10 space-y-2.5">
+          <div className="p-3.5 sm:p-4 border-b border-slate-200 bg-white shrink-0 z-10 space-y-2.5">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 shadow-xs">
@@ -1193,8 +1219,13 @@ export default function LmsClassroomPage() {
 
           {/* Module List with Vertical Connecting Tree Lines & Smooth Touch Momentum Scrolling */}
           <div 
-            className="flex-1 overflow-y-auto overscroll-contain p-3 space-y-2.5 bg-slate-50/50 touch-pan-y"
-            style={{ WebkitOverflowScrolling: 'touch' }}
+            ref={moduleListRef}
+            className="flex-1 min-h-0 overflow-y-auto overscroll-contain p-3 space-y-2.5 bg-slate-50/50 touch-pan-y"
+            style={{ 
+              WebkitOverflowScrolling: 'touch',
+              overscrollBehavior: 'contain',
+              overscrollBehaviorY: 'contain'
+            }}
           >
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
@@ -1353,7 +1384,7 @@ export default function LmsClassroomPage() {
           </div>
 
           {/* Sidebar Footer Security Tag */}
-          <div className="p-3 border-t border-slate-200 bg-white flex items-center justify-between text-[11px] text-slate-500 font-medium">
+          <div className="p-3 border-t border-slate-200 bg-white shrink-0 flex items-center justify-between text-[11px] text-slate-500 font-medium">
             <span className="flex items-center gap-1.5 text-slate-600">
               <Lock size={12} className="text-blue-600" />
               <span>Encrypted Mentorship Vault</span>
