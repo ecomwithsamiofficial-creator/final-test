@@ -1934,8 +1934,8 @@ export default function AdminCmsPage() {
             { id: 'video_reviews', label: '7. 🎥 Video Reviews', icon: FileVideo },
             { id: 'who', label: '8. 🎯 Who Is This For', icon: ShieldCheck },
             { id: 'homepage_curriculum', label: '9A. 🌐 Homepage Curriculum (Accordion)', icon: BookOpen },
-            { id: 'lms', label: '9B. 📚 LMS Portal (Videos & Lessons)', icon: Video },
-            { id: 'bonuses', label: '10. 🎁 6 Bonuses', icon: Gift },
+            { id: 'lms', label: '9B. 📚 LMS Portal (Videos, Themes, Bonuses & Suppliers)', icon: Video },
+            { id: 'bonuses', label: '10. 🎁 6 Bonuses (Homepage Sales Text)', icon: Gift },
             { id: 'reviews', label: '11A. 🏆 Proof Wall (Checkout)', icon: Award },
             { id: 'proofwall_home', label: '11B. 🌟 Proof Wall (Homepage)', icon: Star },
             { id: 'options', label: '12. ⚖️ 2 Options Left', icon: SlidersHorizontal },
@@ -2566,6 +2566,33 @@ export default function AdminCmsPage() {
                   <Plus size={15} />
                   <span>Add Supplier</span>
                 </button>
+              </div>
+            </div>
+
+            {/* Quick Section Anchors */}
+            <div className="bg-[#0B0F19] border border-[#00A0DF]/30 rounded-2xl p-3 flex flex-wrap items-center justify-between gap-2.5 text-xs">
+              <span className="text-slate-400 font-bold flex items-center gap-1.5">
+                <span>⚡ Direct Sections:</span>
+              </span>
+              <div className="flex flex-wrap items-center gap-2">
+                <a
+                  href="#lms-modules-section"
+                  className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition-colors"
+                >
+                  📹 Course Lectures ({modules.length})
+                </a>
+                <a
+                  href="#lms-suppliers-section"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold transition-colors flex items-center gap-1"
+                >
+                  🇵🇰 Wholesale Suppliers ({suppliers.length})
+                </a>
+                <a
+                  href="#lms-bonuses-section"
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold transition-colors flex items-center gap-1"
+                >
+                  🎁 Power Bonuses &amp; Themes ({resources.length})
+                </a>
               </div>
             </div>
 
@@ -3253,7 +3280,7 @@ export default function AdminCmsPage() {
             )}
 
             {/* Wholesale Suppliers Management Box */}
-            <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6">
+            <div id="lms-suppliers-section" className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6 scroll-mt-24">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
@@ -3312,7 +3339,7 @@ export default function AdminCmsPage() {
             </div>
 
             {/* LMS Power Bonuses & Theme Downloads Manager Box */}
-            <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6">
+            <div id="lms-bonuses-section" className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6 scroll-mt-24">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
                 <div>
                   <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
@@ -5403,6 +5430,25 @@ export default function AdminCmsPage() {
               >
                 <Save size={15} />
                 <span>{loading ? 'Saving...' : 'Save Changes'}</span>
+              </button>
+            </div>
+
+            {/* Notice for Downloadable Themes & Bonus Files */}
+            <div className="p-4 sm:p-5 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs text-amber-200">
+              <div className="flex items-center gap-3">
+                <span className="text-2xl">💡</span>
+                <div>
+                  <strong className="text-white block font-bold text-sm">Downloadable Shopify Themes (.zip) ya Resources Upload karni hain?</strong>
+                  <span className="text-slate-300">Yeh tab (10) sirf Landing Page ke 6 promotional cards ke liye hai. Enrolled students ke liye downloadable themes, ZIP files, Excel calculators aur Pakistan suppliers <strong>Tab 9B</strong> mein hain.</span>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveTab('lms')}
+                className="px-4 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-xs transition-transform active:scale-95 shadow-md flex items-center gap-1.5 whitespace-nowrap cursor-pointer self-stretch sm:self-auto justify-center"
+              >
+                <span>Go to Tab 9B (Themes &amp; Downloads Manager)</span>
+                <ArrowRight size={14} />
               </button>
             </div>
 
