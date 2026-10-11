@@ -2236,10 +2236,17 @@ export default function LmsClassroomPage() {
                         <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
                           <button
                             onClick={() => {
-                              const downloadUrl = `/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(r.title)}`;
+                              const rawExt = (r.downloadUrl.split('.').pop() || 'zip').split('?')[0].toLowerCase();
+                              const cleanExt = (rawExt.length > 5 || rawExt.includes('/')) ? 'zip' : rawExt;
+                              const cleanTitle = r.title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'theme-resource';
+                              const finalDownloadName = cleanTitle.toLowerCase().endsWith('.' + cleanExt)
+                                ? cleanTitle
+                                : `${cleanTitle}.${cleanExt}`;
+
+                              const downloadUrl = `/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(finalDownloadName)}`;
                               const a = document.createElement('a');
                               a.href = downloadUrl;
-                              a.download = r.title;
+                              a.download = finalDownloadName;
                               document.body.appendChild(a);
                               a.click();
                               document.body.removeChild(a);

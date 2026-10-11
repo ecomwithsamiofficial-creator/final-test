@@ -3432,14 +3432,23 @@ export default function AdminCmsPage() {
                         <span className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]" title={r.downloadUrl}>
                           {r.downloadUrl}
                         </span>
-                        <a
-                          href={`/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(r.title)}`}
-                          className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-[#00A0DF] text-[11px] font-bold flex items-center gap-1 border border-blue-500/20 transition-colors"
-                          title="Test direct download"
-                        >
-                          <Download size={11} />
-                          <span>Test Download</span>
-                        </a>
+                        {(() => {
+                          const rawExt = (r.downloadUrl.split('.').pop() || 'zip').split('?')[0].toLowerCase();
+                          const cleanExt = (rawExt.length > 5 || rawExt.includes('/')) ? 'zip' : rawExt;
+                          const cleanTitle = r.title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'theme-resource';
+                          const finalDownloadName = cleanTitle.toLowerCase().endsWith('.' + cleanExt) ? cleanTitle : `${cleanTitle}.${cleanExt}`;
+                          return (
+                            <a
+                              href={`/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(finalDownloadName)}`}
+                              download={finalDownloadName}
+                              className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-[#00A0DF] text-[11px] font-bold flex items-center gap-1 border border-blue-500/20 transition-colors"
+                              title="Test direct download"
+                            >
+                              <Download size={11} />
+                              <span>Test Download</span>
+                            </a>
+                          );
+                        })()}
                       </div>
                     </div>
                   ))}

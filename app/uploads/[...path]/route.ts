@@ -61,8 +61,13 @@ export async function GET(
         'Access-Control-Allow-Origin': '*'
       };
 
-      if (forceDownload) {
-        headers['Content-Disposition'] = `attachment; filename="${filename}"`;
+      const ext = path.extname(filename).toLowerCase();
+      const isArchiveOrSpreadsheet = ['.zip', '.rar', '.7z', '.xlsx', '.xls', '.csv'].includes(ext);
+
+      if (forceDownload || isArchiveOrSpreadsheet) {
+        const safeAscii = filename.replace(/[^\x20-\x7E]/g, '_').replace(/["\\]/g, '-');
+        const safeUtf8 = encodeURIComponent(filename).replace(/['()]/g, escape).replace(/\*/g, '%2A');
+        headers['Content-Disposition'] = `attachment; filename="${safeAscii}"; filename*=UTF-8''${safeUtf8}`;
       } else if (filename.endsWith('.pdf')) {
         headers['Content-Disposition'] = `inline; filename="${filename}"`;
       }

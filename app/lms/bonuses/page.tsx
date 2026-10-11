@@ -102,12 +102,19 @@ export default function LmsBonusesPage() {
     }
 
     // Direct download endpoint with forced Content-Disposition: attachment headers
-    const downloadEndpoint = `/api/lms/resources/download?url=${encodeURIComponent(res.downloadUrl)}&name=${encodeURIComponent(res.title)}`;
+    const rawExt = (res.downloadUrl.split('.').pop() || 'zip').split('?')[0].toLowerCase();
+    const cleanExt = (rawExt.length > 5 || rawExt.includes('/')) ? 'zip' : rawExt;
+    const cleanTitle = res.title.replace(/[/\\?%*:|"<>]/g, '-').trim() || 'theme-resource';
+    const finalDownloadName = cleanTitle.toLowerCase().endsWith('.' + cleanExt)
+      ? cleanTitle
+      : `${cleanTitle}.${cleanExt}`;
+
+    const downloadEndpoint = `/api/lms/resources/download?url=${encodeURIComponent(res.downloadUrl)}&name=${encodeURIComponent(finalDownloadName)}`;
     
     // Trigger download iframe/link for Safari & Android compliance
     const a = document.createElement('a');
     a.href = downloadEndpoint;
-    a.download = res.title;
+    a.download = finalDownloadName;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
