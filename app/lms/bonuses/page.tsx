@@ -19,7 +19,7 @@ import {
   Video, 
   Radio, 
   LogOut,
-  FolderZip,
+  FolderArchive,
   BookOpen,
   Filter,
   Eye,
