@@ -9,9 +9,11 @@ import {
   Student, 
   Supplier, 
   SupportTicket, 
+  ResourceItem,
   initialStudents, 
   initialEnrollments, 
-  initialSuppliers 
+  initialSuppliers,
+  initialResources 
 } from '@/utils/db';
 import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
 
@@ -281,6 +283,39 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
       `);
     } catch (err) {
       console.error('ensureAnalyticsTables lms_suppliers error:', err);
+    }
+
+    // 8B. LMS Bonuses & Resources table in Hostinger MySQL
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`lms_resources\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`title\` VARCHAR(255) NOT NULL,
+          \`type\` VARCHAR(100) NULL,
+          \`size\` VARCHAR(100) NULL,
+          \`download_url\` LONGTEXT NOT NULL,
+          \`value\` VARCHAR(100) NULL,
+          \`description\` TEXT NULL,
+          \`created_at\` VARCHAR(100) NULL,
+          \`updated_at\` DATETIME NULL,
+          PRIMARY KEY (\`id\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      // Auto-seed initialResources if table is empty
+      const [resCount]: any = await p.query(`SELECT COUNT(*) as cnt FROM \`lms_resources\``);
+      if (Number(resCount?.[0]?.cnt || 0) === 0 && Array.isArray(initialResources)) {
+        for (const res of initialResources) {
+          await p.query(
+            `INSERT INTO \`lms_resources\` (id, title, type, size, download_url, value, description, created_at, updated_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+             ON DUPLICATE KEY UPDATE title = VALUES(title)`,
+            [res.id, res.title, res.type, res.size, res.downloadUrl, res.value, res.description]
+          );
+        }
+      }
+    } catch (err) {
+      console.error('ensureAnalyticsTables lms_resources error:', err);
     }
 
     // 9. Support Tickets table in Hostinger MySQL
@@ -1525,6 +1560,165 @@ export async function mysqlDeleteSupplier(id: string): Promise<boolean> {
       return true;
     } catch (err) {
       console.error('mysqlDeleteSupplier error:', err);
+    }
+  }
+  return false;
+}
+
+export async function mysqlUpdateSupplier(id: string, patch: Partial<Supplier>): Promise<Supplier | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [existing]: any = await pool.query(`SELECT * FROM lms_suppliers WHERE id = ? LIMIT 1`, [id]);
+      if (Array.isArray(existing) && existing.length > 0) {
+        const cur = existing[0];
+        const name = patch.name !== undefined ? patch.name : cur.name;
+        const category = patch.category !== undefined ? patch.category : cur.category;
+        const country = patch.country !== undefined ? patch.country : cur.country;
+        const city = patch.city !== undefined ? patch.city : cur.city;
+        const phone = patch.phone !== undefined ? patch.phone : cur.phone;
+        const whatsappLink = patch.whatsappLink !== undefined ? patch.whatsappLink : (patch.phone ? `https://wa.me/${patch.phone.replace(/[^0-9]/g, '')}` : cur.whatsapp_link);
+        const minOrder = patch.minOrder !== undefined ? patch.minOrder : cur.min_order;
+        const deliveryTime = patch.deliveryTime !== undefined ? patch.deliveryTime : cur.delivery_time;
+        const codSupported = patch.codSupported !== undefined ? (patch.codSupported ? 1 : 0) : cur.cod_supported;
+        const notes = patch.notes !== undefined ? patch.notes : cur.notes;
+
+        await pool.query(
+          `UPDATE lms_suppliers SET
+             name = ?, category = ?, country = ?, city = ?, phone = ?, whatsapp_link = ?,
+             min_order = ?, delivery_time = ?, cod_supported = ?, notes = ?, updated_at = NOW()
+           WHERE id = ?`,
+          [name, category, country, city, phone, whatsappLink, minOrder, deliveryTime, codSupported, notes, id]
+        );
+
+        return {
+          id,
+          name,
+          category,
+          country,
+          city,
+          phone,
+          whatsappLink,
+          minOrder,
+          deliveryTime,
+          codSupported: Boolean(codSupported),
+          notes
+        };
+      }
+    } catch (err) {
+      console.error('mysqlUpdateSupplier error:', err);
+    }
+  }
+  return null;
+}
+
+// =============================================================================
+// LMS BONUSES & DOWNLOAD RESOURCES (100% NATIVE HOSTINGER MYSQL)
+// =============================================================================
+
+export async function mysqlGetResources(): Promise<ResourceItem[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(`SELECT * FROM lms_resources ORDER BY updated_at DESC, created_at DESC`);
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map((r: any) => ({
+          id: String(r.id),
+          title: String(r.title || ''),
+          type: String(r.type || 'Resource'),
+          size: String(r.size || '1.0 MB'),
+          downloadUrl: String(r.download_url || ''),
+          value: String(r.value || 'Rs 5,000'),
+          description: String(r.description || '')
+        }));
+      }
+    } catch (err) {
+      console.error('mysqlGetResources error:', err);
+    }
+  }
+  return initialResources;
+}
+
+export async function mysqlAddResource(resource: ResourceItem): Promise<ResourceItem> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO lms_resources (
+          id, title, type, size, download_url, value, description, created_at, updated_at
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+        ON DUPLICATE KEY UPDATE
+          title = VALUES(title),
+          type = VALUES(type),
+          size = VALUES(size),
+          download_url = VALUES(download_url),
+          value = VALUES(value),
+          description = VALUES(description),
+          updated_at = NOW()`,
+        [
+          resource.id,
+          resource.title,
+          resource.type,
+          resource.size,
+          resource.downloadUrl,
+          resource.value,
+          resource.description
+        ]
+      );
+      return resource;
+    } catch (err) {
+      console.error('mysqlAddResource error:', err);
+    }
+  }
+  return resource;
+}
+
+export async function mysqlUpdateResource(id: string, patch: Partial<ResourceItem>): Promise<ResourceItem | null> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [existing]: any = await pool.query(`SELECT * FROM lms_resources WHERE id = ? LIMIT 1`, [id]);
+      if (Array.isArray(existing) && existing.length > 0) {
+        const cur = existing[0];
+        const title = patch.title !== undefined ? patch.title : cur.title;
+        const type = patch.type !== undefined ? patch.type : cur.type;
+        const size = patch.size !== undefined ? patch.size : cur.size;
+        const downloadUrl = patch.downloadUrl !== undefined ? patch.downloadUrl : cur.download_url;
+        const value = patch.value !== undefined ? patch.value : cur.value;
+        const description = patch.description !== undefined ? patch.description : cur.description;
+
+        await pool.query(
+          `UPDATE lms_resources SET
+             title = ?, type = ?, size = ?, download_url = ?, value = ?, description = ?, updated_at = NOW()
+           WHERE id = ?`,
+          [title, type, size, downloadUrl, value, description, id]
+        );
+
+        return {
+          id,
+          title,
+          type,
+          size,
+          downloadUrl,
+          value,
+          description
+        };
+      }
+    } catch (err) {
+      console.error('mysqlUpdateResource error:', err);
+    }
+  }
+  return null;
+}
+
+export async function mysqlDeleteResource(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM lms_resources WHERE id = ?`, [id]);
+      return true;
+    } catch (err) {
+      console.error('mysqlDeleteResource error:', err);
     }
   }
   return false;

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { dbGetSuppliers, dbAddSupplier, dbDeleteSupplier } from '@/lib/database';
+import { dbGetSuppliers, dbAddSupplier, dbUpdateSupplier, dbDeleteSupplier } from '@/lib/database';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
@@ -35,18 +35,19 @@ export async function GET() {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
+    const cleanPhone = (body.phone || '').replace(/[^0-9]/g, '');
     const newSupplier = await dbAddSupplier({
       id: body.id || `sup_${Date.now()}`,
       name: body.name || 'New Verified Wholesale Supplier',
       category: body.category || 'General Wholesale & Electronics',
-      country: body.country || 'UAE',
-      city: body.city || 'Dubai',
-      phone: body.phone || '+971500000000',
-      whatsappLink: body.whatsappLink || `https://wa.me/${(body.phone || '').replace(/[^0-9]/g, '')}`,
+      country: body.country || 'Pakistan',
+      city: body.city || 'Lahore',
+      phone: body.phone || '+923000000000',
+      whatsappLink: body.whatsappLink || `https://wa.me/${cleanPhone}`,
       minOrder: body.minOrder || '1 Piece (Dropshipping Enabled)',
       deliveryTime: body.deliveryTime || '24-48 Hours',
       codSupported: body.codSupported !== undefined ? body.codSupported : true,
-      notes: body.notes || 'Verified supplier with local stock in UAE/KSA.'
+      notes: body.notes || 'Verified supplier with local stock.'
     });
 
     triggerRevalidate();
@@ -55,6 +56,43 @@ export async function POST(request: NextRequest) {
       success: true,
       message: 'Supplier added to database successfully!',
       supplier: newSupplier,
+      suppliers: await dbGetSuppliers()
+    }, { headers: NO_CACHE_HEADERS });
+  } catch (error: any) {
+    return NextResponse.json({ success: false, message: error.message }, { status: 500, headers: NO_CACHE_HEADERS });
+  }
+}
+
+export async function PUT(request: NextRequest) {
+  try {
+    const body = await request.json();
+    if (!body.id) {
+      return NextResponse.json({ success: false, message: 'Supplier ID is required for update' }, { status: 400, headers: NO_CACHE_HEADERS });
+    }
+
+    const updated = await dbUpdateSupplier(body.id, {
+      name: body.name,
+      category: body.category,
+      country: body.country,
+      city: body.city,
+      phone: body.phone,
+      whatsappLink: body.whatsappLink || (body.phone ? `https://wa.me/${body.phone.replace(/[^0-9]/g, '')}` : undefined),
+      minOrder: body.minOrder,
+      deliveryTime: body.deliveryTime,
+      codSupported: body.codSupported !== undefined ? body.codSupported : undefined,
+      notes: body.notes
+    });
+
+    if (!updated) {
+      return NextResponse.json({ success: false, message: 'Supplier not found or update failed' }, { status: 404, headers: NO_CACHE_HEADERS });
+    }
+
+    triggerRevalidate();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Supplier updated successfully!',
+      supplier: updated,
       suppliers: await dbGetSuppliers()
     }, { headers: NO_CACHE_HEADERS });
   } catch (error: any) {

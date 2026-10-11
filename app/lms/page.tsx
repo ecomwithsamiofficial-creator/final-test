@@ -85,7 +85,7 @@ export default function LmsClassroomPage() {
   const [communityUpdates, setCommunityUpdates] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [searchQuery, setSearchQuery] = useState('');
-  const [supplierCountryFilter, setSupplierCountryFilter] = useState<'ALL' | 'UAE' | 'Saudi Arabia'>('ALL');
+  const [supplierCountryFilter, setSupplierCountryFilter] = useState<'ALL' | 'UAE' | 'Saudi Arabia' | 'Pakistan'>('ALL');
   const [supplierSearch, setSupplierSearch] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [watchProgress, setWatchProgress] = useState<{ [lessonId: string]: number }>({});
@@ -361,6 +361,14 @@ export default function LmsClassroomPage() {
       }
     };
     window.addEventListener('storage', onStorage);
+
+    try {
+      const target = sessionStorage.getItem('sami_lms_target_tab');
+      if (target === 'suppliers' || target === 'resources' || target === 'community') {
+        setActiveTab(target as any);
+        sessionStorage.removeItem('sami_lms_target_tab');
+      }
+    } catch (e) {}
 
     const timestamp = Date.now();
 
@@ -2121,7 +2129,17 @@ export default function LmsClassroomPage() {
                           : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
                       }`}
                     >
-                      KSA
+                      KSA 🇸🇦
+                    </button>
+                    <button
+                      onClick={() => setSupplierCountryFilter('Pakistan')}
+                      className={`flex-1 sm:flex-initial px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                        supplierCountryFilter === 'Pakistan'
+                          ? 'bg-blue-600 text-white shadow-sm'
+                          : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      }`}
+                    >
+                      Pakistan 🇵🇰
                     </button>
                   </div>
                 </div>
@@ -2182,39 +2200,71 @@ export default function LmsClassroomPage() {
                       Power Bonus Resources Hub
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
-                      Premium templates, Shopify themes, and profit calculators
+                      Premium Shopify themes, video ad blueprints, and profit calculators
                     </p>
                   </div>
-                  <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
-                    Total Value: Rs 30,000+
-                  </span>
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-200 px-3 py-1 rounded-full">
+                      Total Value: Rs 30,000+
+                    </span>
+                    <Link
+                      href="/lms/bonuses"
+                      className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 transition-colors"
+                    >
+                      Open Full Hub ↗
+                    </Link>
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {resources.map((r) => (
-                    <div key={r.id} className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition-all">
-                      <div>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
-                            {r.type} • {r.size}
-                          </span>
-                          <span className="text-xs font-bold text-amber-600">{r.value}</span>
+                  {resources.map((r) => {
+                    const isPdfFile = (r.downloadUrl || '').toLowerCase().includes('.pdf') || r.type.toLowerCase().includes('pdf');
+                    return (
+                      <div key={r.id} className="bg-white border border-slate-200/90 rounded-2xl p-5 flex flex-col justify-between hover:border-blue-400 hover:shadow-md transition-all">
+                        <div>
+                          <div className="flex items-center justify-between mb-2">
+                            <span className="text-[10px] font-bold bg-blue-50 text-blue-700 px-2.5 py-0.5 rounded-full border border-blue-200">
+                              {r.type} • {r.size}
+                            </span>
+                            <span className="text-xs font-bold text-amber-600">{r.value}</span>
+                          </div>
+                          <h3 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">{r.title}</h3>
+                          <p className="text-xs text-slate-500 leading-relaxed mb-4">{r.description}</p>
                         </div>
-                        <h3 className="text-xs sm:text-sm font-bold text-slate-900 mb-1.5">{r.title}</h3>
-                        <p className="text-xs text-slate-500 leading-relaxed mb-4">{r.description}</p>
-                      </div>
 
-                      <a
-                        href={`https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20share%20access%20to%20bonus%20resource:%20${encodeURIComponent(r.title)}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="py-2.5 px-4 rounded-xl text-xs font-bold text-slate-700 hover:text-white bg-slate-100 hover:bg-blue-600 flex items-center justify-center gap-2 transition-colors border border-slate-200 active:scale-95 cursor-pointer"
-                      >
-                        <Download size={14} />
-                        <span>Request Access Link</span>
-                      </a>
-                    </div>
-                  ))}
+                        <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                          <button
+                            onClick={() => {
+                              const downloadUrl = `/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(r.title)}`;
+                              const a = document.createElement('a');
+                              a.href = downloadUrl;
+                              a.download = r.title;
+                              document.body.appendChild(a);
+                              a.click();
+                              document.body.removeChild(a);
+                            }}
+                            className="flex-1 py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer"
+                            title="Direct download file"
+                          >
+                            <Download size={14} />
+                            <span>Direct Download</span>
+                          </button>
+
+                          {isPdfFile && (
+                            <a
+                              href={r.downloadUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="py-2.5 px-3 rounded-xl text-xs font-bold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                              title="Open PDF in new tab"
+                            >
+                              <span>Preview</span>
+                            </a>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

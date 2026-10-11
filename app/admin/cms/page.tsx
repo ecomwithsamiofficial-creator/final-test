@@ -57,7 +57,7 @@ import {
   generateThemeCss,
   updateCmsContent
 } from '@/utils/cmsStore';
-import { Module, Supplier, initialModules, initialSuppliers } from '@/utils/db';
+import { Module, Supplier, ResourceItem, initialModules, initialSuppliers, initialResources } from '@/utils/db';
 import { 
   ShowcaseCmsData, 
   defaultShowcaseCmsData, 
@@ -93,6 +93,7 @@ export default function AdminCmsPage() {
   const [newTopicInputs, setNewTopicInputs] = useState<{ [modIdx: number]: string }>({});
   const [modules, setModules] = useState<Module[]>(initialModules);
   const [suppliers, setSuppliers] = useState<Supplier[]>(initialSuppliers);
+  const [resources, setResources] = useState<ResourceItem[]>(initialResources);
   const [loading, setLoading] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [openModuleId, setOpenModuleId] = useState<number>(1);
@@ -183,6 +184,27 @@ export default function AdminCmsPage() {
     deliveryTime: '24-48 Hours',
     notes: 'Verified local supplier.'
   });
+
+  // Edit Supplier state
+  const [editingSupplier, setEditingSupplier] = useState<Supplier | null>(null);
+
+  // LMS Bonuses / Resources state
+  const [showAddResourceModal, setShowAddResourceModal] = useState(false);
+  const [editingResource, setEditingResource] = useState<ResourceItem | null>(null);
+  const [newResource, setNewResource] = useState({
+    title: '',
+    type: 'Shopify Theme ZIP',
+    size: '1.0 MB',
+    downloadUrl: '',
+    value: 'Rs 8,500',
+    description: ''
+  });
+  const [uploadingBonusFile, setUploadingBonusFile] = useState(false);
+  const [bonusUploadProgress, setBonusUploadProgress] = useState(0);
+  const [bonusUploadError, setBonusUploadError] = useState('');
+  const [bonusUploadSuccess, setBonusUploadSuccess] = useState(false);
+  const bonusFileInputRef = useRef<HTMLInputElement>(null);
+  const editBonusFileInputRef = useRef<HTMLInputElement>(null);
 
   // Review & FAQ form states
   const [newReview, setNewReview] = useState({
@@ -355,6 +377,20 @@ export default function AdminCmsPage() {
         if (supData.success && Array.isArray(supData.suppliers) && supData.suppliers.length > 0) {
           setSuppliers(supData.suppliers);
           suppliersLoadedFromApi = true;
+        }
+      }
+    } catch (err) {}
+
+    // 3A. Fetch LMS Bonuses / Resources from API (Hostinger MySQL)
+    try {
+      const resRes = await fetch(`/api/lms/resources?_nocache=${cacheBuster}`, {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache, no-store, must-revalidate', 'Pragma': 'no-cache' }
+      });
+      if (resRes.ok) {
+        const resData = await resRes.json();
+        if (resData.success && Array.isArray(resData.resources) && resData.resources.length > 0) {
+          setResources(resData.resources);
         }
       }
     } catch (err) {}
@@ -1237,6 +1273,134 @@ export default function AdminCmsPage() {
       if (data.success && data.suppliers) setSuppliers(data.suppliers);
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleUpdateSupplier = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingSupplier || !editingSupplier.name) return;
+
+    try {
+      const res = await fetch('/api/lms/suppliers', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingSupplier)
+      });
+      const data = await res.json();
+      if (data.success && data.suppliers) {
+        setSuppliers(data.suppliers);
+        setEditingSupplier(null);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  // --- LMS BONUSES & RESOURCES ACTIONS ---
+  const handleUploadBonusFile = async (e: React.ChangeEvent<HTMLInputElement>, isEditMode = false) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploadingBonusFile(true);
+    setBonusUploadError('');
+    setBonusUploadSuccess(false);
+
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const res = await fetch('/api/lms/resources/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setBonusUploadSuccess(true);
+        if (isEditMode && editingResource) {
+          setEditingResource({
+            ...editingResource,
+            downloadUrl: data.url,
+            size: data.size || editingResource.size,
+            type: data.type || editingResource.type
+          });
+        } else {
+          setNewResource({
+            ...newResource,
+            downloadUrl: data.url,
+            size: data.size || newResource.size,
+            type: data.type || newResource.type,
+            title: newResource.title || data.originalName.replace(/\.[^/.]+$/, "")
+          });
+        }
+      } else {
+        setBonusUploadError(data.message || 'File upload failed');
+      }
+    } catch (err: any) {
+      setBonusUploadError(err.message || 'File upload failed');
+    } finally {
+      setUploadingBonusFile(false);
+    }
+  };
+
+  const handleAddResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newResource.title || !newResource.downloadUrl) return;
+
+    try {
+      const res = await fetch('/api/lms/resources', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(newResource)
+      });
+      const data = await res.json();
+      if (data.success && data.resources) {
+        setResources(data.resources);
+        setShowAddResourceModal(false);
+        setNewResource({
+          title: '',
+          type: 'Shopify Theme ZIP',
+          size: '1.0 MB',
+          downloadUrl: '',
+          value: 'Rs 8,500',
+          description: ''
+        });
+        setBonusUploadSuccess(false);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleUpdateResource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingResource || !editingResource.title) return;
+
+    try {
+      const res = await fetch('/api/lms/resources', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editingResource)
+      });
+      const data = await res.json();
+      if (data.success && data.resources) {
+        setResources(data.resources);
+        setEditingResource(null);
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteResource = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this bonus resource?')) return;
+    try {
+      const res = await fetch(`/api/lms/resources?id=${id}`, { method: 'DELETE' });
+      const data = await res.json();
+      if (data.success && data.resources) {
+        setResources(data.resources);
+      }
+    } catch (err) {
+      console.error(err);
     }
   };
 
@@ -3090,39 +3254,167 @@ export default function AdminCmsPage() {
 
             {/* Wholesale Suppliers Management Box */}
             <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6">
-              <div className="flex items-center justify-between">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
-                  <h3 className="text-sm sm:text-lg font-bold text-white">Verified GCC Wholesale Suppliers</h3>
-                  <p className="text-xs text-slate-400">Manage supplier cards shown to active LMS students</p>
+                  <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
+                    <ShoppingBag size={18} className="text-[#00A0DF]" />
+                    <span>Verified GCC &amp; Pakistan Wholesale Suppliers</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Manage wholesale contacts shown to students across Pakistan 🇵🇰 (Lahore, Karachi), UAE 🇦🇪, and Saudi Arabia 🇸🇦.
+                  </p>
                 </div>
                 <button
                   onClick={() => setShowAddSupplierModal(true)}
-                  className="px-3 py-1.5 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] text-xs font-black text-white active:scale-95"
+                  className="px-3.5 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] text-xs font-black text-white active:scale-95 shadow-md shadow-[#00A0DF]/20 flex items-center gap-1.5 self-start sm:self-auto cursor-pointer"
                 >
-                  + Add Supplier
+                  <Plus size={14} />
+                  <span>+ Add Supplier</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
                 {suppliers.map((s) => (
-                  <div key={s.id} className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 flex flex-col justify-between">
+                  <div key={s.id} className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-colors">
                     <div>
-                      <div className="flex items-center justify-between mb-1.5">
-                        <span className="text-xs font-bold text-[#00A0DF]">{s.country} &bull; {s.city}</span>
-                        <button
-                          onClick={() => handleDeleteSupplier(s.id)}
-                          className="text-slate-500 hover:text-red-400 p-1"
-                        >
-                          <Trash2 size={13} />
-                        </button>
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[11px] font-bold text-[#00A0DF] bg-[#00A0DF]/10 border border-[#00A0DF]/20 px-2 py-0.5 rounded-full">
+                          {s.country === 'Pakistan' ? '🇵🇰 Pakistan' : s.country === 'Saudi Arabia' ? '🇸🇦 Saudi Arabia' : '🇦🇪 ' + s.country} &bull; {s.city}
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <button
+                            onClick={() => setEditingSupplier(s)}
+                            className="text-slate-400 hover:text-[#00A0DF] p-1 transition-colors cursor-pointer"
+                            title="Edit Supplier"
+                          >
+                            <Edit size={13} />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteSupplier(s.id)}
+                            className="text-slate-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
+                            title="Delete Supplier"
+                          >
+                            <Trash2 size={13} />
+                          </button>
+                        </div>
                       </div>
                       <h4 className="text-xs sm:text-sm font-bold text-white mb-1">{s.name}</h4>
                       <p className="text-xs text-slate-400 mb-2">{s.category}</p>
-                      <div className="text-[11px] text-slate-300 font-mono">Phone: {s.phone}</div>
+                      <div className="space-y-0.5 text-[11px] text-slate-300 font-mono bg-black/30 p-2 rounded-lg border border-white/5">
+                        <div><strong>Phone:</strong> {s.phone}</div>
+                        {s.minOrder && <div><strong>MOQ:</strong> {s.minOrder}</div>}
+                        {s.deliveryTime && <div><strong>Delivery:</strong> {s.deliveryTime}</div>}
+                      </div>
                     </div>
                   </div>
                 ))}
               </div>
+            </div>
+
+            {/* LMS Power Bonuses & Theme Downloads Manager Box */}
+            <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-xl space-y-4 sm:space-y-6">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-white/5 pb-4">
+                <div>
+                  <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
+                    <Gift size={18} className="text-[#00A0DF]" />
+                    <span>LMS Power Bonuses &amp; Theme Downloads Manager</span>
+                  </h3>
+                  <p className="text-xs text-slate-400 mt-0.5">
+                    Upload Shopify Themes (.zip), PDF Guides, Creatives, and Excel Margin Calculators. Files are permanently saved and directly downloadable on mobile &amp; laptop.
+                  </p>
+                </div>
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <Link
+                    href="/lms/bonuses"
+                    target="_blank"
+                    className="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold transition-colors flex items-center gap-1.5"
+                  >
+                    <ExternalLink size={13} />
+                    <span>View Student Page</span>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      setNewResource({
+                        title: '',
+                        type: 'Shopify Theme ZIP',
+                        size: '1.0 MB',
+                        downloadUrl: '',
+                        value: 'Rs 8,500',
+                        description: ''
+                      });
+                      setBonusUploadSuccess(false);
+                      setBonusUploadError('');
+                      setShowAddResourceModal(true);
+                    }}
+                    className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white active:scale-95 shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>+ Add Bonus Resource</span>
+                  </button>
+                </div>
+              </div>
+
+              {resources.length === 0 ? (
+                <div className="p-8 text-center bg-[#0B0F19] rounded-2xl border border-white/5 space-y-2">
+                  <Package size={32} className="text-slate-500 mx-auto" />
+                  <p className="text-xs text-slate-400">No bonus resources added yet.</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3 sm:gap-4">
+                  {resources.map((r) => (
+                    <div key={r.id} className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 flex flex-col justify-between hover:border-white/10 transition-colors">
+                      <div>
+                        <div className="flex items-center justify-between mb-2">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-full">
+                              {r.type}
+                            </span>
+                            <span className="text-[10px] text-slate-400 font-mono">
+                              {r.size}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1">
+                            <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-full">
+                              {r.value}
+                            </span>
+                            <button
+                              onClick={() => setEditingResource(r)}
+                              className="text-slate-400 hover:text-[#00A0DF] p-1 transition-colors cursor-pointer"
+                              title="Edit Resource"
+                            >
+                              <Edit size={13} />
+                            </button>
+                            <button
+                              onClick={() => handleDeleteResource(r.id)}
+                              className="text-slate-500 hover:text-red-400 p-1 transition-colors cursor-pointer"
+                              title="Delete Resource"
+                            >
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        </div>
+
+                        <h4 className="text-xs sm:text-sm font-bold text-white mb-1">{r.title}</h4>
+                        <p className="text-xs text-slate-400 mb-3 leading-relaxed">{r.description}</p>
+                      </div>
+
+                      <div className="pt-2 border-t border-white/5 flex items-center justify-between gap-2">
+                        <span className="text-[10px] text-slate-500 font-mono truncate max-w-[200px]" title={r.downloadUrl}>
+                          {r.downloadUrl}
+                        </span>
+                        <a
+                          href={`/api/lms/resources/download?url=${encodeURIComponent(r.downloadUrl)}&name=${encodeURIComponent(r.title)}`}
+                          className="px-2.5 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-[#00A0DF] text-[11px] font-bold flex items-center gap-1 border border-blue-500/20 transition-colors"
+                          title="Test direct download"
+                        >
+                          <Download size={11} />
+                          <span>Test Download</span>
+                        </a>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
           </div>
@@ -10239,13 +10531,14 @@ export default function AdminCmsPage() {
                   >
                     <option value="UAE">UAE</option>
                     <option value="Saudi Arabia">Saudi Arabia</option>
+                    <option value="Pakistan">Pakistan</option>
                   </select>
                 </div>
                 <div>
                   <label className="block text-xs text-slate-400 mb-1">City</label>
                   <input
                     type="text"
-                    placeholder="Dubai / Riyadh"
+                    placeholder="Dubai / Riyadh / Lahore"
                     value={newSup.city}
                     onChange={(e) => setNewSup({ ...newSup, city: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
@@ -10256,7 +10549,7 @@ export default function AdminCmsPage() {
                 <label className="block text-xs text-slate-400 mb-1">WhatsApp Phone</label>
                 <input
                   type="text"
-                  placeholder="+971501234567"
+                  placeholder="+923001234567 or +971501234567"
                   value={newSup.phone}
                   onChange={(e) => setNewSup({ ...newSup, phone: e.target.value })}
                   className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
@@ -10276,6 +10569,429 @@ export default function AdminCmsPage() {
                   className="px-4 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] text-xs font-black text-white active:scale-95"
                 >
                   Add Supplier
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Supplier Modal */}
+      {editingSupplier && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-md bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <Edit size={16} className="text-[#00A0DF]" />
+                <span>Edit Wholesale Supplier</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingSupplier(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateSupplier} className="space-y-3">
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Supplier / Warehouse Name *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingSupplier.name}
+                  onChange={(e) => setEditingSupplier({ ...editingSupplier, name: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Country</label>
+                  <select
+                    value={editingSupplier.country}
+                    onChange={(e) => setEditingSupplier({ ...editingSupplier, country: e.target.value as any })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  >
+                    <option value="Pakistan">Pakistan</option>
+                    <option value="UAE">UAE</option>
+                    <option value="Saudi Arabia">Saudi Arabia</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">City</label>
+                  <input
+                    type="text"
+                    value={editingSupplier.city}
+                    onChange={(e) => setEditingSupplier({ ...editingSupplier, city: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Category</label>
+                <input
+                  type="text"
+                  value={editingSupplier.category}
+                  onChange={(e) => setEditingSupplier({ ...editingSupplier, category: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">WhatsApp Phone</label>
+                <input
+                  type="text"
+                  value={editingSupplier.phone}
+                  onChange={(e) => setEditingSupplier({ ...editingSupplier, phone: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Minimum Order (MOQ)</label>
+                  <input
+                    type="text"
+                    value={editingSupplier.minOrder}
+                    onChange={(e) => setEditingSupplier({ ...editingSupplier, minOrder: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs text-slate-400 mb-1">Delivery Timeframe</label>
+                  <input
+                    type="text"
+                    value={editingSupplier.deliveryTime}
+                    onChange={(e) => setEditingSupplier({ ...editingSupplier, deliveryTime: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs text-slate-400 mb-1">Special Notes / Terms</label>
+                <textarea
+                  rows={2}
+                  value={editingSupplier.notes}
+                  onChange={(e) => setEditingSupplier({ ...editingSupplier, notes: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 justify-end pt-2 border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setEditingSupplier(null)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 text-xs text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-4 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] text-xs font-black text-white active:scale-95"
+                >
+                  Save Supplier Changes
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Add LMS Bonus Resource Modal */}
+      {showAddResourceModal && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-lg bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <Gift size={18} className="text-[#00A0DF]" />
+                <span>Upload LMS Power Bonus / Theme</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setShowAddResourceModal(false)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleAddResource} className="space-y-3.5">
+              {/* File Upload Box (Laptop / Computer / Mobile) */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  1. Upload File from Computer / Laptop (.ZIP, .PDF, .XLSX, Images)
+                </label>
+                <div className="border-2 border-dashed border-[#00A0DF]/40 hover:border-[#00A0DF] bg-[#0B0F19] rounded-2xl p-4 text-center transition-all relative">
+                  <input
+                    type="file"
+                    ref={bonusFileInputRef}
+                    accept=".zip,.rar,.7z,.pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp"
+                    onChange={(e) => handleUploadBonusFile(e, false)}
+                    disabled={uploadingBonusFile}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                  />
+                  <div className="flex flex-col items-center gap-2 pointer-events-none">
+                    <div className="w-10 h-10 rounded-xl bg-[#00A0DF]/15 text-[#00A0DF] flex items-center justify-center">
+                      {uploadingBonusFile ? (
+                        <Loader2 size={20} className="animate-spin" />
+                      ) : bonusUploadSuccess ? (
+                        <CheckCircle2 size={20} className="text-emerald-400" />
+                      ) : (
+                        <UploadCloud size={20} />
+                      )}
+                    </div>
+                    {uploadingBonusFile ? (
+                      <span className="text-xs font-bold text-white">Uploading file to server...</span>
+                    ) : bonusUploadSuccess ? (
+                      <span className="text-xs font-bold text-emerald-400">✓ File Uploaded Successfully!</span>
+                    ) : (
+                      <>
+                        <span className="text-xs font-bold text-white">Click or Drag &amp; Drop Theme (.zip) or Document (.pdf)</span>
+                        <span className="text-[10px] text-slate-400">Max size 100MB • Auto-saved to Hostinger storage</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+                {bonusUploadError && (
+                  <p className="text-[11px] font-bold text-red-400">⚠️ {bonusUploadError}</p>
+                )}
+              </div>
+
+              {/* Resource Title */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Resource Title *</label>
+                <input
+                  type="text"
+                  required
+                  placeholder="e.g. High-Converting Shopify Turbo Theme 2026 (ZIP)"
+                  value={newResource.title}
+                  onChange={(e) => setNewResource({ ...newResource, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                />
+              </div>
+
+              {/* Category & File Size */}
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Category / Type</label>
+                  <select
+                    value={newResource.type}
+                    onChange={(e) => setNewResource({ ...newResource, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  >
+                    <option value="Shopify Theme ZIP">Shopify Theme ZIP</option>
+                    <option value="PDF Blueprint / Guide">PDF Blueprint / Guide</option>
+                    <option value="Excel Profit Calculator">Excel Profit Calculator</option>
+                    <option value="Ad Banners & Creatives">Ad Banners & Creatives</option>
+                    <option value="VIP Resource File">VIP Resource File</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">File Size</label>
+                  <input
+                    type="text"
+                    placeholder="e.g. 8.2 MB"
+                    value={newResource.size}
+                    onChange={(e) => setNewResource({ ...newResource, size: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              {/* Download URL / File Link */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">
+                  Download URL / Path * <span className="text-slate-500 font-normal">(Auto-filled on upload, or paste external Drive link)</span>
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="/uploads/bonuses/... or https://drive.google.com/..."
+                  value={newResource.downloadUrl}
+                  onChange={(e) => setNewResource({ ...newResource, downloadUrl: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-[#00A0DF]"
+                />
+              </div>
+
+              {/* Worth Value */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Estimated Worth / Value</label>
+                <input
+                  type="text"
+                  placeholder="e.g. Rs 8,500"
+                  value={newResource.value}
+                  onChange={(e) => setNewResource({ ...newResource, value: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-amber-400 font-bold focus:outline-none"
+                />
+              </div>
+
+              {/* Description */}
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Description / Student Instructions</label>
+                <textarea
+                  rows={2.5}
+                  placeholder="Explain what is inside this download and how students should use it..."
+                  value={newResource.description}
+                  onChange={(e) => setNewResource({ ...newResource, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 justify-end pt-2 border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setShowAddResourceModal(false)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 text-xs text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!newResource.title || !newResource.downloadUrl || uploadingBonusFile}
+                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-xs font-black text-white active:scale-95 shadow-md shadow-emerald-600/20"
+                >
+                  Add Bonus to LMS
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Edit LMS Bonus Resource Modal */}
+      {editingResource && (
+        <div className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-4">
+          <div className="w-full max-w-lg bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between pb-2 border-b border-white/10">
+              <h3 className="text-base sm:text-lg font-bold text-white flex items-center gap-2">
+                <Edit size={16} className="text-[#00A0DF]" />
+                <span>Edit Bonus Resource</span>
+              </h3>
+              <button
+                type="button"
+                onClick={() => setEditingResource(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-white"
+              >
+                <X size={16} />
+              </button>
+            </div>
+
+            <form onSubmit={handleUpdateResource} className="space-y-3.5">
+              {/* Replace File Box */}
+              <div className="space-y-1.5">
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Replace File (Optional)
+                </label>
+                <div className="border border-dashed border-white/20 hover:border-[#00A0DF] bg-[#0B0F19] rounded-xl p-3 text-center transition-all relative">
+                  <input
+                    type="file"
+                    ref={editBonusFileInputRef}
+                    accept=".zip,.rar,.7z,.pdf,.xlsx,.xls,.png,.jpg,.jpeg,.webp"
+                    onChange={(e) => handleUploadBonusFile(e, true)}
+                    disabled={uploadingBonusFile}
+                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer disabled:cursor-not-allowed z-10"
+                  />
+                  <div className="flex items-center justify-center gap-2 pointer-events-none text-xs">
+                    {uploadingBonusFile ? (
+                      <>
+                        <Loader2 size={15} className="animate-spin text-[#00A0DF]" />
+                        <span className="text-white font-bold">Uploading new version...</span>
+                      </>
+                    ) : bonusUploadSuccess ? (
+                      <span className="text-emerald-400 font-bold">✓ Replacement File Uploaded!</span>
+                    ) : (
+                      <span className="text-slate-400">Click to upload a newer version of this file</span>
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Title *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingResource.title}
+                  onChange={(e) => setEditingResource({ ...editingResource, title: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">Category / Type</label>
+                  <select
+                    value={editingResource.type}
+                    onChange={(e) => setEditingResource({ ...editingResource, type: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  >
+                    <option value="Shopify Theme ZIP">Shopify Theme ZIP</option>
+                    <option value="PDF Blueprint / Guide">PDF Blueprint / Guide</option>
+                    <option value="Excel Profit Calculator">Excel Profit Calculator</option>
+                    <option value="Ad Banners & Creatives">Ad Banners & Creatives</option>
+                    <option value="VIP Resource File">VIP Resource File</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-400 mb-1">File Size</label>
+                  <input
+                    type="text"
+                    value={editingResource.size}
+                    onChange={(e) => setEditingResource({ ...editingResource, size: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Download URL / Path *</label>
+                <input
+                  type="text"
+                  required
+                  value={editingResource.downloadUrl}
+                  onChange={(e) => setEditingResource({ ...editingResource, downloadUrl: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-mono focus:outline-none focus:border-[#00A0DF]"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Estimated Worth / Value</label>
+                <input
+                  type="text"
+                  value={editingResource.value}
+                  onChange={(e) => setEditingResource({ ...editingResource, value: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-amber-400 font-bold focus:outline-none"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-400 mb-1">Description</label>
+                <textarea
+                  rows={2.5}
+                  value={editingResource.description}
+                  onChange={(e) => setEditingResource({ ...editingResource, description: e.target.value })}
+                  className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-slate-300 focus:outline-none resize-none"
+                />
+              </div>
+
+              <div className="flex items-center gap-2 justify-end pt-2 border-t border-white/5">
+                <button
+                  type="button"
+                  onClick={() => setEditingResource(null)}
+                  className="px-3.5 py-2 rounded-xl bg-slate-800 text-xs text-slate-300"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={!editingResource.title || !editingResource.downloadUrl || uploadingBonusFile}
+                  className="px-5 py-2 rounded-xl bg-[#00A0DF] hover:bg-[#008ec7] disabled:opacity-50 text-xs font-black text-white active:scale-95"
+                >
+                  Save Changes
                 </button>
               </div>
             </form>

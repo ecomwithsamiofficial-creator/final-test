@@ -52,7 +52,7 @@ export interface Supplier {
   id: string;
   name: string;
   category: string;
-  country: 'UAE' | 'Saudi Arabia';
+  country: 'UAE' | 'Saudi Arabia' | 'Pakistan' | string;
   city: string;
   phone: string;
   whatsappLink: string;
@@ -325,6 +325,32 @@ export const initialSuppliers: Supplier[] = [
     deliveryTime: '24-48 Hours Across Western Province',
     codSupported: true,
     notes: 'High average order value items. Great for Saudi male demographic targeting.'
+  },
+  {
+    id: 'sup_5',
+    name: 'Shah Alam Market Direct Wholesale & Sourcing',
+    category: 'Trending Consumer Goods, Toys & Gadgets',
+    country: 'Pakistan',
+    city: 'Lahore (Shah Alam Market)',
+    phone: '+923001234567',
+    whatsappLink: 'https://wa.me/923001234567',
+    minOrder: '1 Piece (Dropshipping Enabled)',
+    deliveryTime: '24-48 Hours (Trax / PostEx / TCS)',
+    codSupported: true,
+    notes: 'Direct importer stock at Shah Alam Market Lahore. Trax & PostEx auto-pickup supported.'
+  },
+  {
+    id: 'sup_6',
+    name: 'Karachi Bolton Market Wholesale Hub',
+    category: 'Beauty, Electronics & Kitchenware',
+    country: 'Pakistan',
+    city: 'Karachi (Bolton Market)',
+    phone: '+923219876543',
+    whatsappLink: 'https://wa.me/923219876543',
+    minOrder: '1 Piece (Dropshipping Enabled)',
+    deliveryTime: '24-48 Hours Across Pakistan',
+    codSupported: true,
+    notes: 'Largest import hub in Karachi. Instant replacement guarantee for damaged items.'
   }
 ];
 

@@ -19,7 +19,12 @@ import {
   mysqlResetStudentPassword,
   mysqlGetSuppliers,
   mysqlAddSupplier,
+  mysqlUpdateSupplier,
   mysqlDeleteSupplier,
+  mysqlGetResources,
+  mysqlAddResource,
+  mysqlUpdateResource,
+  mysqlDeleteResource,
   mysqlGetTickets,
   mysqlAddTicket,
   mysqlUpdateTicketStatus,
@@ -520,6 +525,15 @@ export async function dbDeleteSupplier(id: string): Promise<boolean> {
   }
 }
 
+export async function dbUpdateSupplier(id: string, patch: Partial<Supplier>): Promise<Supplier | null> {
+  try {
+    return await mysqlUpdateSupplier(id, patch);
+  } catch (e) {
+    console.error('Hostinger MySQL update supplier error:', e);
+    return null;
+  }
+}
+
 // -----------------------------------------------------------------------------
 // 4. STUDENTS (100% NATIVE HOSTINGER MYSQL)
 // -----------------------------------------------------------------------------
@@ -738,7 +752,39 @@ export async function dbDeleteEnrollment(id: string): Promise<boolean> {
 // 6. RESOURCES & TICKETS (100% NATIVE HOSTINGER MYSQL)
 // -----------------------------------------------------------------------------
 export async function dbGetResources(): Promise<ResourceItem[]> {
-  return initialResources;
+  try {
+    return await mysqlGetResources();
+  } catch (e) {
+    console.error('Hostinger MySQL get resources error:', e);
+    return initialResources;
+  }
+}
+
+export async function dbAddResource(resource: ResourceItem): Promise<ResourceItem> {
+  try {
+    return await mysqlAddResource(resource);
+  } catch (e) {
+    console.error('Hostinger MySQL add resource error:', e);
+    return resource;
+  }
+}
+
+export async function dbUpdateResource(id: string, patch: Partial<ResourceItem>): Promise<ResourceItem | null> {
+  try {
+    return await mysqlUpdateResource(id, patch);
+  } catch (e) {
+    console.error('Hostinger MySQL update resource error:', e);
+    return null;
+  }
+}
+
+export async function dbDeleteResource(id: string): Promise<boolean> {
+  try {
+    return await mysqlDeleteResource(id);
+  } catch (e) {
+    console.error('Hostinger MySQL delete resource error:', e);
+    return false;
+  }
 }
 
 export async function dbGetTickets(): Promise<SupportTicket[]> {

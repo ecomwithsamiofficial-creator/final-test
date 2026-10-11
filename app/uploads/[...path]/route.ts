@@ -15,7 +15,17 @@ const MIME_TYPES: Record<string, string> = {
   '.avif': 'image/avif',
   '.ico': 'image/x-icon',
   '.mp4': 'video/mp4',
-  '.webm': 'video/webm'
+  '.webm': 'video/webm',
+  '.zip': 'application/zip',
+  '.rar': 'application/x-rar-compressed',
+  '.7z': 'application/x-7z-compressed',
+  '.pdf': 'application/pdf',
+  '.xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+  '.xls': 'application/vnd.ms-excel',
+  '.csv': 'text/csv',
+  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  '.doc': 'application/msword',
+  '.txt': 'text/plain'
 };
 
 export async function GET(
@@ -30,6 +40,9 @@ export async function GET(
       return new NextResponse('File not specified', { status: 400 });
     }
 
+    const { searchParams } = new URL(request.url);
+    const forceDownload = searchParams.get('download') === '1' || searchParams.get('dl') === '1';
+
     // Sanitize and prevent directory traversal
     const safePathSegments = pathSegments.map(seg => path.basename(seg));
     const relativePath = path.join(...safePathSegments);
@@ -39,6 +52,23 @@ export async function GET(
 
     // Primary path in public/uploads
     const fullPath = path.join(process.cwd(), 'public', 'uploads', relativePath);
+
+    const buildHeaders = (contentType: string, contentLength: number | string) => {
+      const headers: Record<string, string> = {
+        'Content-Type': contentType,
+        'Content-Length': String(contentLength),
+        'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
+        'Access-Control-Allow-Origin': '*'
+      };
+
+      if (forceDownload) {
+        headers['Content-Disposition'] = `attachment; filename="${filename}"`;
+      } else if (filename.endsWith('.pdf')) {
+        headers['Content-Disposition'] = `inline; filename="${filename}"`;
+      }
+
+      return headers;
+    };
 
     // 1. If file exists physically on server disk, serve it immediately with fast caching headers
     if (fs.existsSync(fullPath)) {
@@ -50,12 +80,7 @@ export async function GET(
 
         return new NextResponse(new Uint8Array(fileBuffer), {
           status: 200,
-          headers: {
-            'Content-Type': contentType,
-            'Content-Length': String(stat.size),
-            'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-            'Access-Control-Allow-Origin': '*'
-          }
+          headers: buildHeaders(contentType, stat.size)
         });
       }
     }
@@ -74,12 +99,7 @@ export async function GET(
 
         return new NextResponse(new Uint8Array(media.buffer), {
           status: 200,
-          headers: {
-            'Content-Type': media.contentType || 'image/jpeg',
-            'Content-Length': String(media.buffer.length),
-            'Cache-Control': 'public, max-age=60, stale-while-revalidate=300',
-            'Access-Control-Allow-Origin': '*'
-          }
+          headers: buildHeaders(media.contentType || 'application/octet-stream', media.buffer.length)
         });
       }
     } catch (dbErr: any) {
