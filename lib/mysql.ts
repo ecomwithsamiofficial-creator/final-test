@@ -394,6 +394,74 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
     } catch (err) {
       console.error('ensureAnalyticsTables community_updates error:', err);
     }
+
+    // 11. Community Chat Messages table (Student Support & Success Stories)
+    try {
+      await p.query(`
+        CREATE TABLE IF NOT EXISTS \`community_chat_messages\` (
+          \`id\` VARCHAR(191) NOT NULL,
+          \`student_id\` VARCHAR(191) NULL,
+          \`student_name\` VARCHAR(191) NOT NULL,
+          \`is_mentor\` TINYINT(1) DEFAULT 0,
+          \`message\` TEXT,
+          \`image_url\` VARCHAR(500) NULL,
+          \`audio_url\` VARCHAR(500) NULL,
+          \`audio_duration\` VARCHAR(50) NULL,
+          \`created_at\` VARCHAR(100) NOT NULL,
+          PRIMARY KEY (\`id\`),
+          INDEX \`idx_chat_created\` (\`created_at\`)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+      `);
+
+      const [chatCountRows]: any = await p.query(`SELECT COUNT(*) as count FROM community_chat_messages`);
+      if (Number(chatCountRows?.[0]?.count || 0) === 0) {
+        const seedMessages = [
+          {
+            id: 'cmsg-01',
+            student_id: null,
+            student_name: 'Mentor Sardar Samiullah',
+            is_mentor: 1,
+            message: '🎉 Assalam-o-Alaikum Students! Ecom With Sami Community Support & Success Stories hub live hai. Yahan apni success stories, store scaling milestones aur doubts share karein. We grow together!',
+            image_url: null,
+            audio_url: null,
+            audio_duration: null,
+            created_at: new Date(Date.now() - 3600000 * 24).toISOString()
+          },
+          {
+            id: 'cmsg-02',
+            student_id: null,
+            student_name: 'Hamza Tariq',
+            is_mentor: 0,
+            message: 'Alhamdulillah pehla winning product scale hona start hua hai! Module 4 ka Spark Ads testing formula follow kiya tha, aj 16 orders dispatch huye hain.',
+            image_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+            audio_url: null,
+            audio_duration: null,
+            created_at: new Date(Date.now() - 3600000 * 5).toISOString()
+          },
+          {
+            id: 'cmsg-03',
+            student_id: null,
+            student_name: 'Zeeshan Ali',
+            is_mentor: 0,
+            message: 'Bhaiyon TCS courier portal integrate karne me agar kisi ko mushkil pesh aa rahi ho toh batayein, maine verify karwaya hai bohot smooth process hai.',
+            image_url: null,
+            audio_url: null,
+            audio_duration: null,
+            created_at: new Date(Date.now() - 3600000 * 2).toISOString()
+          }
+        ];
+        for (const m of seedMessages) {
+          await p.query(
+            `INSERT IGNORE INTO community_chat_messages (id, student_id, student_name, is_mentor, message, image_url, audio_url, audio_duration, created_at)
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+            [m.id, m.student_id, m.student_name, m.is_mentor, m.message, m.image_url, m.audio_url, m.audio_duration, m.created_at]
+          );
+        }
+      }
+    } catch (err) {
+      console.error('ensureAnalyticsTables community_chat_messages error:', err);
+    }
+
     tablesInitialized = true;
     return true;
   } catch (error) {
@@ -2037,5 +2105,277 @@ export async function mysqlSaveShowcaseCms(data: ShowcaseCmsData): Promise<boole
   }
   inMemoryShowcaseCms = data;
   return true;
+}
+
+// ============================================================================
+// STUDENT COMMUNITY CHAT & SUCCESS STORIES
+// ============================================================================
+
+export interface CommunityChatMessageItem {
+  id: string;
+  studentId?: string | null;
+  studentName: string;
+  isMentor: boolean;
+  message: string;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
+  audioDuration?: string | null;
+  createdAt: string;
+}
+
+export interface CommunityChatConfig {
+  isOpen: boolean;
+  noticeText: string;
+}
+
+let inMemoryChatConfig: CommunityChatConfig = {
+  isOpen: true,
+  noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT with Mentor Sardar Samiullah for reviews and live store audits!'
+};
+
+let inMemoryChatMessages: CommunityChatMessageItem[] = [
+  {
+    id: 'cmsg-01',
+    studentId: null,
+    studentName: 'Mentor Sardar Samiullah',
+    isMentor: true,
+    message: '🎉 Assalam-o-Alaikum Students! Ecom With Sami Community Support & Success Stories hub live hai. Yahan apni success stories, store scaling milestones aur doubts share karein. We grow together!',
+    imageUrl: null,
+    audioUrl: null,
+    audioDuration: null,
+    createdAt: new Date(Date.now() - 3600000 * 24).toISOString()
+  },
+  {
+    id: 'cmsg-02',
+    studentId: null,
+    studentName: 'Hamza Tariq',
+    isMentor: false,
+    message: 'Alhamdulillah pehla winning product scale hona start hua hai! Module 4 ka Spark Ads testing formula follow kiya tha, aj 16 orders dispatch huye hain.',
+    imageUrl: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
+    audioUrl: null,
+    audioDuration: null,
+    createdAt: new Date(Date.now() - 3600000 * 5).toISOString()
+  },
+  {
+    id: 'cmsg-03',
+    studentId: null,
+    studentName: 'Zeeshan Ali',
+    isMentor: false,
+    message: 'Bhaiyon TCS courier portal integrate karne me agar kisi ko mushkil pesh aa rahi ho toh batayein, maine verify karwaya hai bohot smooth process hai.',
+    imageUrl: null,
+    audioUrl: null,
+    audioDuration: null,
+    createdAt: new Date(Date.now() - 3600000 * 2).toISOString()
+  }
+];
+
+export async function mysqlGetCommunityChatConfig(): Promise<CommunityChatConfig> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT value_json FROM cms_settings WHERE \`key\` = 'community_chat_config' LIMIT 1`
+      );
+      if (Array.isArray(rows) && rows.length > 0 && rows[0].value_json) {
+        const raw = rows[0].value_json;
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
+        if (parsed && typeof parsed === 'object') {
+          return {
+            isOpen: Boolean(parsed.isOpen ?? true),
+            noticeText: String(parsed.noticeText || inMemoryChatConfig.noticeText)
+          };
+        }
+      }
+    } catch (err) {
+      console.error('mysqlGetCommunityChatConfig error:', err);
+    }
+  }
+  return inMemoryChatConfig;
+}
+
+export async function mysqlUpdateCommunityChatConfig(config: Partial<CommunityChatConfig>): Promise<CommunityChatConfig> {
+  const current = await mysqlGetCommunityChatConfig();
+  const updated: CommunityChatConfig = {
+    isOpen: config.isOpen !== undefined ? Boolean(config.isOpen) : current.isOpen,
+    noticeText: config.noticeText !== undefined ? String(config.noticeText) : current.noticeText
+  };
+
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const jsonStr = JSON.stringify(updated);
+      await pool.query(
+        `INSERT INTO cms_settings (\`key\`, \`value_json\`, \`updated_at\`)
+         VALUES ('community_chat_config', ?, NOW())
+         ON DUPLICATE KEY UPDATE \`value_json\` = VALUES(\`value_json\`), \`updated_at\` = NOW()`,
+        [jsonStr]
+      );
+    } catch (err) {
+      console.error('mysqlUpdateCommunityChatConfig error:', err);
+    }
+  }
+  inMemoryChatConfig = updated;
+  return updated;
+}
+
+export async function mysqlGetCommunityChatMessages(limit: number = 80): Promise<CommunityChatMessageItem[]> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(
+        `SELECT id, student_id, student_name, is_mentor, message, image_url, audio_url, audio_duration, created_at
+         FROM community_chat_messages
+         ORDER BY created_at DESC
+         LIMIT ?`,
+        [limit]
+      );
+      if (Array.isArray(rows) && rows.length > 0) {
+        return rows.map((r: any) => ({
+          id: String(r.id),
+          studentId: r.student_id ? String(r.student_id) : null,
+          studentName: String(r.student_name || 'Student'),
+          isMentor: Boolean(r.is_mentor),
+          message: String(r.message || ''),
+          imageUrl: r.image_url ? String(r.image_url) : null,
+          audioUrl: r.audio_url ? String(r.audio_url) : null,
+          audioDuration: r.audio_duration ? String(r.audio_duration) : null,
+          createdAt: String(r.created_at || new Date().toISOString())
+        })).reverse(); // Return in chronological order for chat view
+      }
+    } catch (err) {
+      console.error('mysqlGetCommunityChatMessages error:', err);
+    }
+  }
+  return inMemoryChatMessages;
+}
+
+export async function mysqlCreateCommunityChatMessage(data: {
+  studentId?: string | null;
+  studentName: string;
+  isMentor?: boolean;
+  message: string;
+  imageUrl?: string | null;
+  audioUrl?: string | null;
+  audioDuration?: string | null;
+}): Promise<CommunityChatMessageItem> {
+  const newItem: CommunityChatMessageItem = {
+    id: 'cmsg-' + Date.now() + '-' + Math.random().toString(36).substring(2, 6),
+    studentId: data.studentId || null,
+    studentName: data.studentName.trim(),
+    isMentor: Boolean(data.isMentor),
+    message: data.message ? data.message.trim() : '',
+    imageUrl: data.imageUrl || null,
+    audioUrl: data.audioUrl || null,
+    audioDuration: data.audioDuration || null,
+    createdAt: new Date().toISOString()
+  };
+
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(
+        `INSERT INTO community_chat_messages (id, student_id, student_name, is_mentor, message, image_url, audio_url, audio_duration, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          newItem.id,
+          newItem.studentId,
+          newItem.studentName,
+          newItem.isMentor ? 1 : 0,
+          newItem.message,
+          newItem.imageUrl,
+          newItem.audioUrl,
+          newItem.audioDuration,
+          newItem.createdAt
+        ]
+      );
+    } catch (err) {
+      console.error('mysqlCreateCommunityChatMessage error:', err);
+    }
+  }
+
+  inMemoryChatMessages = [...inMemoryChatMessages, newItem];
+  return newItem;
+}
+
+export async function mysqlDeleteCommunityChatMessage(id: string): Promise<boolean> {
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      await pool.query(`DELETE FROM community_chat_messages WHERE id = ?`, [id]);
+    } catch (err) {
+      console.error('mysqlDeleteCommunityChatMessage error:', err);
+    }
+  }
+  inMemoryChatMessages = inMemoryChatMessages.filter((m) => m.id !== id);
+  return true;
+}
+
+export async function mysqlPurgeCommunityChatMessages(olderThanDays?: number): Promise<{ deletedCount: number }> {
+  let deletedCount = 0;
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      if (olderThanDays && olderThanDays > 0) {
+        const cutoffDate = new Date(Date.now() - olderThanDays * 86400000).toISOString();
+        const [res]: any = await pool.query(
+          `DELETE FROM community_chat_messages WHERE created_at < ?`,
+          [cutoffDate]
+        );
+        deletedCount = res?.affectedRows || 0;
+      } else {
+        const [res]: any = await pool.query(`DELETE FROM community_chat_messages`);
+        deletedCount = res?.affectedRows || 0;
+      }
+    } catch (err) {
+      console.error('mysqlPurgeCommunityChatMessages error:', err);
+    }
+  }
+  inMemoryChatMessages = [];
+  return { deletedCount };
+}
+
+export async function mysqlGetCommunityChatStorageStats(): Promise<{
+  totalMessages: number;
+  totalImages: number;
+  totalAudio: number;
+  estimatedDiskMb: number;
+}> {
+  let totalMessages = 0;
+  let totalImages = 0;
+  let totalAudio = 0;
+
+  const hasTables = await ensureAnalyticsTables();
+  if (hasTables && pool) {
+    try {
+      const [rows]: any = await pool.query(`
+        SELECT 
+          COUNT(*) as total,
+          SUM(CASE WHEN image_url IS NOT NULL AND image_url != '' THEN 1 ELSE 0 END) as images,
+          SUM(CASE WHEN audio_url IS NOT NULL AND audio_url != '' THEN 1 ELSE 0 END) as audios
+        FROM community_chat_messages
+      `);
+      if (Array.isArray(rows) && rows[0]) {
+        totalMessages = Number(rows[0].total || 0);
+        totalImages = Number(rows[0].images || 0);
+        totalAudio = Number(rows[0].audios || 0);
+      }
+    } catch (err) {
+      console.error('mysqlGetCommunityChatStorageStats error:', err);
+    }
+  } else {
+    totalMessages = inMemoryChatMessages.length;
+    totalImages = inMemoryChatMessages.filter((m) => Boolean(m.imageUrl)).length;
+    totalAudio = inMemoryChatMessages.filter((m) => Boolean(m.audioUrl)).length;
+  }
+
+  // Calculate estimated disk usage in MB (images average ~150KB, audios ~300KB, messages ~1KB)
+  const estimatedDiskMb = Math.round(((totalImages * 0.15) + (totalAudio * 0.3) + (totalMessages * 0.002)) * 10) / 10;
+
+  return {
+    totalMessages,
+    totalImages,
+    totalAudio,
+    estimatedDiskMb
+  };
 }
 

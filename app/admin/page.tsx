@@ -41,7 +41,15 @@ import {
   Radio,
   Megaphone,
   Pin,
-  Share2
+  Share2,
+  Mic,
+  Volume2,
+  HardDrive,
+  Play,
+  Square,
+  Upload,
+  Power,
+  MessageCircle
 } from 'lucide-react';
 import { Enrollment, Student } from '@/utils/db';
 import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
@@ -120,6 +128,27 @@ export default function AdminDashboardPage() {
   const [broadcastPinned, setBroadcastPinned] = useState(false);
   const [broadcastSubmitting, setBroadcastSubmitting] = useState(false);
   const [broadcastDeletingId, setBroadcastDeletingId] = useState<string | null>(null);
+
+  // Sunday Support & Community Chat State
+  const [communitySectionTab, setCommunitySectionTab] = useState<'chat' | 'broadcasts'>('chat');
+  const [chatConfig, setChatConfig] = useState<{ isOpen: boolean; noticeText: string }>({
+    isOpen: true,
+    noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM with Mentor Sardar Samiullah for reviews and live store audits!'
+  });
+  const [chatMessages, setChatMessages] = useState<any[]>([]);
+  const [chatStats, setChatStats] = useState<{ totalMessages: number; totalImages: number; totalAudio: number; estimatedDiskMb: number }>({
+    totalMessages: 0,
+    totalImages: 0,
+    totalAudio: 0,
+    estimatedDiskMb: 0
+  });
+  const [chatLoading, setChatLoading] = useState(false);
+  const [mentorChatMsg, setMentorChatMsg] = useState('');
+  const [mentorAudioUrl, setMentorAudioUrl] = useState<string | null>(null);
+  const [mentorAudioUploading, setMentorAudioUploading] = useState(false);
+  const [chatNoticeDraft, setChatNoticeDraft] = useState('');
+  const [savingNotice, setSavingNotice] = useState(false);
+  const [deletingChatMsgId, setDeletingChatMsgId] = useState<string | null>(null);
 
   // Showcase / Video Proof Hub State (Dynamic from CMS)
   const [showcaseCms, setShowcaseCms] = useState<ShowcaseCmsData>(defaultShowcaseCmsData);
@@ -313,13 +342,182 @@ export default function AdminDashboardPage() {
         } catch (e) {}
       }
 
-      // Fetch Community updates and Showcase CMS data
+      // Fetch Community updates, chat, and Showcase CMS data
       fetchAdminCommunityUpdates();
+      fetchCommunityChat();
       fetchShowcaseCms();
     } catch (err) {
       console.error('Fetch dashboard overview error:', err);
     } finally {
       if (!isBg) setLoading(false);
+    }
+  };
+
+  const fetchCommunityChat = async () => {
+    try {
+      setChatLoading(true);
+      const res = await fetch(`/api/community/chat?t=${Date.now()}`);
+      const data = await res.json();
+      if (data.success) {
+        if (data.config) {
+          setChatConfig(data.config);
+          setChatNoticeDraft(data.config.noticeText);
+        }
+        if (Array.isArray(data.messages)) {
+          setChatMessages(data.messages);
+        }
+        if (data.stats) {
+          setChatStats(data.stats);
+        }
+      }
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setChatLoading(false);
+    }
+  };
+
+  const handleToggleChatOpen = async (newStatus: boolean) => {
+    try {
+      const res = await fetch('/api/community/chat/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ isOpen: newStatus })
+      });
+      const data = await res.json();
+      if (data.success && data.config) {
+        setChatConfig(data.config);
+        setToastMessage(`Chat status: ${data.config.isOpen ? '🟢 OPEN for Students' : '🔒 LOCKED (Read-Only)'}`);
+        setTimeout(() => setToastMessage(null), 4000);
+      }
+    } catch (e) {
+      alert('Failed to update chat status');
+    }
+  };
+
+  const handleSaveChatNotice = async () => {
+    if (!chatNoticeDraft.trim()) return;
+    setSavingNotice(true);
+    try {
+      const res = await fetch('/api/community/chat/settings', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ noticeText: chatNoticeDraft.trim() })
+      });
+      const data = await res.json();
+      if (data.success && data.config) {
+        setChatConfig(data.config);
+        setToastMessage('✅ Closed-chat notice updated for all students!');
+        setTimeout(() => setToastMessage(null), 4000);
+      }
+    } catch (e) {
+      alert('Failed to save notice text');
+    } finally {
+      setSavingNotice(false);
+    }
+  };
+
+  const handleMentorAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setMentorAudioUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/community/chat/upload', {
+        method: 'POST',
+        body: formData
+      });
+      const data = await res.json();
+      if (data.success && data.url) {
+        setMentorAudioUrl(data.url);
+        setToastMessage('Voice note audio uploaded! Ab Send Message daba kar post karein.');
+        setTimeout(() => setToastMessage(null), 4000);
+      } else {
+        alert(data.message || 'Failed to upload audio');
+      }
+    } catch (e) {
+      alert('Network error while uploading audio');
+    } finally {
+      setMentorAudioUploading(false);
+    }
+  };
+
+  const handleSendMentorChat = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!mentorChatMsg.trim() && !mentorAudioUrl) {
+      alert('Please enter a message or attach a voice note');
+      return;
+    }
+    try {
+      const res = await fetch('/api/community/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          studentName: 'Mentor Sardar Samiullah',
+          isMentor: true,
+          message: mentorChatMsg.trim(),
+          audioUrl: mentorAudioUrl
+        })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setMentorChatMsg('');
+        setMentorAudioUrl(null);
+        setToastMessage('✅ Mentor message posted to community chat!');
+        setTimeout(() => setToastMessage(null), 4000);
+        fetchCommunityChat();
+      } else {
+        alert(data.message || 'Failed to post message');
+      }
+    } catch (e) {
+      alert('Network error while posting message');
+    }
+  };
+
+  const handleDeleteChatMessage = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this message?')) return;
+    setDeletingChatMsgId(id);
+    try {
+      const res = await fetch('/api/community/chat', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setChatMessages(prev => prev.filter(m => m.id !== id));
+        setToastMessage('Message deleted successfully.');
+        setTimeout(() => setToastMessage(null), 3000);
+        fetchCommunityChat();
+      }
+    } catch (e) {
+      alert('Failed to delete message');
+    } finally {
+      setDeletingChatMsgId(null);
+    }
+  };
+
+  const handlePurgeCommunityMedia = async (days?: number) => {
+    const promptMsg = days
+      ? `Kya aap 14 din se purani saari chat images aur messages delete karna chahte hain?`
+      : `⚠️ Warning: Kya aap tamam Community Chat messages aur images delete karke storage 100% free karna chahte hain?`;
+    if (!confirm(promptMsg)) return;
+
+    try {
+      const res = await fetch('/api/community/chat', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ purgeAll: true, olderThanDays: days })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setToastMessage(`✅ ${data.message}`);
+        setTimeout(() => setToastMessage(null), 5000);
+        fetchCommunityChat();
+      }
+    } catch (e) {
+      alert('Error clearing storage');
     }
   };
 
@@ -1968,225 +2166,551 @@ export default function AdminDashboardPage() {
           {/* ========================================================================= */}
           {activeTab === 'community' && (
             <div className="space-y-6 sm:space-y-8 animate-in fade-in duration-200">
-              {/* Header Box */}
+              {/* Header Box & Sub-Tab Switcher */}
               <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div>
                   <div className="flex items-center gap-2 mb-1">
                     <span className="bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                      <Radio size={12} className="animate-pulse" /> Live Broadcast
+                      <Radio size={12} className="animate-pulse" /> Student Engagement Hub
                     </span>
                     <span className="text-slate-400 text-xs">• Synchronized with Student LMS</span>
                   </div>
-                  <h2 className="text-lg sm:text-2xl font-black text-white">Student Community Broadcast Hub</h2>
+                  <h2 className="text-lg sm:text-2xl font-black text-white">Community &amp; Sunday Support Center</h2>
                   <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl">
-                    Post announcements, winning product guidelines, live Zoom links, and formula updates. They appear instantly in students' LMS classrooms with real-time notification alerts.
+                    Control Sunday student-to-student support chat, post mentor voice notes, moderate sales proof screenshots, and manage Hostinger disk storage.
                   </p>
                 </div>
 
-                <div className="flex items-center gap-2">
+                {/* Sub-Tab Navigation */}
+                <div className="flex items-center bg-[#0B0F19] p-1 rounded-xl border border-white/10 self-start sm:self-auto">
                   <button
-                    onClick={() => fetchAdminCommunityUpdates()}
-                    className="px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 flex items-center gap-1.5 transition-all"
+                    onClick={() => setCommunitySectionTab('chat')}
+                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                      communitySectionTab === 'chat'
+                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
                   >
-                    <RotateCcw size={13} />
-                    <span>Refresh</span>
+                    <MessageCircle size={14} />
+                    <span>Sunday Support Chat</span>
+                    <span className={`w-2 h-2 rounded-full ${chatConfig.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                  </button>
+                  <button
+                    onClick={() => setCommunitySectionTab('broadcasts')}
+                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                      communitySectionTab === 'broadcasts'
+                        ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20'
+                        : 'text-slate-400 hover:text-white'
+                    }`}
+                  >
+                    <Megaphone size={14} />
+                    <span>Mentor Broadcasts ({adminUpdates.length})</span>
                   </button>
                 </div>
               </div>
 
-              {/* Composer & LMS Preview Grid */}
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                {/* Composer Form */}
-                <div className="lg:col-span-7 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
-                  <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                    <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                      <Megaphone size={17} className="text-[#00A0DF]" />
-                      <span>Compose New Broadcast</span>
-                    </h3>
-                    <span className="text-[11px] text-slate-400">Author: Mentor Sardar Samiullah</span>
-                  </div>
-
-                  <form onSubmit={handleSendBroadcast} className="space-y-4">
-                    <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Broadcast Title *</label>
-                      <input
-                        type="text"
-                        placeholder="e.g. 🔴 Important: Tonight Live Q&A Session at 9 PM PKT"
-                        value={broadcastTitle}
-                        onChange={(e) => setBroadcastTitle(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
-                        required
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      <div>
-                        <label className="block text-xs font-bold text-slate-300 mb-1.5">Category Tag</label>
-                        <select
-                          value={broadcastTag}
-                          onChange={(e: any) => setBroadcastTag(e.target.value)}
-                          className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                        >
-                          <option value="Announcement">📢 Announcement</option>
-                          <option value="Strategy">🚀 Strategy / Formula</option>
-                          <option value="Live Session">📹 Live Q&amp;A Session</option>
-                          <option value="Urgent">🔴 Urgent Notice</option>
-                        </select>
+              {/* ================================================================= */}
+              {/* SUB-VIEW 1: SUNDAY SUPPORT CHAT & SUCCESS STORIES */}
+              {/* ================================================================= */}
+              {communitySectionTab === 'chat' && (
+                <div className="space-y-6">
+                  {/* Master Switch & Storage Stats Row */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                    
+                    {/* Master Switch Card */}
+                    <div className={`lg:col-span-6 p-5 sm:p-6 rounded-2xl sm:rounded-3xl border transition-all ${
+                      chatConfig.isOpen
+                        ? 'bg-emerald-950/20 border-emerald-500/40 shadow-xl shadow-emerald-500/5'
+                        : 'bg-red-950/20 border-red-500/40 shadow-xl shadow-red-500/5'
+                    }`}>
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-xs font-black uppercase tracking-wider text-slate-300 flex items-center gap-2">
+                          <Power size={15} className={chatConfig.isOpen ? 'text-emerald-400' : 'text-red-400'} />
+                          <span>Master Chat Access Switch</span>
+                        </span>
+                        <span className={`text-[11px] font-black uppercase px-2.5 py-0.5 rounded-full ${
+                          chatConfig.isOpen ? 'bg-emerald-500 text-slate-950' : 'bg-red-500 text-white'
+                        }`}>
+                          {chatConfig.isOpen ? '🟢 ACTIVE & OPEN' : '🔒 LOCKED (READ-ONLY)'}
+                        </span>
                       </div>
 
-                      <div className="flex items-center pt-6">
-                        <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-300">
-                          <input
-                            type="checkbox"
-                            checked={broadcastPinned}
-                            onChange={(e) => setBroadcastPinned(e.target.checked)}
-                            className="w-4 h-4 rounded text-[#00A0DF] bg-[#0B0F19] border-white/20 focus:ring-0"
-                          />
-                          <span>Pin to Top of Student Feed</span>
-                        </label>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label className="block text-xs font-bold text-slate-300 mb-1.5">Announcement Content *</label>
-                      <textarea
-                        rows={4}
-                        placeholder="Write message, action steps, or Zoom link for students..."
-                        value={broadcastContent}
-                        onChange={(e) => setBroadcastContent(e.target.value)}
-                        className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF] leading-relaxed"
-                        required
-                      />
-                    </div>
-
-                    <div className="pt-2 flex justify-end">
-                      <button
-                        type="submit"
-                        disabled={broadcastSubmitting}
-                        className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#00A0DF] to-[#0077aa] hover:from-[#008ec7] hover:to-[#006699] disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#00A0DF]/30 transition-all active:scale-95"
-                      >
-                        {broadcastSubmitting ? (
-                          <Loader2 size={14} className="animate-spin" />
-                        ) : (
-                          <Send size={14} />
-                        )}
-                        <span>Broadcast to All Students</span>
-                      </button>
-                    </div>
-                  </form>
-                </div>
-
-                {/* Live Student LMS Preview Card */}
-                <div className="lg:col-span-5 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 flex flex-col justify-between">
-                  <div>
-                    <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
-                      <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
-                        <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                        LMS Live Preview
-                      </span>
-                      <span className="text-[10px] text-slate-500">How students see it</span>
-                    </div>
-
-                    <div className="bg-[#0B0F19] border border-[#00A0DF]/30 rounded-2xl p-4 sm:p-5 shadow-inner space-y-2.5">
-                      <div className="flex items-center justify-between gap-2">
-                        <div className="flex items-center gap-2">
-                          {broadcastPinned && (
-                            <span className="bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
-                              <Pin size={9} /> Pinned
-                            </span>
-                          )}
-                          <span className="bg-[#00A0DF]/20 text-[#00A0DF] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#00A0DF]/30">
-                            {broadcastTag}
-                          </span>
-                        </div>
-                        <span className="text-[10px] text-slate-500">Just Now</span>
-                      </div>
-
-                      <h4 className="text-sm font-black text-white leading-snug">
-                        {broadcastTitle || 'Preview: Enter your broadcast title above'}
-                      </h4>
-
-                      <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
-                        {broadcastContent || 'Your detailed announcement message will appear right here for all enrolled students in the LMS Classroom.'}
+                      <p className="text-xs text-slate-400 leading-relaxed mb-4">
+                        {chatConfig.isOpen
+                          ? 'Chat is currently OPEN. Students can write messages and share sales proof screenshots in LMS.'
+                          : 'Chat is LOCKED. Students can see past proofs and your notices, but typing is disabled.'}
                       </p>
 
-                      <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
-                        <span className="text-slate-300 font-semibold">• Mentor Sardar Samiullah</span>
-                        <span className="text-emerald-400 font-bold">Verified Broadcast</span>
+                      <div className="flex items-center gap-3">
+                        <button
+                          onClick={() => handleToggleChatOpen(!chatConfig.isOpen)}
+                          className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md ${
+                            chatConfig.isOpen
+                              ? 'bg-red-600 hover:bg-red-500 text-white'
+                              : 'bg-emerald-500 hover:bg-emerald-400 text-slate-950'
+                          }`}
+                        >
+                          <Power size={14} />
+                          <span>{chatConfig.isOpen ? 'Lock / Close Chat Now' : 'Open / Unlock Chat for Students'}</span>
+                        </button>
+                        <button
+                          onClick={fetchCommunityChat}
+                          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl"
+                          title="Refresh Chat Data"
+                        >
+                          <RotateCcw size={14} />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Storage Manager Card */}
+                    <div className="lg:col-span-6 bg-[#111827] border border-white/10 p-5 sm:p-6 rounded-2xl sm:rounded-3xl shadow-xl flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between mb-3">
+                          <span className="text-xs font-black uppercase tracking-wider text-amber-400 flex items-center gap-2">
+                            <HardDrive size={15} />
+                            <span>Hostinger Disk &amp; Media Storage Safety</span>
+                          </span>
+                          <span className="text-[10px] bg-slate-800 text-slate-300 px-2 py-0.5 rounded-md font-mono">
+                            Plan: 50 GB SSD
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-3 gap-2 py-2 mb-2 text-center bg-[#0B0F19] rounded-xl border border-white/5 p-2">
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Total Messages</span>
+                            <span className="text-sm font-black text-white">{chatStats.totalMessages}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Screenshots</span>
+                            <span className="text-sm font-black text-emerald-400">{chatStats.totalImages}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 block">Used Space</span>
+                            <span className="text-sm font-black text-amber-300">{chatStats.estimatedDiskMb} MB</span>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-2 pt-2 border-t border-white/5">
+                        <button
+                          onClick={() => handlePurgeCommunityMedia(14)}
+                          className="flex-1 py-1.5 px-3 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 text-[11px] font-bold transition-colors"
+                          title="14 din se purani images aur messages delete karein"
+                        >
+                          Clear &gt;14 Days Old
+                        </button>
+                        <button
+                          onClick={() => handlePurgeCommunityMedia()}
+                          className="py-1.5 px-3 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 text-[11px] font-bold border border-red-500/20 transition-colors flex items-center gap-1"
+                          title="Saara chat data delete karke storage 100% free karein"
+                        >
+                          <Trash2 size={12} />
+                          <span>Purge All Storage</span>
+                        </button>
                       </div>
                     </div>
                   </div>
 
-                  <p className="text-[11px] text-slate-400 text-center pt-2 border-t border-white/5">
-                    💡 Broadcasts are saved in MySQL and trigger notification badges on student dashboards.
-                  </p>
-                </div>
-              </div>
-
-              {/* Published Broadcasts History */}
-              <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
-                <div className="flex items-center justify-between border-b border-white/5 pb-3">
-                  <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
-                    <Radio size={16} className="text-[#00A0DF]" />
-                    <span>Published Broadcast History ({adminUpdates.length})</span>
-                  </h3>
-                  <span className="text-xs text-slate-400">Ordered by Priority &amp; Time</span>
-                </div>
-
-                {adminUpdates.length === 0 ? (
-                  <div className="text-center py-8 text-slate-400 text-xs">
-                    No broadcasts currently published. Create your first update above!
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {adminUpdates.map((update: any) => (
-                      <div
-                        key={update.id}
-                        className="bg-[#0B0F19] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                  {/* Lock Notice Text Editor */}
+                  <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 shadow-xl space-y-3">
+                    <div className="flex items-center justify-between">
+                      <label className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <Lock size={13} className="text-amber-400" />
+                        <span>Closed Chat Announcement (Displayed to students when chat is Locked):</span>
+                      </label>
+                      <button
+                        onClick={handleSaveChatNotice}
+                        disabled={savingNotice}
+                        className="px-3.5 py-1.5 rounded-lg bg-[#00A0DF] hover:bg-[#008ec7] text-white text-xs font-bold transition-all disabled:opacity-50"
                       >
-                        <div className="space-y-1.5 flex-1">
-                          <div className="flex flex-wrap items-center gap-2">
-                            {update.pinned && (
-                              <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
-                                <Pin size={9} /> Pinned
-                              </span>
-                            )}
-                            <span className="bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
-                              {update.tag || 'Announcement'}
-                            </span>
-                            <span className="text-[11px] text-slate-400">
-                              {new Date(update.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric',
-                                hour: '2-digit',
-                                minute: '2-digit'
-                              })}
-                            </span>
-                          </div>
-                          <h4 className="text-sm font-bold text-white">{update.title}</h4>
-                          <p className="text-xs text-slate-400 line-clamp-2">{update.content}</p>
+                        {savingNotice ? 'Saving...' : 'Save Notice'}
+                      </button>
+                    </div>
+                    <input
+                      type="text"
+                      value={chatNoticeDraft}
+                      onChange={(e) => setChatNoticeDraft(e.target.value)}
+                      placeholder="e.g. Sunday Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT..."
+                      className="w-full px-3.5 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                    />
+                  </div>
+
+                  {/* Mentor Message & Voice Note Composer */}
+                  <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <Mic size={17} className="text-emerald-400" />
+                        <span>Post Mentor Announcement &amp; Voice Note</span>
+                      </h3>
+                      <span className="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
+                        Official Mentor Sardar Samiullah
+                      </span>
+                    </div>
+
+                    <form onSubmit={handleSendMentorChat} className="space-y-4">
+                      <div>
+                        <textarea
+                          rows={3}
+                          value={mentorChatMsg}
+                          onChange={(e) => setMentorChatMsg(e.target.value)}
+                          placeholder="Assalam-o-Alaikum Students! Aaj ke session ke bare me ya koi guidance share karein..."
+                          className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-emerald-500 leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Voice Note Audio Attachment */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-[#0B0F19] rounded-xl border border-white/5">
+                        <div className="flex items-center gap-3">
+                          <label className="cursor-pointer inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-xs font-bold transition-all">
+                            <Upload size={13} />
+                            <span>{mentorAudioUploading ? 'Uploading Audio...' : 'Attach Voice Note (.mp3 / .wav)'}</span>
+                            <input
+                              type="file"
+                              accept="audio/*"
+                              onChange={handleMentorAudioUpload}
+                              className="hidden"
+                              disabled={mentorAudioUploading}
+                            />
+                          </label>
+
+                          {mentorAudioUrl && (
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs text-emerald-400 font-medium">🎧 Voice Note Ready</span>
+                              <button
+                                type="button"
+                                onClick={() => setMentorAudioUrl(null)}
+                                className="text-xs text-red-400 hover:underline"
+                              >
+                                Remove
+                              </button>
+                            </div>
+                          )}
                         </div>
 
-                        <div className="flex items-center gap-2 self-end sm:self-auto">
-                          <button
-                            onClick={() => handleDeleteBroadcast(update.id)}
-                            disabled={broadcastDeletingId === update.id}
-                            className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/25 text-red-400 transition-colors border border-red-500/20 text-xs flex items-center gap-1.5 active:scale-95"
-                            title="Delete this broadcast"
+                        <button
+                          type="submit"
+                          className="px-6 py-2 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                        >
+                          <Send size={14} />
+                          <span>Post to Community Chat</span>
+                        </button>
+                      </div>
+                    </form>
+                  </div>
+
+                  {/* Live Feed & Message Moderation List */}
+                  <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <div className="flex items-center gap-2">
+                        <MessageSquare size={16} className="text-emerald-400" />
+                        <h3 className="text-sm sm:text-base font-bold text-white">
+                          Community Chat Feed ({chatMessages.length})
+                        </h3>
+                      </div>
+                      <span className="text-xs text-slate-400">Student privacy protected (Only Name visible)</span>
+                    </div>
+
+                    {chatLoading && chatMessages.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 text-xs flex items-center justify-center gap-2">
+                        <Loader2 size={16} className="animate-spin" />
+                        <span>Loading chat messages...</span>
+                      </div>
+                    ) : chatMessages.length === 0 ? (
+                      <div className="text-center py-10 text-slate-400 text-xs">
+                        No messages in chat yet. New messages from students and mentor will show here.
+                      </div>
+                    ) : (
+                      <div className="space-y-3 max-h-[600px] overflow-y-auto pr-1">
+                        {chatMessages.map((msg) => (
+                          <div
+                            key={msg.id}
+                            className={`p-4 rounded-xl border transition-all flex flex-col sm:flex-row sm:items-start justify-between gap-3 ${
+                              msg.isMentor
+                                ? 'bg-gradient-to-r from-emerald-950/30 to-[#0B0F19] border-emerald-500/40'
+                                : 'bg-[#0B0F19] border-white/5 hover:border-white/10'
+                            }`}
                           >
-                            {broadcastDeletingId === update.id ? (
-                              <Loader2 size={13} className="animate-spin" />
+                            <div className="space-y-2 flex-1">
+                              <div className="flex items-center gap-2 flex-wrap">
+                                {msg.isMentor ? (
+                                  <span className="bg-emerald-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    ★ Mentor Sardar Samiullah
+                                  </span>
+                                ) : (
+                                  <span className="text-white font-bold text-xs">
+                                    👤 {msg.studentName}
+                                  </span>
+                                )}
+
+                                <span className="text-[11px] text-slate-500">
+                                  {new Date(msg.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+
+                              {msg.message && (
+                                <p className="text-xs text-slate-300 leading-relaxed whitespace-pre-wrap">
+                                  {msg.message}
+                                </p>
+                              )}
+
+                              {/* Attached Proof Image */}
+                              {msg.imageUrl && (
+                                <div className="mt-2">
+                                  <a href={msg.imageUrl} target="_blank" rel="noopener noreferrer" className="inline-block group relative">
+                                    <img
+                                      src={msg.imageUrl}
+                                      alt="Sales proof"
+                                      className="max-h-48 rounded-lg border border-white/10 object-cover group-hover:opacity-90 transition-opacity"
+                                    />
+                                    <span className="absolute bottom-1 right-1 bg-black/70 text-white text-[9px] px-1.5 py-0.5 rounded">
+                                      Click to View Full
+                                    </span>
+                                  </a>
+                                </div>
+                              )}
+
+                              {/* Attached Audio Player */}
+                              {msg.audioUrl && (
+                                <div className="mt-2 bg-slate-900 p-2.5 rounded-xl border border-white/10 max-w-sm">
+                                  <div className="flex items-center gap-2 mb-1">
+                                    <Volume2 size={13} className="text-emerald-400" />
+                                    <span className="text-[10px] font-bold text-slate-300">Voice Note Broadcast</span>
+                                  </div>
+                                  <audio controls className="w-full h-8">
+                                    <source src={msg.audioUrl} />
+                                    Your browser does not support audio.
+                                  </audio>
+                                </div>
+                              )}
+                            </div>
+
+                            <button
+                              onClick={() => handleDeleteChatMessage(msg.id)}
+                              disabled={deletingChatMsgId === msg.id}
+                              className="self-end sm:self-start p-1.5 rounded-lg bg-red-500/10 hover:bg-red-500/25 text-red-400 border border-red-500/20 text-xs transition-colors flex items-center gap-1 active:scale-95"
+                              title="Delete this message"
+                            >
+                              {deletingChatMsgId === msg.id ? (
+                                <Loader2 size={12} className="animate-spin" />
+                              ) : (
+                                <Trash2 size={12} />
+                              )}
+                              <span>Delete</span>
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* ================================================================= */}
+              {/* SUB-VIEW 2: MENTOR BROADCASTS & SOPS (PREVIOUS BROADCASTS) */}
+              {/* ================================================================= */}
+              {communitySectionTab === 'broadcasts' && (
+                <div className="space-y-6">
+                  {/* Composer & LMS Preview Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    {/* Composer Form */}
+                    <div className="lg:col-span-7 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                      <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                        <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                          <Megaphone size={17} className="text-[#00A0DF]" />
+                          <span>Compose New Broadcast</span>
+                        </h3>
+                        <span className="text-[11px] text-slate-400">Author: Mentor Sardar Samiullah</span>
+                      </div>
+
+                      <form onSubmit={handleSendBroadcast} className="space-y-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1.5">Broadcast Title *</label>
+                          <input
+                            type="text"
+                            placeholder="e.g. 🔴 Important: Tonight Live Q&A Session at 9 PM PKT"
+                            value={broadcastTitle}
+                            onChange={(e) => setBroadcastTitle(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                            required
+                          />
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-xs font-bold text-slate-300 mb-1.5">Category Tag</label>
+                            <select
+                              value={broadcastTag}
+                              onChange={(e: any) => setBroadcastTag(e.target.value)}
+                              className="w-full px-3 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                            >
+                              <option value="Announcement">📢 Announcement</option>
+                              <option value="Strategy">🚀 Strategy / Formula</option>
+                              <option value="Live Session">📹 Live Q&amp;A Session</option>
+                              <option value="Urgent">🔴 Urgent Notice</option>
+                            </select>
+                          </div>
+
+                          <div className="flex items-center pt-6">
+                            <label className="flex items-center gap-2 cursor-pointer text-xs font-bold text-slate-300">
+                              <input
+                                type="checkbox"
+                                checked={broadcastPinned}
+                                onChange={(e) => setBroadcastPinned(e.target.checked)}
+                                className="w-4 h-4 rounded text-[#00A0DF] bg-[#0B0F19] border-white/20 focus:ring-0"
+                              />
+                              <span>Pin to Top of Student Feed</span>
+                            </label>
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-xs font-bold text-slate-300 mb-1.5">Announcement Content *</label>
+                          <textarea
+                            rows={4}
+                            placeholder="Write message, action steps, or Zoom link for students..."
+                            value={broadcastContent}
+                            onChange={(e) => setBroadcastContent(e.target.value)}
+                            className="w-full px-3.5 py-2.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF] leading-relaxed"
+                            required
+                          />
+                        </div>
+
+                        <div className="pt-2 flex justify-end">
+                          <button
+                            type="submit"
+                            disabled={broadcastSubmitting}
+                            className="w-full sm:w-auto px-6 py-2.5 rounded-xl bg-gradient-to-r from-[#00A0DF] to-[#0077aa] hover:from-[#008ec7] hover:to-[#006699] disabled:opacity-50 text-white font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-[#00A0DF]/30 transition-all active:scale-95"
+                          >
+                            {broadcastSubmitting ? (
+                              <Loader2 size={14} className="animate-spin" />
                             ) : (
-                              <Trash2 size={13} />
+                              <Send size={14} />
                             )}
-                            <span>Delete</span>
+                            <span>Broadcast to All Students</span>
                           </button>
                         </div>
+                      </form>
+                    </div>
+
+                    {/* Live Student LMS Preview Card */}
+                    <div className="lg:col-span-5 bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 flex flex-col justify-between">
+                      <div>
+                        <div className="flex items-center justify-between border-b border-white/5 pb-3 mb-3">
+                          <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                            LMS Live Preview
+                          </span>
+                          <span className="text-[10px] text-slate-500">How students see it</span>
+                        </div>
+
+                        <div className="bg-[#0B0F19] border border-[#00A0DF]/30 rounded-2xl p-4 sm:p-5 shadow-inner space-y-2.5">
+                          <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              {broadcastPinned && (
+                                <span className="bg-amber-500/20 text-amber-300 text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-amber-500/30 flex items-center gap-1">
+                                  <Pin size={9} /> Pinned
+                                </span>
+                              )}
+                              <span className="bg-[#00A0DF]/20 text-[#00A0DF] text-[9px] font-black uppercase px-2 py-0.5 rounded-full border border-[#00A0DF]/30">
+                                {broadcastTag}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-slate-500">Just Now</span>
+                          </div>
+
+                          <h4 className="text-sm font-black text-white leading-snug">
+                            {broadcastTitle || 'Preview: Enter your broadcast title above'}
+                          </h4>
+
+                          <p className="text-xs text-slate-300 leading-relaxed line-clamp-3">
+                            {broadcastContent || 'Your detailed announcement message will appear right here for all enrolled students in the LMS Classroom.'}
+                          </p>
+
+                          <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
+                            <span className="text-slate-300 font-semibold">• Mentor Sardar Samiullah</span>
+                            <span className="text-emerald-400 font-bold">Verified Broadcast</span>
+                          </div>
+                        </div>
                       </div>
-                    ))}
+
+                      <p className="text-[11px] text-slate-400 text-center pt-2 border-t border-white/5">
+                        💡 Broadcasts are saved in MySQL and trigger notification badges on student dashboards.
+                      </p>
+                    </div>
                   </div>
-                )}
-              </div>
+
+                  {/* Published Broadcasts History */}
+                  <div className="bg-[#111827] border border-white/10 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                        <Radio size={16} className="text-[#00A0DF]" />
+                        <span>Published Broadcast History ({adminUpdates.length})</span>
+                      </h3>
+                      <span className="text-xs text-slate-400">Ordered by Priority &amp; Time</span>
+                    </div>
+
+                    {adminUpdates.length === 0 ? (
+                      <div className="text-center py-8 text-slate-400 text-xs">
+                        No broadcasts currently published. Create your first update above!
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {adminUpdates.map((update: any) => (
+                          <div
+                            key={update.id}
+                            className="bg-[#0B0F19] border border-white/5 hover:border-white/15 rounded-xl sm:rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all"
+                          >
+                            <div className="space-y-1.5 flex-1">
+                              <div className="flex flex-wrap items-center gap-2">
+                                {update.pinned && (
+                                  <span className="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Pin size={9} /> Pinned
+                                  </span>
+                                )}
+                                <span className="bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[9px] font-black uppercase px-2 py-0.5 rounded-full">
+                                  {update.tag || 'Announcement'}
+                                </span>
+                                <span className="text-[11px] text-slate-400">
+                                  {new Date(update.createdAt).toLocaleDateString('en-US', {
+                                    month: 'short',
+                                    day: 'numeric',
+                                    hour: '2-digit',
+                                    minute: '2-digit'
+                                  })}
+                                </span>
+                              </div>
+                              <h4 className="text-sm font-bold text-white">{update.title}</h4>
+                              <p className="text-xs text-slate-400 line-clamp-2">{update.content}</p>
+                            </div>
+
+                            <div className="flex items-center gap-2 self-end sm:self-auto">
+                              <button
+                                onClick={() => handleDeleteBroadcast(update.id)}
+                                disabled={broadcastDeletingId === update.id}
+                                className="p-2 rounded-xl bg-red-500/10 hover:bg-red-500/25 text-red-400 transition-colors border border-red-500/20 text-xs flex items-center gap-1.5 active:scale-95"
+                                title="Delete this broadcast"
+                              >
+                                {broadcastDeletingId === update.id ? (
+                                  <Loader2 size={13} className="animate-spin" />
+                                ) : (
+                                  <Trash2 size={13} />
+                                )}
+                                <span>Delete</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                </div>
+              )}
             </div>
           )}
 
