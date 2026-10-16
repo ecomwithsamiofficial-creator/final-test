@@ -1033,6 +1033,19 @@ export default function AdminDashboardPage() {
                 {(showcaseCms.enrollments || []).length > 0 ? `${(showcaseCms.enrollments || []).length}+ Pro` : '50+ Pro'}
               </span>
             </button>
+            <Link
+              href="/admin/whatsapp"
+              target="_blank"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-emerald-400 bg-emerald-500/10 border border-emerald-500/30 hover:bg-emerald-500/20 transition-all font-bold group shadow-sm shadow-emerald-500/10"
+            >
+              <div className="flex items-center gap-3">
+                <MessageSquare size={16} className="text-emerald-400 group-hover:scale-110 transition-transform" />
+                <span>WhatsApp Simulator</span>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 animate-pulse">
+                Live
+              </span>
+            </Link>
           </nav>
         </div>
 
