@@ -123,7 +123,7 @@ export default function LmsClassroomPage() {
   const [lmsChatMessages, setLmsChatMessages] = useState<any[]>([]);
   const [lmsChatLoading, setLmsChatLoading] = useState(false);
   const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
-  const [newChatToast, setNewChatToast] = useState<{ author: string; text: string; id: number } | null>(null);
+  const [newChatToast, setNewChatToast] = useState<{ author: string; text: string; id: string | number } | null>(null);
   const [studentChatMsg, setStudentChatMsg] = useState('');
   const [studentChatImg, setStudentChatImg] = useState<File | null>(null);
   const [studentChatImgPreview, setStudentChatImgPreview] = useState<string | null>(null);
@@ -131,6 +131,35 @@ export default function LmsClassroomPage() {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
   const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+  const knownChatMsgIdsRef = useRef<Set<string>>(new Set());
+  const hasInitialChatLoadedRef = useRef<boolean>(false);
+  const lastAudioNotificationTimeRef = useRef<number>(0);
+  const communityBcRef = useRef<BroadcastChannel | null>(null);
+  const chatToastTimerRef = useRef<NodeJS.Timeout | null>(null);
+
+  const playChatNotificationSound = () => {
+    try {
+      const AudioCtx = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioCtx) return;
+      const ctx = new AudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().catch(() => {});
+      }
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.type = 'sine';
+      const now = ctx.currentTime;
+      // High-definition WhatsApp / iOS style melodic chime
+      osc.frequency.setValueAtTime(880, now); // A5
+      osc.frequency.setValueAtTime(1174.66, now + 0.08); // D6
+      gain.gain.setValueAtTime(0.12, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(now);
+      osc.stop(now + 0.3);
+    } catch (e) {}
+  };
 
   const markChatAsRead = () => {
     try {
@@ -142,15 +171,56 @@ export default function LmsClassroomPage() {
 
   const fetchLmsChat = async (isPolling = false) => {
     try {
-      if (!isPolling) setLmsChatLoading(true);
+      if (!isPolling && lmsChatMessages.length === 0) setLmsChatLoading(true);
       const res = await fetch(`/api/community/chat?t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         if (data.config) setLmsChatConfig(data.config);
         if (Array.isArray(data.messages)) {
-          setLmsChatMessages(data.messages);
+          const newMessages = data.messages;
+          setLmsChatMessages(newMessages);
 
-          // Calculate unread message badge count
+          // Check if message belongs to current student
+          const isOwn = (msg: any) => {
+            if (!msg) return false;
+            if (msg.isMentor) return false;
+            if (msg.studentId && user?.id && String(msg.studentId) === String(user.id)) return true;
+            if (user?.name && msg.studentName && msg.studentName.trim().toLowerCase() === user.name.trim().toLowerCase()) return true;
+            return false;
+          };
+
+          // Detect new incoming messages from other students or mentor
+          if (hasInitialChatLoadedRef.current) {
+            const newlyArrived = newMessages.filter((m: any) => !knownChatMsgIdsRef.current.has(String(m.id)) && !isOwn(m));
+            if (newlyArrived.length > 0) {
+              const latest = newlyArrived[newlyArrived.length - 1];
+
+              // Play subtle notification chime
+              if (Date.now() - lastAudioNotificationTimeRef.current > 1200) {
+                lastAudioNotificationTimeRef.current = Date.now();
+                playChatNotificationSound();
+              }
+
+              // If user is on another tab (video, suppliers, etc.), show instant floating notification toast
+              if (activeTab !== 'community') {
+                if (chatToastTimerRef.current) clearTimeout(chatToastTimerRef.current);
+                setNewChatToast({
+                  author: latest.isMentor ? 'Mentor Sardar Samiullah' : (latest.studentName || 'Student'),
+                  text: latest.message || (latest.imageUrl ? '📸 Shared a sales proof screenshot' : 'Sent a message'),
+                  id: latest.id
+                });
+                chatToastTimerRef.current = setTimeout(() => {
+                  setNewChatToast(null);
+                }, 8000);
+              }
+            }
+          }
+
+          // Register all message IDs
+          newMessages.forEach((m: any) => knownChatMsgIdsRef.current.add(String(m.id)));
+          hasInitialChatLoadedRef.current = true;
+
+          // Calculate unread badge count
           try {
             const lastReadStr = localStorage.getItem('sami_lms_last_read_chat_time');
             const lastRead = lastReadStr ? parseInt(lastReadStr, 10) : 0;
@@ -159,18 +229,8 @@ export default function LmsClassroomPage() {
               localStorage.setItem('sami_lms_last_read_chat_time', Date.now().toString());
               setUnreadChatCount(0);
             } else if (lastRead > 0) {
-              const unreadMsgs = data.messages.filter((m: any) => new Date(m.createdAt).getTime() > lastRead);
+              const unreadMsgs = newMessages.filter((m: any) => new Date(m.createdAt).getTime() > lastRead && !isOwn(m));
               setUnreadChatCount(unreadMsgs.length);
-
-              // If a new message arrived in background while student is on another tab, show toast
-              if (isPolling && unreadMsgs.length > 0) {
-                const latest = unreadMsgs[unreadMsgs.length - 1];
-                setNewChatToast({
-                  author: latest.studentName || 'Community Member',
-                  text: latest.message || 'Shared a screenshot/proof',
-                  id: latest.id
-                });
-              }
             } else {
               setUnreadChatCount(0);
               localStorage.setItem('sami_lms_last_read_chat_time', Date.now().toString());
@@ -292,7 +352,10 @@ export default function LmsClassroomPage() {
         setStudentChatImg(null);
         setStudentChatImgPreview(null);
         if (chatFileInputRef.current) chatFileInputRef.current.value = '';
-        fetchLmsChat();
+        fetchLmsChat(false);
+        try {
+          communityBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       } else {
         alert(data.message || 'Failed to send message');
       }
@@ -757,21 +820,56 @@ export default function LmsClassroomPage() {
       })
       .catch(() => {});
 
-    // Initial Community Chat load & background polling
-    fetchLmsChat();
-    const chatPollInterval = setInterval(() => {
-      fetchLmsChat(true);
-    }, 20000);
-
     return () => {
       clearInterval(heartbeatInterval);
-      clearInterval(chatPollInterval);
       window.removeEventListener('storage', onStorage);
       if (bc) bc.close();
       if (realtimeChannel && supabase) supabase.removeChannel(realtimeChannel);
       if (realtimeEnrChannel && supabase) supabase.removeChannel(realtimeEnrChannel);
     };
   }, []);
+
+  // Real-Time Community Chat Sync, Cross-Tab Broadcast & Ultra-Fast Polling
+  useEffect(() => {
+    // Immediate initial sync
+    fetchLmsChat(false);
+
+    // Cross-tab broadcast channel for instantaneous 0ms local sync
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('sami_community_chat');
+        communityBcRef.current = bc;
+        bc.onmessage = (ev) => {
+          if (ev.data?.type === 'NEW_CHAT_MESSAGE') {
+            fetchLmsChat(true);
+          }
+        };
+      }
+    } catch (e) {}
+
+    // Dynamic Fast Polling (2.5s if viewing community, 3.5s if elsewhere on LMS)
+    const pollTime = activeTab === 'community' ? 2500 : 3500;
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchLmsChat(true);
+    }, pollTime);
+
+    // Background poll for tab in background (8s)
+    const bgInterval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) {
+        fetchLmsChat(true);
+      }
+    }, 8000);
+
+    return () => {
+      clearInterval(interval);
+      clearInterval(bgInterval);
+      if (communityBcRef.current) {
+        communityBcRef.current.close();
+        communityBcRef.current = null;
+      }
+    };
+  }, [activeTab]);
 
   // Auto-scroll WhatsApp chat to newest message
   useEffect(() => {
@@ -2504,16 +2602,36 @@ export default function LmsClassroomPage() {
             {/* TAB 4: COMMUNITY & SUNDAY SUPPORT HUB */}
             {/* --------------------------------------------------------------------- */}
             {activeTab === 'community' && (
-              <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-200">
+              <div className="max-w-4xl mx-auto space-y-3 sm:space-y-4 animate-in fade-in duration-200">
                 
+                {/* Top Quick Bar: Return to Course / Close Chat */}
+                <div className="flex items-center justify-between px-1">
+                  <button
+                    onClick={() => setActiveTab('video')}
+                    className="inline-flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-slate-200/90 hover:bg-slate-300 text-slate-800 text-xs font-bold transition-all active:scale-95 cursor-pointer shadow-2xs"
+                  >
+                    <ChevronLeft size={15} />
+                    <span>Back to Video Lessons</span>
+                  </button>
+
+                  <button
+                    onClick={() => setActiveTab('video')}
+                    title="Close Community & Return to Video"
+                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-bold text-slate-600 hover:text-rose-600 hover:bg-rose-50 transition-all cursor-pointer"
+                  >
+                    <span>Close Chat</span>
+                    <X size={15} />
+                  </button>
+                </div>
+
                 {/* ------------------------------------------------------------- */}
                 {/* WHATSAPP GROUP CHAT BOX CONTAINER */}
                 {/* ------------------------------------------------------------- */}
                 <div className="bg-[#efeae2] border border-slate-300 rounded-2xl sm:rounded-3xl shadow-lg overflow-hidden flex flex-col h-[680px] sm:h-[730px] relative">
                   
                   {/* 1. WHATSAPP HEADER */}
-                  <div className="bg-[#008069] text-white px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shadow-sm z-10">
-                    <div className="flex items-center gap-3 min-w-0">
+                  <div className="bg-[#008069] text-white px-3 sm:px-5 py-3 sm:py-3.5 flex items-center justify-between shadow-sm z-10">
+                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
                       <div className="relative shrink-0">
                         <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-sm shadow-xs overflow-hidden">
                           <span className="tracking-tighter font-extrabold">SS</span>
@@ -2541,7 +2659,7 @@ export default function LmsClassroomPage() {
                     </div>
 
                     {/* Header Right Actions */}
-                    <div className="flex items-center gap-2 shrink-0">
+                    <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       {/* Sub-View Switcher */}
                       <div className="flex items-center bg-[#075e54] p-0.5 rounded-xl border border-white/10 text-[11px]">
                         <button
@@ -2574,6 +2692,15 @@ export default function LmsClassroomPage() {
                         className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
                       >
                         <RotateCcw size={14} className={lmsChatLoading ? 'animate-spin' : ''} />
+                      </button>
+
+                      {/* Close / Cross Button */}
+                      <button
+                        onClick={() => setActiveTab('video')}
+                        title="Close Chat & Return to Lessons"
+                        className="w-8 h-8 rounded-xl bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
+                      >
+                        <X size={17} />
                       </button>
                     </div>
                   </div>
@@ -2627,7 +2754,7 @@ export default function LmsClassroomPage() {
                         ) : (
                           lmsChatMessages.map((msg) => {
                             const isMentor = Boolean(msg.isMentor);
-                            const isMe = !isMentor && (msg.authorId === user?.id || (user?.name && msg.studentName === user?.name));
+                            const isMe = !isMentor && ((msg.studentId && user?.id && String(msg.studentId) === String(user.id)) || (user?.name && msg.studentName && msg.studentName.trim().toLowerCase() === user.name.trim().toLowerCase()));
 
                             // Mentor VIP Broadcast Message (Centered / Highlighted)
                             if (isMentor) {
@@ -2964,31 +3091,32 @@ export default function LmsClassroomPage() {
             markChatAsRead();
             setNewChatToast(null);
           }}
-          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#008069] text-white p-3 sm:p-4 rounded-2xl shadow-2xl flex items-center gap-3 cursor-pointer hover:bg-[#075e54] transition-all animate-in slide-in-from-bottom duration-300 max-w-sm border border-emerald-300/40"
+          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#008069] text-white p-3.5 sm:p-4 rounded-2xl shadow-2xl flex items-center gap-3.5 cursor-pointer hover:bg-[#075e54] transition-all animate-in slide-in-from-bottom duration-300 max-w-sm border-2 border-emerald-300/40"
         >
-          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0 shadow-inner">
             <MessageCircle size={20} className="text-white" />
           </div>
           <div className="flex-1 min-w-0 text-left">
             <div className="flex items-center justify-between">
-              <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
-                New Community Update
+              <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider flex items-center gap-1.5">
+                <span className="w-2 h-2 rounded-full bg-emerald-300 animate-ping" />
+                New Community Message
               </span>
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   setNewChatToast(null);
                 }}
-                className="text-white/70 hover:text-white p-0.5 ml-2 cursor-pointer"
+                className="text-white/70 hover:text-white p-1 rounded-md hover:bg-white/10 ml-2 cursor-pointer transition-colors"
+                title="Dismiss"
               >
-                <X size={13} />
+                <X size={14} />
               </button>
             </div>
-            <p className="text-xs font-extrabold truncate mt-0.5 text-white">
+            <p className="text-xs font-black truncate mt-0.5 text-white">
               {newChatToast.author}
             </p>
-            <p className="text-[11px] text-white/90 truncate">
+            <p className="text-[11px] text-white/90 truncate font-medium">
               {newChatToast.text}
             </p>
           </div>

@@ -14,11 +14,12 @@ export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);
     const limit = parseInt(searchParams.get('limit') || '80', 10);
+    const includeStats = searchParams.get('stats') === 'true';
 
     const [config, messages, stats] = await Promise.all([
       mysqlGetCommunityChatConfig(),
       mysqlGetCommunityChatMessages(limit),
-      mysqlGetCommunityChatStorageStats()
+      includeStats ? mysqlGetCommunityChatStorageStats() : Promise.resolve(null)
     ]);
 
     return NextResponse.json({

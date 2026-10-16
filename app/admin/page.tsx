@@ -149,6 +149,7 @@ export default function AdminDashboardPage() {
   const [chatNoticeDraft, setChatNoticeDraft] = useState('');
   const [savingNotice, setSavingNotice] = useState(false);
   const [deletingChatMsgId, setDeletingChatMsgId] = useState<string | null>(null);
+  const adminBcRef = useRef<BroadcastChannel | null>(null);
 
   // Showcase / Video Proof Hub State (Dynamic from CMS)
   const [showcaseCms, setShowcaseCms] = useState<ShowcaseCmsData>(defaultShowcaseCmsData);
@@ -353,10 +354,10 @@ export default function AdminDashboardPage() {
     }
   };
 
-  const fetchCommunityChat = async () => {
+  const fetchCommunityChat = async (isBg = false) => {
     try {
-      setChatLoading(true);
-      const res = await fetch(`/api/community/chat?t=${Date.now()}`);
+      if (!isBg && chatMessages.length === 0) setChatLoading(true);
+      const res = await fetch(`/api/community/chat?stats=true&t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         if (data.config) {
@@ -373,9 +374,39 @@ export default function AdminDashboardPage() {
     } catch (e) {
       console.error(e);
     } finally {
-      setChatLoading(false);
+      if (!isBg) setChatLoading(false);
     }
   };
+
+  // Real-Time Community Chat Sync & Fast Polling for Admin
+  useEffect(() => {
+    try {
+      if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
+        const bc = new BroadcastChannel('sami_community_chat');
+        adminBcRef.current = bc;
+        bc.onmessage = (ev) => {
+          if (ev.data?.type === 'NEW_CHAT_MESSAGE') {
+            fetchCommunityChat(true);
+          }
+        };
+      }
+    } catch (e) {}
+
+    // Dynamic Fast Polling (2.5s if in community tab, 6s if elsewhere in admin)
+    const pollTime = activeTab === 'community' ? 2500 : 6000;
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.hidden) return;
+      fetchCommunityChat(true);
+    }, pollTime);
+
+    return () => {
+      clearInterval(interval);
+      if (adminBcRef.current) {
+        adminBcRef.current.close();
+        adminBcRef.current = null;
+      }
+    };
+  }, [activeTab]);
 
   const handleToggleChatOpen = async (newStatus: boolean) => {
     try {
@@ -389,6 +420,9 @@ export default function AdminDashboardPage() {
         setChatConfig(data.config);
         setToastMessage(`Chat status: ${data.config.isOpen ? '🟢 OPEN for Students' : '🔒 LOCKED (Read-Only)'}`);
         setTimeout(() => setToastMessage(null), 4000);
+        try {
+          adminBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       }
     } catch (e) {
       alert('Failed to update chat status');
@@ -409,6 +443,9 @@ export default function AdminDashboardPage() {
         setChatConfig(data.config);
         setToastMessage('✅ Closed-chat notice updated for all students!');
         setTimeout(() => setToastMessage(null), 4000);
+        try {
+          adminBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       }
     } catch (e) {
       alert('Failed to save notice text');
@@ -466,7 +503,10 @@ export default function AdminDashboardPage() {
         setMentorAudioUrl(null);
         setToastMessage('✅ Mentor message posted to community chat!');
         setTimeout(() => setToastMessage(null), 4000);
-        fetchCommunityChat();
+        fetchCommunityChat(false);
+        try {
+          adminBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       } else {
         alert(data.message || 'Failed to post message');
       }
@@ -489,7 +529,10 @@ export default function AdminDashboardPage() {
         setChatMessages(prev => prev.filter(m => m.id !== id));
         setToastMessage('Message deleted successfully.');
         setTimeout(() => setToastMessage(null), 3000);
-        fetchCommunityChat();
+        fetchCommunityChat(true);
+        try {
+          adminBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       }
     } catch (e) {
       alert('Failed to delete message');
@@ -514,7 +557,10 @@ export default function AdminDashboardPage() {
       if (data.success) {
         setToastMessage(`✅ ${data.message}`);
         setTimeout(() => setToastMessage(null), 5000);
-        fetchCommunityChat();
+        fetchCommunityChat(false);
+        try {
+          adminBcRef.current?.postMessage({ type: 'NEW_CHAT_MESSAGE' });
+        } catch (e) {}
       }
     } catch (e) {
       alert('Error clearing storage');
@@ -2181,30 +2227,41 @@ export default function AdminDashboardPage() {
                   </p>
                 </div>
 
-                {/* Sub-Tab Navigation */}
-                <div className="flex items-center bg-[#0B0F19] p-1 rounded-xl border border-white/10 self-start sm:self-auto">
+                {/* Sub-Tab Navigation & Close Button */}
+                <div className="flex items-center gap-2 self-start sm:self-auto">
+                  <div className="flex items-center bg-[#0B0F19] p-1 rounded-xl border border-white/10">
+                    <button
+                      onClick={() => setCommunitySectionTab('chat')}
+                      className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                        communitySectionTab === 'chat'
+                          ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <MessageCircle size={14} />
+                      <span>Sunday Support Chat</span>
+                      <span className={`w-2 h-2 rounded-full ${chatConfig.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
+                    </button>
+                    <button
+                      onClick={() => setCommunitySectionTab('broadcasts')}
+                      className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
+                        communitySectionTab === 'broadcasts'
+                          ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20'
+                          : 'text-slate-400 hover:text-white'
+                      }`}
+                    >
+                      <Megaphone size={14} />
+                      <span>Mentor Broadcasts ({adminUpdates.length})</span>
+                    </button>
+                  </div>
+
+                  {/* Close / Return to Overview Button */}
                   <button
-                    onClick={() => setCommunitySectionTab('chat')}
-                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
-                      communitySectionTab === 'chat'
-                        ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
+                    onClick={() => setActiveTab('overview')}
+                    title="Close Community & Return to Dashboard"
+                    className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-all cursor-pointer active:scale-95 border border-white/5"
                   >
-                    <MessageCircle size={14} />
-                    <span>Sunday Support Chat</span>
-                    <span className={`w-2 h-2 rounded-full ${chatConfig.isOpen ? 'bg-emerald-400 animate-pulse' : 'bg-red-400'}`} />
-                  </button>
-                  <button
-                    onClick={() => setCommunitySectionTab('broadcasts')}
-                    className={`px-4 py-2 rounded-lg text-xs font-black transition-all flex items-center gap-2 ${
-                      communitySectionTab === 'broadcasts'
-                        ? 'bg-[#00A0DF] text-white shadow-md shadow-[#00A0DF]/20'
-                        : 'text-slate-400 hover:text-white'
-                    }`}
-                  >
-                    <Megaphone size={14} />
-                    <span>Mentor Broadcasts ({adminUpdates.length})</span>
+                    <X size={16} />
                   </button>
                 </div>
               </div>
@@ -2254,11 +2311,11 @@ export default function AdminDashboardPage() {
                           <span>{chatConfig.isOpen ? 'Lock / Close Chat Now' : 'Open / Unlock Chat for Students'}</span>
                         </button>
                         <button
-                          onClick={fetchCommunityChat}
-                          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl"
+                          onClick={() => fetchCommunityChat(false)}
+                          className="p-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 rounded-xl cursor-pointer"
                           title="Refresh Chat Data"
                         >
-                          <RotateCcw size={14} />
+                          <RotateCcw size={14} className={chatLoading ? 'animate-spin' : ''} />
                         </button>
                       </div>
                     </div>
