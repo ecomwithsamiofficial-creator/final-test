@@ -16,6 +16,11 @@ const MIME_TYPES: Record<string, string> = {
   '.ico': 'image/x-icon',
   '.mp4': 'video/mp4',
   '.webm': 'video/webm',
+  '.mp3': 'audio/mpeg',
+  '.wav': 'audio/wav',
+  '.m4a': 'audio/mp4',
+  '.aac': 'audio/aac',
+  '.ogg': 'audio/ogg',
   '.zip': 'application/zip',
   '.rar': 'application/x-rar-compressed',
   '.7z': 'application/x-7z-compressed',
@@ -58,7 +63,8 @@ export async function GET(
         'Content-Type': contentType,
         'Content-Length': String(contentLength),
         'Cache-Control': 'public, max-age=86400, stale-while-revalidate=604800',
-        'Access-Control-Allow-Origin': '*'
+        'Access-Control-Allow-Origin': '*',
+        'Accept-Ranges': 'bytes'
       };
 
       const ext = path.extname(filename).toLowerCase();
@@ -81,6 +87,33 @@ export async function GET(
       if (stat.isFile()) {
         const ext = path.extname(fullPath).toLowerCase();
         const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+
+        // Support HTTP Range requests (crucial for iOS Safari & Android audio/video streaming)
+        const range = request.headers.get('range');
+        if (range && range.startsWith('bytes=')) {
+          const parts = range.replace(/bytes=/, '').split('-');
+          const start = parseInt(parts[0], 10);
+          const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+          const chunksize = (end - start) + 1;
+          const fileStream = fs.createReadStream(fullPath, { start, end });
+          const stream = new ReadableStream({
+            start(controller) {
+              fileStream.on('data', (chunk) => controller.enqueue(chunk));
+              fileStream.on('end', () => controller.close());
+              fileStream.on('error', (err) => controller.error(err));
+            }
+          });
+
+          return new NextResponse(stream, {
+            status: 206,
+            headers: {
+              ...buildHeaders(contentType, chunksize),
+              'Content-Range': `bytes ${start}-${end}/${stat.size}`,
+              'Content-Length': String(chunksize)
+            }
+          });
+        }
+
         const fileBuffer = fs.readFileSync(fullPath);
 
         return new NextResponse(new Uint8Array(fileBuffer), {

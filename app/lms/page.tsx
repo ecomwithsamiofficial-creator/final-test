@@ -52,6 +52,133 @@ import {
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
 
+function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; isMentor?: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      setIsLoading(true);
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            console.warn('Audio playback error:', err);
+            setIsLoading(false);
+            setIsPlaying(false);
+          });
+      }
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!audioRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const newPercent = Math.max(0, Math.min(1, clickX / rect.width));
+    const newTime = newPercent * duration;
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className={`p-2.5 sm:p-3 rounded-2xl border flex items-center gap-3 shadow-xs my-1.5 select-none transition-all ${
+        isMentor
+          ? 'bg-white/95 border-emerald-300 text-slate-800'
+          : 'bg-emerald-50/90 border-emerald-200 text-slate-800'
+      }`}
+    >
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        preload="metadata"
+        playsInline
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+        }}
+        onLoadedMetadata={() => {
+          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+        }}
+        onDurationChange={() => {
+          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+        }}
+        onEnded={() => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }}
+        onError={() => {
+          setIsLoading(false);
+          setIsPlaying(false);
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={togglePlay}
+        disabled={isLoading}
+        className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90 cursor-pointer shadow-md ${
+          isMentor ? 'bg-[#008069] hover:bg-[#075e54] text-white' : 'bg-[#128c7e] hover:bg-[#075e54] text-white'
+        }`}
+        title={isPlaying ? 'Pause voice note' : 'Play voice note'}
+      >
+        {isLoading ? (
+          <Loader2 size={18} className="animate-spin text-white" />
+        ) : isPlaying ? (
+          <Pause size={18} className="fill-white text-white" />
+        ) : (
+          <Play size={18} className="fill-white text-white ml-0.5" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center justify-between text-[11px] font-bold">
+          <span className="text-[#008069] flex items-center gap-1">
+            <Mic size={12} />
+            <span>{isMentor ? 'Mentor Voice Note' : 'Voice Note'}</span>
+          </span>
+          <span className="text-[10px] text-slate-500 font-mono">
+            {formatTime(currentTime)} / {formatTime(duration || 0)}
+          </span>
+        </div>
+
+        <div
+          onClick={handleSeek}
+          className="h-2.5 bg-slate-200/90 hover:bg-slate-300 rounded-full cursor-pointer relative overflow-hidden transition-colors"
+        >
+          <div
+            className="h-full bg-[#008069] rounded-full transition-all duration-100"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function LmsClassroomPage() {
   const router = useRouter();
   const [modules, setModules] = useState<Module[]>([]);
@@ -2790,20 +2917,7 @@ export default function LmsClassroomPage() {
 
                                     {/* Mentor Voice Note Player */}
                                     {msg.audioUrl && (
-                                      <div className="bg-white/90 border border-emerald-200 rounded-xl p-3 flex items-center gap-3 shadow-2xs">
-                                        <div className="w-9 h-9 rounded-full bg-[#008069] text-white flex items-center justify-center shrink-0">
-                                          <Mic size={16} />
-                                        </div>
-                                        <div className="flex-1 min-w-0">
-                                          <span className="text-[11px] font-bold text-[#008069] block mb-1">
-                                            Mentor Voice Note
-                                          </span>
-                                          <audio controls className="w-full h-8">
-                                            <source src={msg.audioUrl} />
-                                            Audio not supported
-                                          </audio>
-                                        </div>
-                                      </div>
+                                      <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={true} />
                                     )}
 
                                     {/* Attached Image if any */}
@@ -2881,6 +2995,11 @@ export default function LmsClassroomPage() {
                                     <p className="text-xs leading-relaxed whitespace-pre-wrap break-words">
                                       {msg.message}
                                     </p>
+                                  )}
+
+                                  {/* Attached Voice Note if any */}
+                                  {msg.audioUrl && (
+                                    <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={false} />
                                   )}
 
                                   {/* Bottom Ticks for outgoing */}

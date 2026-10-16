@@ -46,6 +46,7 @@ import {
   Volume2,
   HardDrive,
   Play,
+  Pause,
   Square,
   Upload,
   Power,
@@ -95,6 +96,127 @@ function generateFallbackPassword(seed: string): string {
   const positive = Math.abs(hash);
   const num = 10000000 + (positive % 90000000);
   return num.toString();
+}
+
+function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; isMentor?: boolean }) {
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [currentTime, setCurrentTime] = useState(0);
+  const [duration, setDuration] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const togglePlay = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!audioRef.current) return;
+    if (isPlaying) {
+      audioRef.current.pause();
+      setIsPlaying(false);
+    } else {
+      setIsLoading(true);
+      const playPromise = audioRef.current.play();
+      if (playPromise !== undefined) {
+        playPromise
+          .then(() => {
+            setIsPlaying(true);
+            setIsLoading(false);
+          })
+          .catch((err) => {
+            console.warn('Audio playback error:', err);
+            setIsLoading(false);
+            setIsPlaying(false);
+          });
+      }
+    }
+  };
+
+  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
+    e.stopPropagation();
+    if (!audioRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const clickX = e.clientX - rect.left;
+    const newPercent = Math.max(0, Math.min(1, clickX / rect.width));
+    const newTime = newPercent * duration;
+    audioRef.current.currentTime = newTime;
+    setCurrentTime(newTime);
+  };
+
+  const formatTime = (secs: number) => {
+    if (isNaN(secs) || secs < 0) return '0:00';
+    const m = Math.floor(secs / 60);
+    const s = Math.floor(secs % 60);
+    return `${m}:${s < 10 ? '0' : ''}${s}`;
+  };
+
+  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+
+  return (
+    <div
+      onClick={(e) => e.stopPropagation()}
+      className="p-2.5 sm:p-3 rounded-2xl bg-[#0B0F19] border border-white/10 flex items-center gap-3 shadow-xs my-1.5 select-none transition-all max-w-sm"
+    >
+      <audio
+        ref={audioRef}
+        src={audioUrl}
+        preload="metadata"
+        playsInline
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
+        }}
+        onLoadedMetadata={() => {
+          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+        }}
+        onDurationChange={() => {
+          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+        }}
+        onEnded={() => {
+          setIsPlaying(false);
+          setCurrentTime(0);
+        }}
+        onError={() => {
+          setIsLoading(false);
+          setIsPlaying(false);
+        }}
+      />
+
+      <button
+        type="button"
+        onClick={togglePlay}
+        disabled={isLoading}
+        className="w-10 h-10 rounded-full flex items-center justify-center shrink-0 bg-emerald-500 hover:bg-emerald-400 text-slate-950 transition-transform active:scale-90 cursor-pointer shadow-md"
+        title={isPlaying ? 'Pause voice note' : 'Play voice note'}
+      >
+        {isLoading ? (
+          <Loader2 size={16} className="animate-spin text-slate-950" />
+        ) : isPlaying ? (
+          <Pause size={16} className="fill-slate-950 text-slate-950" />
+        ) : (
+          <Play size={16} className="fill-slate-950 text-slate-950 ml-0.5" />
+        )}
+      </button>
+
+      <div className="flex-1 min-w-0 space-y-1">
+        <div className="flex items-center justify-between text-[11px] font-bold">
+          <span className="text-emerald-400 flex items-center gap-1">
+            <Mic size={12} />
+            <span>{isMentor ? 'Mentor Voice Note' : 'Voice Note'}</span>
+          </span>
+          <span className="text-[10px] text-slate-400 font-mono">
+            {formatTime(currentTime)} / {formatTime(duration || 0)}
+          </span>
+        </div>
+
+        <div
+          onClick={handleSeek}
+          className="h-2.5 bg-slate-800 hover:bg-slate-700 rounded-full cursor-pointer relative overflow-hidden transition-colors"
+        >
+          <div
+            className="h-full bg-emerald-500 rounded-full transition-all duration-100"
+            style={{ width: `${progressPercent}%` }}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 export default function AdminDashboardPage() {
@@ -2534,16 +2656,7 @@ export default function AdminDashboardPage() {
 
                               {/* Attached Audio Player */}
                               {msg.audioUrl && (
-                                <div className="mt-2 bg-slate-900 p-2.5 rounded-xl border border-white/10 max-w-sm">
-                                  <div className="flex items-center gap-2 mb-1">
-                                    <Volume2 size={13} className="text-emerald-400" />
-                                    <span className="text-[10px] font-bold text-slate-300">Voice Note Broadcast</span>
-                                  </div>
-                                  <audio controls className="w-full h-8">
-                                    <source src={msg.audioUrl} />
-                                    Your browser does not support audio.
-                                  </audio>
-                                </div>
+                                <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={msg.isMentor} />
                               )}
                             </div>
 
