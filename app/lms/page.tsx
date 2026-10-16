@@ -43,7 +43,11 @@ import {
   MessageCircle,
   Mic,
   Upload,
-  Eye
+  Eye,
+  CheckCheck,
+  Paperclip,
+  Bell,
+  Users
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
@@ -110,7 +114,7 @@ export default function LmsClassroomPage() {
     }
   };
 
-  // Sunday Support & Community Chat State
+  // Sunday Support & Community Chat State (WhatsApp Group Style)
   const [communitySubView, setCommunitySubView] = useState<'chat' | 'broadcasts'>('chat');
   const [lmsChatConfig, setLmsChatConfig] = useState<{ isOpen: boolean; noticeText: string }>({
     isOpen: true,
@@ -118,25 +122,65 @@ export default function LmsClassroomPage() {
   });
   const [lmsChatMessages, setLmsChatMessages] = useState<any[]>([]);
   const [lmsChatLoading, setLmsChatLoading] = useState(false);
+  const [unreadChatCount, setUnreadChatCount] = useState<number>(0);
+  const [newChatToast, setNewChatToast] = useState<{ author: string; text: string; id: number } | null>(null);
   const [studentChatMsg, setStudentChatMsg] = useState('');
   const [studentChatImg, setStudentChatImg] = useState<File | null>(null);
   const [studentChatImgPreview, setStudentChatImgPreview] = useState<string | null>(null);
   const [studentChatSubmitting, setStudentChatSubmitting] = useState(false);
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
+  const chatMessagesEndRef = useRef<HTMLDivElement>(null);
 
-  const fetchLmsChat = async () => {
+  const markChatAsRead = () => {
     try {
-      setLmsChatLoading(true);
+      localStorage.setItem('sami_lms_last_read_chat_time', Date.now().toString());
+      setUnreadChatCount(0);
+      setNewChatToast(null);
+    } catch (e) {}
+  };
+
+  const fetchLmsChat = async (isPolling = false) => {
+    try {
+      if (!isPolling) setLmsChatLoading(true);
       const res = await fetch(`/api/community/chat?t=${Date.now()}`);
       const data = await res.json();
       if (data.success) {
         if (data.config) setLmsChatConfig(data.config);
-        if (Array.isArray(data.messages)) setLmsChatMessages(data.messages);
+        if (Array.isArray(data.messages)) {
+          setLmsChatMessages(data.messages);
+
+          // Calculate unread message badge count
+          try {
+            const lastReadStr = localStorage.getItem('sami_lms_last_read_chat_time');
+            const lastRead = lastReadStr ? parseInt(lastReadStr, 10) : 0;
+
+            if (activeTab === 'community') {
+              localStorage.setItem('sami_lms_last_read_chat_time', Date.now().toString());
+              setUnreadChatCount(0);
+            } else if (lastRead > 0) {
+              const unreadMsgs = data.messages.filter((m: any) => new Date(m.createdAt).getTime() > lastRead);
+              setUnreadChatCount(unreadMsgs.length);
+
+              // If a new message arrived in background while student is on another tab, show toast
+              if (isPolling && unreadMsgs.length > 0) {
+                const latest = unreadMsgs[unreadMsgs.length - 1];
+                setNewChatToast({
+                  author: latest.studentName || 'Community Member',
+                  text: latest.message || 'Shared a screenshot/proof',
+                  id: latest.id
+                });
+              }
+            } else {
+              setUnreadChatCount(0);
+              localStorage.setItem('sami_lms_last_read_chat_time', Date.now().toString());
+            }
+          } catch (e) {}
+        }
       }
     } catch (e) {
     } finally {
-      setLmsChatLoading(false);
+      if (!isPolling) setLmsChatLoading(false);
     }
   };
 
@@ -713,17 +757,31 @@ export default function LmsClassroomPage() {
       })
       .catch(() => {});
 
-    // Initial Community Chat load
+    // Initial Community Chat load & background polling
     fetchLmsChat();
+    const chatPollInterval = setInterval(() => {
+      fetchLmsChat(true);
+    }, 20000);
 
     return () => {
       clearInterval(heartbeatInterval);
+      clearInterval(chatPollInterval);
       window.removeEventListener('storage', onStorage);
       if (bc) bc.close();
       if (realtimeChannel && supabase) supabase.removeChannel(realtimeChannel);
       if (realtimeEnrChannel && supabase) supabase.removeChannel(realtimeEnrChannel);
     };
   }, []);
+
+  // Auto-scroll WhatsApp chat to newest message
+  useEffect(() => {
+    if (activeTab === 'community' && communitySubView === 'chat') {
+      const timer = setTimeout(() => {
+        chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [activeTab, communitySubView, lmsChatMessages.length]);
 
   const setIsApple = (val: boolean) => {
     setIsIos(val);
@@ -1298,25 +1356,31 @@ export default function LmsClassroomPage() {
             <span>Bonuses</span>
           </button>
 
-          <button
-            onClick={() => {
-              setActiveTab('community');
-              markUpdatesAsRead();
-            }}
-            className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer relative ${
-              activeTab === 'community'
-                ? 'bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30'
-                : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
-            }`}
-          >
-            <Radio size={13} className={unreadCount > 0 ? 'text-amber-500 animate-pulse' : ''} />
-            <span>Community</span>
-            {unreadCount > 0 && (
-              <span className="bg-red-500 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full animate-pulse">
-                {unreadCount}
-              </span>
-            )}
-          </button>
+          {(() => {
+            const totalCommunityUnread = unreadCount + unreadChatCount;
+            return (
+              <button
+                onClick={() => {
+                  setActiveTab('community');
+                  markUpdatesAsRead();
+                  markChatAsRead();
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl transition-all cursor-pointer relative ${
+                  activeTab === 'community'
+                    ? 'bg-[#008069] text-white font-bold shadow-sm shadow-[#008069]/30'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
+                }`}
+              >
+                <MessageCircle size={13} className={totalCommunityUnread > 0 ? 'text-amber-300 animate-pulse' : ''} />
+                <span>Community</span>
+                {totalCommunityUnread > 0 && (
+                  <span className="bg-red-500 text-white text-[10px] font-black min-w-[18px] h-[18px] px-1 rounded-full flex items-center justify-center animate-bounce shadow-xs">
+                    {totalCommunityUnread > 99 ? '99+' : totalCommunityUnread}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
         </div>
 
         {/* Right Status, Progress & Profile */}
@@ -2440,148 +2504,307 @@ export default function LmsClassroomPage() {
             {/* TAB 4: COMMUNITY & SUNDAY SUPPORT HUB */}
             {/* --------------------------------------------------------------------- */}
             {activeTab === 'community' && (
-              <div className="max-w-4xl mx-auto space-y-5 animate-in fade-in duration-200">
-                {/* Community Top Header */}
-                <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-xs flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-4">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-xl flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
-                      S
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2">
-                        <h2 className="text-base sm:text-xl font-black text-slate-900">
-                          Student Community &amp; Support Hub
-                        </h2>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1 ${
-                          lmsChatConfig.isOpen ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-slate-100 text-slate-600 border border-slate-200'
-                        }`}>
-                          <span className={`w-1.5 h-1.5 rounded-full ${lmsChatConfig.isOpen ? 'bg-emerald-500 animate-pulse' : 'bg-slate-400'}`} />
-                          {lmsChatConfig.isOpen ? 'Support Live' : 'Chat Scheduled'}
-                        </span>
+              <div className="max-w-4xl mx-auto space-y-4 animate-in fade-in duration-200">
+                
+                {/* ------------------------------------------------------------- */}
+                {/* WHATSAPP GROUP CHAT BOX CONTAINER */}
+                {/* ------------------------------------------------------------- */}
+                <div className="bg-[#efeae2] border border-slate-300 rounded-2xl sm:rounded-3xl shadow-lg overflow-hidden flex flex-col h-[680px] sm:h-[730px] relative">
+                  
+                  {/* 1. WHATSAPP HEADER */}
+                  <div className="bg-[#008069] text-white px-4 py-3 sm:px-5 sm:py-3.5 flex items-center justify-between shadow-sm z-10">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="relative shrink-0">
+                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-sm shadow-xs overflow-hidden">
+                          <span className="tracking-tighter font-extrabold">SS</span>
+                        </div>
+                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#008069] ${lmsChatConfig.isOpen ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                       </div>
-                      <p className="text-xs text-slate-500 mt-1 max-w-lg leading-relaxed">
-                        Share sales milestones, connect with batch peers, and receive guidance directly from <strong>Mentor Sardar Samiullah</strong>.
-                      </p>
-                    </div>
-                  </div>
-
-                  {/* Sub-View Switcher */}
-                  <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200 self-start sm:self-auto">
-                    <button
-                      onClick={() => setCommunitySubView('chat')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        communitySubView === 'chat'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <MessageCircle size={13} />
-                      <span>Sunday Support Chat</span>
-                      <span className={`w-2 h-2 rounded-full ${lmsChatConfig.isOpen ? 'bg-emerald-400' : 'bg-slate-400'}`} />
-                    </button>
-                    <button
-                      onClick={() => setCommunitySubView('broadcasts')}
-                      className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center gap-1.5 ${
-                        communitySubView === 'broadcasts'
-                          ? 'bg-blue-600 text-white shadow-xs'
-                          : 'text-slate-600 hover:text-slate-900'
-                      }`}
-                    >
-                      <Radio size={13} />
-                      <span>Mentor SOPs ({communityUpdates.length})</span>
-                    </button>
-                  </div>
-                </div>
-
-                {/* =================================================================== */}
-                {/* SUB-VIEW 1: SUNDAY SUPPORT CHAT & SUCCESS STORIES */}
-                {/* =================================================================== */}
-                {communitySubView === 'chat' && (
-                  <div className="space-y-4">
-                    {/* Status Notice Banner */}
-                    <div className={`p-4 rounded-2xl border flex items-start gap-3 transition-all ${
-                      lmsChatConfig.isOpen
-                        ? 'bg-emerald-50/80 border-emerald-200 text-emerald-900'
-                        : 'bg-amber-50/80 border-amber-200 text-amber-900'
-                    }`}>
-                      {lmsChatConfig.isOpen ? (
-                        <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <Sparkles size={16} />
-                        </div>
-                      ) : (
-                        <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
-                          <Lock size={16} />
-                        </div>
-                      )}
-                      <div className="flex-1">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-bold text-xs uppercase tracking-wider">
-                            {lmsChatConfig.isOpen ? '🟢 Sunday Support Session is LIVE' : '🔒 Chat Notice by Mentor Sami'}
-                          </h4>
-                          <button
-                            onClick={fetchLmsChat}
-                            className="text-[11px] underline opacity-75 hover:opacity-100 flex items-center gap-1"
-                          >
-                            <RotateCcw size={11} /> Refresh
-                          </button>
-                        </div>
-                        <p className="text-xs mt-0.5 leading-relaxed">
-                          {lmsChatConfig.isOpen
-                            ? 'The chat is currently open! Share your Shopify sales proofs, order tracking milestones, or ask questions.'
-                            : lmsChatConfig.noticeText}
+                      <div className="min-w-0">
+                        <h2 className="text-sm sm:text-base font-bold text-white truncate leading-tight">
+                          Ecom With Sami — VIP Community Group 🇵🇰
+                        </h2>
+                        <p className="text-[11px] text-white/85 truncate mt-0.5 flex items-center gap-1.5">
+                          {lmsChatConfig.isOpen ? (
+                            <>
+                              <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" />
+                              <span className="truncate">🟢 Online • Sunday Live Mentorship ({lmsChatMessages.length} updates)</span>
+                            </>
+                          ) : (
+                            <>
+                              <Lock size={11} className="text-amber-200 shrink-0" />
+                              <span className="truncate">🔒 Scheduled • Read-Only (Opens Sundays)</span>
+                            </>
+                          )}
                         </p>
                       </div>
                     </div>
 
-                    {/* Chat Message Input Composer */}
-                    <div className="bg-white border border-slate-200/90 rounded-2xl p-4 sm:p-5 shadow-xs space-y-3">
-                      <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                        <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
-                          <MessageSquare size={14} className="text-blue-600" />
-                          <span>Share Success Story or Message</span>
-                        </span>
-                        <span className="text-[11px] text-slate-400">
-                          Posting as: <strong className="text-slate-700">{user?.name || 'Student'}</strong> (Privacy Protected)
-                        </span>
+                    {/* Header Right Actions */}
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* Sub-View Switcher */}
+                      <div className="flex items-center bg-[#075e54] p-0.5 rounded-xl border border-white/10 text-[11px]">
+                        <button
+                          onClick={() => setCommunitySubView('chat')}
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            communitySubView === 'chat'
+                              ? 'bg-white text-[#008069] shadow-xs'
+                              : 'text-white/80 hover:text-white'
+                          }`}
+                        >
+                          <MessageCircle size={12} />
+                          <span className="hidden sm:inline">Group Chat</span>
+                        </button>
+                        <button
+                          onClick={() => setCommunitySubView('broadcasts')}
+                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                            communitySubView === 'broadcasts'
+                              ? 'bg-white text-[#008069] shadow-xs'
+                              : 'text-white/80 hover:text-white'
+                          }`}
+                        >
+                          <Radio size={12} />
+                          <span>SOPs ({communityUpdates.length})</span>
+                        </button>
                       </div>
 
-                      {lmsChatConfig.isOpen ? (
-                        <form onSubmit={handleSendStudentChatMessage} className="space-y-3">
-                          <textarea
-                            rows={3}
-                            value={studentChatMsg}
-                            onChange={(e) => setStudentChatMsg(e.target.value)}
-                            placeholder="Share your sales milestone, courier dispatch count, or query... (e.g. Alhamdulillah got 12 orders today with Sami bhai formula!)"
-                            className="w-full p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-blue-500 focus:bg-white transition-all leading-relaxed"
-                          />
+                      <button
+                        onClick={() => fetchLmsChat(false)}
+                        title="Refresh Messages"
+                        className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                      >
+                        <RotateCcw size={14} className={lmsChatLoading ? 'animate-spin' : ''} />
+                      </button>
+                    </div>
+                  </div>
 
-                          {/* Image Attachment Preview */}
-                          {studentChatImgPreview && (
-                            <div className="flex items-center gap-3 p-2 bg-slate-50 border border-slate-200 rounded-xl max-w-sm">
+                  {/* 2. PINNED NOTICE BAR (Slim WhatsApp Style) */}
+                  <div className={`px-4 py-2 border-b text-xs flex items-center justify-between gap-2 z-10 transition-all ${
+                    lmsChatConfig.isOpen
+                      ? 'bg-emerald-100/90 border-emerald-300 text-emerald-950 font-medium'
+                      : 'bg-amber-100/95 border-amber-300 text-amber-950 font-medium'
+                  }`}>
+                    <div className="flex items-center gap-2 min-w-0">
+                      <Pin size={13} className="shrink-0 text-slate-700" />
+                      <span className="text-[11px] truncate">
+                        <strong>{lmsChatConfig.isOpen ? 'Sunday Live:' : 'Notice:'}</strong>{' '}
+                        {lmsChatConfig.isOpen
+                          ? 'Chat is OPEN! Share your Shopify sales proofs, order milestones, or ask questions.'
+                          : lmsChatConfig.noticeText}
+                      </span>
+                    </div>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/70 text-slate-800 shrink-0">
+                      {lmsChatConfig.isOpen ? 'LIVE NOW' : 'SCHEDULED'}
+                    </span>
+                  </div>
+
+                  {/* 3. SUB-VIEW 1: WHATSAPP CHAT FEED */}
+                  {communitySubView === 'chat' && (
+                    <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2]">
+                      
+                      {/* Scrollable Messages Area */}
+                      <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
+                        {/* Group Creation Date Pill */}
+                        <div className="flex justify-center my-1">
+                          <span className="bg-white/90 text-slate-600 text-[10px] font-semibold px-3 py-1 rounded-full shadow-2xs border border-slate-200/60 uppercase tracking-wider">
+                            Official Sunday Student Community
+                          </span>
+                        </div>
+
+                        {lmsChatLoading && lmsChatMessages.length === 0 ? (
+                          <div className="text-center py-16">
+                            <Loader2 size={24} className="mx-auto text-[#008069] animate-spin mb-2" />
+                            <p className="text-xs text-slate-500 font-medium">Opening WhatsApp Group...</p>
+                          </div>
+                        ) : lmsChatMessages.length === 0 ? (
+                          <div className="text-center py-16 bg-white/80 rounded-2xl p-6 max-w-sm mx-auto shadow-2xs border border-slate-200">
+                            <MessageSquare size={32} className="mx-auto text-slate-400 mb-2" />
+                            <h4 className="text-sm font-bold text-slate-800">No Messages Yet</h4>
+                            <p className="text-xs text-slate-500 mt-1">
+                              Be the first to share your Shopify milestone or ask a query in the group!
+                            </p>
+                          </div>
+                        ) : (
+                          lmsChatMessages.map((msg) => {
+                            const isMentor = Boolean(msg.isMentor);
+                            const isMe = !isMentor && (msg.authorId === user?.id || (user?.name && msg.studentName === user?.name));
+
+                            // Mentor VIP Broadcast Message (Centered / Highlighted)
+                            if (isMentor) {
+                              return (
+                                <div key={msg.id} className="flex justify-center my-2">
+                                  <div className="w-full max-w-xl bg-gradient-to-r from-emerald-50 via-teal-50 to-white border-2 border-[#008069]/40 rounded-2xl p-3.5 sm:p-4 shadow-sm space-y-2">
+                                    <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                                      <div className="flex items-center gap-2">
+                                        <div className="w-7 h-7 rounded-full bg-[#008069] text-white flex items-center justify-center font-black text-xs shadow-xs">
+                                          ★
+                                        </div>
+                                        <div>
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="font-extrabold text-xs text-[#008069]">
+                                              Mentor Sardar Samiullah
+                                            </span>
+                                            <span className="bg-[#008069] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
+                                              MENTOR VIP
+                                            </span>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <span className="text-[10px] text-slate-500 font-medium">
+                                        {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                      </span>
+                                    </div>
+
+                                    {msg.message && (
+                                      <p className="text-xs text-slate-800 leading-relaxed whitespace-pre-wrap">
+                                        {msg.message}
+                                      </p>
+                                    )}
+
+                                    {/* Mentor Voice Note Player */}
+                                    {msg.audioUrl && (
+                                      <div className="bg-white/90 border border-emerald-200 rounded-xl p-3 flex items-center gap-3 shadow-2xs">
+                                        <div className="w-9 h-9 rounded-full bg-[#008069] text-white flex items-center justify-center shrink-0">
+                                          <Mic size={16} />
+                                        </div>
+                                        <div className="flex-1 min-w-0">
+                                          <span className="text-[11px] font-bold text-[#008069] block mb-1">
+                                            Mentor Voice Note
+                                          </span>
+                                          <audio controls className="w-full h-8">
+                                            <source src={msg.audioUrl} />
+                                            Audio not supported
+                                          </audio>
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Attached Image if any */}
+                                    {msg.imageUrl && (
+                                      <div
+                                        onClick={() => setZoomedImage(msg.imageUrl)}
+                                        className="relative cursor-pointer rounded-xl overflow-hidden border border-emerald-200 shadow-2xs max-w-sm mt-1 group"
+                                      >
+                                        <img
+                                          src={msg.imageUrl}
+                                          alt="Mentor attachment"
+                                          className="max-h-64 w-full object-cover group-hover:scale-101 transition-transform"
+                                        />
+                                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
+                                          <Eye size={16} className="mr-1" /> Click to Zoom
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    <div className="text-right text-[10px] text-emerald-800 font-bold flex items-center justify-end gap-1">
+                                      <span>Official Mentorship Broadcast</span>
+                                      <CheckCheck size={13} className="text-blue-600" />
+                                    </div>
+                                  </div>
+                                </div>
+                              );
+                            }
+
+                            // Student Message: Outgoing (Me) vs Incoming (Others)
+                            return (
+                              <div
+                                key={msg.id}
+                                className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
+                              >
+                                <div
+                                  className={`relative p-3 rounded-2xl shadow-xs max-w-[85%] sm:max-w-[70%] transition-all ${
+                                    isMe
+                                      ? 'bg-[#d9fdd3] text-slate-900 rounded-tr-xs border border-[#c1e7bb]'
+                                      : 'bg-white text-slate-900 rounded-tl-xs border border-slate-200/80'
+                                  }`}
+                                >
+                                  {/* Author Header */}
+                                  <div className="flex items-center justify-between gap-2 mb-1">
+                                    <span
+                                      className={`text-[11px] font-extrabold truncate ${
+                                        isMe ? 'text-emerald-800' : 'text-[#128c7e]'
+                                      }`}
+                                    >
+                                      {isMe ? 'You (Student)' : msg.studentName}
+                                    </span>
+                                    <span className="text-[9px] text-slate-400 font-medium">
+                                      {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </span>
+                                  </div>
+
+                                  {/* Attached Screenshot Image */}
+                                  {msg.imageUrl && (
+                                    <div
+                                      onClick={() => setZoomedImage(msg.imageUrl)}
+                                      className="relative cursor-pointer rounded-xl overflow-hidden border border-black/10 shadow-2xs mb-2 max-w-xs group"
+                                    >
+                                      <img
+                                        src={msg.imageUrl}
+                                        alt="Student Proof"
+                                        className="max-h-56 w-auto object-cover rounded-xl group-hover:scale-101 transition-transform"
+                                      />
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
+                                        <Eye size={14} className="mr-1" /> Zoom Proof
+                                      </div>
+                                    </div>
+                                  )}
+
+                                  {/* Message Text */}
+                                  {msg.message && (
+                                    <p className="text-xs leading-relaxed whitespace-pre-wrap break-words">
+                                      {msg.message}
+                                    </p>
+                                  )}
+
+                                  {/* Bottom Ticks for outgoing */}
+                                  <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
+                                    {isMe && <CheckCheck size={13} className="text-blue-500" />}
+                                  </div>
+                                </div>
+                              </div>
+                            );
+                          })
+                        )}
+
+                        <div ref={chatMessagesEndRef} />
+                      </div>
+
+                      {/* 4. PINNED BOTTOM WHATSAPP INPUT BAR */}
+                      <div className="bg-[#f0f2f5] border-t border-slate-300/80 p-2.5 sm:p-3 relative z-10">
+                        {/* Attachment Preview Chip */}
+                        {studentChatImgPreview && (
+                          <div className="mb-2 p-2 bg-white rounded-xl border border-emerald-300 shadow-sm flex items-center justify-between gap-3 max-w-md animate-in slide-in-from-bottom-2">
+                            <div className="flex items-center gap-2 min-w-0">
                               <img
                                 src={studentChatImgPreview}
-                                alt="Screenshot preview"
-                                className="w-14 h-14 object-cover rounded-lg border border-slate-300 shrink-0"
+                                alt="Preview"
+                                className="w-10 h-10 object-cover rounded-lg border border-slate-200"
                               />
-                              <div className="flex-1 min-w-0">
-                                <span className="text-xs font-bold text-slate-700 block truncate">{studentChatImg?.name}</span>
-                                <span className="text-[10px] text-emerald-600 font-semibold block">✓ Auto-Compressed Safe</span>
+                              <div className="min-w-0">
+                                <span className="text-xs font-bold text-slate-800 block truncate">
+                                  {studentChatImg?.name}
+                                </span>
+                                <span className="text-[10px] text-emerald-600 font-semibold block">
+                                  ✓ Auto-Compressed Proof Screenshot
+                                </span>
                               </div>
-                              <button
-                                type="button"
-                                onClick={() => {
-                                  setStudentChatImg(null);
-                                  setStudentChatImgPreview(null);
-                                  if (chatFileInputRef.current) chatFileInputRef.current.value = '';
-                                }}
-                                className="text-xs text-red-500 hover:text-red-700 font-bold p-1"
-                              >
-                                Remove
-                              </button>
                             </div>
-                          )}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setStudentChatImg(null);
+                                setStudentChatImgPreview(null);
+                                if (chatFileInputRef.current) chatFileInputRef.current.value = '';
+                              }}
+                              className="w-7 h-7 rounded-full bg-slate-100 hover:bg-red-50 text-slate-500 hover:text-red-600 flex items-center justify-center text-xs font-bold transition-all cursor-pointer"
+                            >
+                              <X size={14} />
+                            </button>
+                          </div>
+                        )}
 
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pt-1">
+                        {lmsChatConfig.isOpen ? (
+                          <form onSubmit={handleSendStudentChatMessage} className="space-y-1.5">
                             <div className="flex items-center gap-2">
                               <input
                                 type="file"
@@ -2590,207 +2813,123 @@ export default function LmsClassroomPage() {
                                 onChange={handleStudentImageSelect}
                                 className="hidden"
                               />
+                              
+                              {/* Clip / Attachment Button */}
                               <button
                                 type="button"
                                 onClick={() => chatFileInputRef.current?.click()}
-                                className="px-3 py-1.5 rounded-lg border border-slate-200 hover:border-blue-400 bg-slate-50 hover:bg-blue-50/50 text-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-all"
+                                title="Attach Proof Screenshot (JPG/PNG)"
+                                className="w-9 h-9 rounded-full bg-white hover:bg-slate-100 text-slate-600 border border-slate-300 flex items-center justify-center shrink-0 cursor-pointer transition-all active:scale-95 shadow-2xs"
                               >
-                                <ImageIcon size={14} className="text-blue-600" />
-                                <span>{studentChatImg ? 'Change Screenshot' : 'Attach Proof Screenshot (Picture)'}</span>
+                                <Paperclip size={17} />
                               </button>
-                              <span className="text-[10px] text-slate-400 hidden sm:inline">(JPG/PNG under 5MB)</span>
-                            </div>
 
-                            <button
-                              type="submit"
-                              disabled={studentChatSubmitting}
-                              className="px-5 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-bold text-xs flex items-center justify-center gap-2 shadow-sm active:scale-95 transition-all self-end sm:self-auto"
-                            >
-                              {studentChatSubmitting ? (
-                                <Loader2 size={13} className="animate-spin" />
-                              ) : (
-                                <Send size={13} />
-                              )}
-                              <span>Post to Community</span>
-                            </button>
-                          </div>
-                        </form>
-                      ) : (
-                        <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl text-center text-xs text-slate-500 space-y-1">
-                          <Lock size={18} className="mx-auto text-slate-400 mb-1" />
-                          <p className="font-semibold text-slate-700">Chat Input is Currently Locked by Mentor</p>
-                          <p className="text-[11px]">Chat opens every Sunday for weekly student reviews. You can browse all previous proofs and guidance below.</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Chat Messages Feed */}
-                    <div className="space-y-3">
-                      {lmsChatLoading && lmsChatMessages.length === 0 ? (
-                        <div className="text-center py-12 bg-white border border-slate-200 rounded-2xl p-6">
-                          <Loader2 size={24} className="mx-auto text-blue-600 animate-spin mb-2" />
-                          <p className="text-xs text-slate-500">Loading student community feed...</p>
-                        </div>
-                      ) : lmsChatMessages.length === 0 ? (
-                        <div className="text-center py-12 bg-white border border-slate-200 rounded-2xl p-6">
-                          <MessageSquare size={32} className="mx-auto text-slate-300 mb-2" />
-                          <h3 className="text-sm font-bold text-slate-700 mb-1">No Messages Yet</h3>
-                          <p className="text-xs text-slate-500">Be the first to share your milestone or question in the community!</p>
-                        </div>
-                      ) : (
-                        lmsChatMessages.map((msg) => (
-                          <div
-                            key={msg.id}
-                            className={`p-4 sm:p-5 rounded-2xl border transition-all ${
-                              msg.isMentor
-                                ? 'bg-gradient-to-r from-blue-50/70 via-indigo-50/50 to-white border-blue-200 shadow-xs'
-                                : 'bg-white border-slate-200/90 shadow-2xs hover:border-slate-300'
-                            }`}
-                          >
-                            <div className="flex items-center justify-between mb-2">
-                              <div className="flex items-center gap-2">
-                                <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold text-xs ${
-                                  msg.isMentor
-                                    ? 'bg-blue-600 text-white shadow-xs'
-                                    : 'bg-slate-200 text-slate-700'
-                                }`}>
-                                  {msg.isMentor ? '★' : (msg.studentName?.[0] || 'S')}
-                                </div>
-                                <div>
-                                  <div className="flex items-center gap-1.5">
-                                    <span className="font-bold text-xs text-slate-900">
-                                      {msg.studentName}
-                                    </span>
-                                    {msg.isMentor && (
-                                      <span className="bg-blue-600 text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
-                                        Mentor
-                                      </span>
-                                    )}
-                                  </div>
-                                </div>
+                              {/* Input field */}
+                              <div className="flex-1 relative">
+                                <input
+                                  type="text"
+                                  value={studentChatMsg}
+                                  onChange={(e) => setStudentChatMsg(e.target.value)}
+                                  placeholder="Type a message or share sales screenshot..."
+                                  className="w-full bg-white border border-slate-300 rounded-full px-4 py-2 text-xs text-slate-800 placeholder-slate-400 focus:outline-none focus:border-[#008069] shadow-inner"
+                                />
                               </div>
 
+                              {/* Send Button */}
+                              <button
+                                type="submit"
+                                disabled={studentChatSubmitting}
+                                className="w-9 h-9 rounded-full bg-[#008069] hover:bg-[#075e54] disabled:opacity-50 text-white flex items-center justify-center shrink-0 cursor-pointer shadow-md transition-all active:scale-95"
+                              >
+                                {studentChatSubmitting ? (
+                                  <Loader2 size={16} className="animate-spin" />
+                                ) : (
+                                  <Send size={15} />
+                                )}
+                              </button>
+                            </div>
+
+                            <div className="flex items-center justify-between px-2 text-[10px] text-slate-500">
+                              <span>🔒 Privacy Shield: Only your name is displayed. Contact details stay 100% private.</span>
+                              <span className="hidden sm:inline">Images auto-compressed for speed</span>
+                            </div>
+                          </form>
+                        ) : (
+                          <div className="py-2.5 px-4 bg-white/90 border border-amber-200 rounded-2xl text-center flex items-center justify-center gap-2 text-xs text-slate-700">
+                            <Lock size={14} className="text-amber-600 shrink-0" />
+                            <span>
+                              <strong>Chat is in Read-Only Mode.</strong> Replies open this Sunday with Mentor Sardar Samiullah.
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 4. SUB-VIEW 2: MENTOR BROADCASTS & SOPS */}
+                  {communitySubView === 'broadcasts' && (
+                    <div className="flex-1 overflow-y-auto p-4 sm:p-6 bg-slate-50 space-y-3">
+                      {communityUpdates.length === 0 ? (
+                        <div className="text-center py-12 bg-white border border-slate-200 rounded-2xl p-6">
+                          <Radio size={32} className="mx-auto text-slate-400 mb-2 animate-pulse" />
+                          <h3 className="text-sm font-bold text-slate-800 mb-1">No Broadcasts Yet</h3>
+                          <p className="text-xs text-slate-500">All new mentorship announcements will appear right here.</p>
+                        </div>
+                      ) : (
+                        communityUpdates.map((update: any) => (
+                          <div
+                            key={update.id}
+                            className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-emerald-300 transition-all"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                {update.pinned && (
+                                  <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                                    <Pin size={10} /> Pinned
+                                  </span>
+                                )}
+                                <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                                  {update.tag || 'Announcement'}
+                                </span>
+                              </div>
                               <span className="text-[11px] text-slate-400">
-                                {new Date(msg.createdAt).toLocaleDateString('en-US', {
+                                {new Date(update.createdAt).toLocaleDateString('en-US', {
                                   month: 'short',
-                                  day: 'numeric',
-                                  hour: '2-digit',
-                                  minute: '2-digit'
+                                  day: 'numeric'
                                 })}
                               </span>
                             </div>
 
-                            {msg.message && (
-                              <p className="text-xs text-slate-700 leading-relaxed whitespace-pre-wrap pl-9">
-                                {msg.message}
-                              </p>
-                            )}
+                            <h3 className="text-sm sm:text-base font-bold text-slate-900">
+                              {update.title}
+                            </h3>
 
-                            {/* Attached Screenshot Image */}
-                            {msg.imageUrl && (
-                              <div className="pl-9 mt-2.5">
-                                <div
-                                  onClick={() => setZoomedImage(msg.imageUrl)}
-                                  className="relative inline-block cursor-pointer group rounded-xl overflow-hidden border border-slate-200 shadow-2xs max-w-md"
-                                >
-                                  <img
-                                    src={msg.imageUrl}
-                                    alt="Sales proof screenshot"
-                                    className="max-h-60 w-auto object-cover group-hover:scale-102 transition-transform duration-200"
-                                  />
-                                  <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
-                                    <Eye size={16} className="mr-1" /> Click to Zoom
-                                  </div>
-                                </div>
-                              </div>
-                            )}
+                            <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
+                              {update.content}
+                            </div>
 
-                            {/* Attached Audio Voice Note */}
-                            {msg.audioUrl && (
-                              <div className="pl-9 mt-2.5 max-w-sm">
-                                <div className="bg-white border border-blue-200 rounded-xl p-2.5 shadow-2xs space-y-1">
-                                  <div className="flex items-center gap-1.5 text-blue-700 text-[10px] font-bold">
-                                    <Volume2 size={12} />
-                                    <span>Mentor Audio Voice Note</span>
-                                  </div>
-                                  <audio controls className="w-full h-8">
-                                    <source src={msg.audioUrl} />
-                                    Your browser does not support audio.
-                                  </audio>
-                                </div>
-                              </div>
-                            )}
+                            <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
+                              <span className="font-semibold text-slate-700">
+                                {update.author || 'Mentor Sardar Samiullah'}
+                              </span>
+                              <span className="text-emerald-600 font-bold flex items-center gap-1">
+                                <CheckCircle2 size={12} />
+                                <span>Official Broadcast</span>
+                              </span>
+                            </div>
                           </div>
                         ))
                       )}
                     </div>
-                  </div>
-                )}
+                  )}
 
-                {/* =================================================================== */}
-                {/* SUB-VIEW 2: MENTOR BROADCASTS & SOPS */}
-                {/* =================================================================== */}
-                {communitySubView === 'broadcasts' && (
-                  <div className="space-y-3">
-                    {communityUpdates.length === 0 ? (
-                      <div className="text-center py-12 bg-white border border-slate-200 rounded-2xl p-6">
-                        <Radio size={32} className="mx-auto text-slate-400 mb-2 animate-pulse" />
-                        <h3 className="text-sm font-bold text-slate-800 mb-1">No Broadcasts Yet</h3>
-                        <p className="text-xs text-slate-500">All new mentorship announcements will appear right here.</p>
-                      </div>
-                    ) : (
-                      communityUpdates.map((update: any) => (
-                        <div
-                          key={update.id}
-                          className="bg-white border border-slate-200/90 rounded-2xl p-5 shadow-xs space-y-2.5 hover:border-blue-300 transition-all"
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              {update.pinned && (
-                                <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-                                  <Pin size={10} /> Pinned
-                                </span>
-                              )}
-                              <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
-                                {update.tag || 'Announcement'}
-                              </span>
-                            </div>
-                            <span className="text-[11px] text-slate-400">
-                              {new Date(update.createdAt).toLocaleDateString('en-US', {
-                                month: 'short',
-                                day: 'numeric'
-                              })}
-                            </span>
-                          </div>
-
-                          <h3 className="text-sm sm:text-base font-bold text-slate-900">
-                            {update.title}
-                          </h3>
-
-                          <div className="text-xs text-slate-600 leading-relaxed whitespace-pre-wrap">
-                            {update.content}
-                          </div>
-
-                          <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-                            <span className="font-semibold text-slate-700">
-                              {update.author || 'Mentor Sardar Samiullah'}
-                            </span>
-                            <span className="text-emerald-600 font-bold flex items-center gap-1">
-                              <CheckCircle2 size={12} />
-                              <span>Official Broadcast</span>
-                            </span>
-                          </div>
-                        </div>
-                      ))
-                    )}
-                  </div>
-                )}
+                </div>
 
                 {/* Screenshot Lightbox Modal */}
                 {zoomedImage && (
                   <div
                     onClick={() => setZoomedImage(null)}
-                    className="fixed inset-0 z-50 bg-black/80 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out"
+                    className="fixed inset-0 z-50 bg-black/85 backdrop-blur-xs flex items-center justify-center p-4 cursor-zoom-out animate-in fade-in duration-200"
                   >
                     <div className="relative max-w-4xl max-h-[90vh]">
                       <img
@@ -2800,7 +2939,7 @@ export default function LmsClassroomPage() {
                       />
                       <button
                         onClick={() => setZoomedImage(null)}
-                        className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-2 rounded-full"
+                        className="absolute top-2 right-2 bg-black/70 hover:bg-black text-white p-2 rounded-full cursor-pointer"
                       >
                         <X size={18} />
                       </button>
@@ -2815,6 +2954,46 @@ export default function LmsClassroomPage() {
         </main>
 
       </div>
+
+      {/* Floating Real-Time Community Notification Toast */}
+      {newChatToast && activeTab !== 'community' && (
+        <div
+          onClick={() => {
+            setActiveTab('community');
+            markUpdatesAsRead();
+            markChatAsRead();
+            setNewChatToast(null);
+          }}
+          className="fixed bottom-20 sm:bottom-6 right-4 sm:right-6 z-50 bg-[#008069] text-white p-3 sm:p-4 rounded-2xl shadow-2xl flex items-center gap-3 cursor-pointer hover:bg-[#075e54] transition-all animate-in slide-in-from-bottom duration-300 max-w-sm border border-emerald-300/40"
+        >
+          <div className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center shrink-0">
+            <MessageCircle size={20} className="text-white" />
+          </div>
+          <div className="flex-1 min-w-0 text-left">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black text-emerald-200 uppercase tracking-wider flex items-center gap-1">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse" />
+                New Community Update
+              </span>
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setNewChatToast(null);
+                }}
+                className="text-white/70 hover:text-white p-0.5 ml-2 cursor-pointer"
+              >
+                <X size={13} />
+              </button>
+            </div>
+            <p className="text-xs font-extrabold truncate mt-0.5 text-white">
+              {newChatToast.author}
+            </p>
+            <p className="text-[11px] text-white/90 truncate">
+              {newChatToast.text}
+            </p>
+          </div>
+        </div>
+      )}
 
       {/* ========================================================================= */}
       {/* MOBILE STICKY BOTTOM NAVIGATION BAR */}
@@ -2861,26 +3040,32 @@ export default function LmsClassroomPage() {
           <span>Bonuses</span>
         </button>
 
-        <button
-          onClick={() => { 
-            setActiveTab('community'); 
-            setSidebarOpen(false); 
-            markUpdatesAsRead(); 
-          }}
-          className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative cursor-pointer ${
-            activeTab === 'community' ? 'text-blue-600 font-extrabold' : 'text-slate-500'
-          }`}
-        >
-          <div className="relative">
-            <Radio size={18} />
-            {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-500 text-white font-black text-[8px] w-3.5 h-3.5 rounded-full flex items-center justify-center animate-pulse">
-                {unreadCount}
-              </span>
-            )}
-          </div>
-          <span>Updates</span>
-        </button>
+        {(() => {
+          const totalCommunityUnread = unreadCount + unreadChatCount;
+          return (
+            <button
+              onClick={() => { 
+                setActiveTab('community'); 
+                setSidebarOpen(false); 
+                markUpdatesAsRead(); 
+                markChatAsRead();
+              }}
+              className={`flex flex-col items-center gap-1 p-1 active:scale-95 transition-transform relative cursor-pointer ${
+                activeTab === 'community' ? 'text-[#008069] font-extrabold' : 'text-slate-500'
+              }`}
+            >
+              <div className="relative">
+                <MessageCircle size={18} />
+                {totalCommunityUnread > 0 && (
+                  <span className="absolute -top-1.5 -right-2 bg-red-500 text-white font-black text-[9px] min-w-[17px] h-[17px] px-0.5 rounded-full flex items-center justify-center animate-bounce shadow-xs">
+                    {totalCommunityUnread > 99 ? '99+' : totalCommunityUnread}
+                  </span>
+                )}
+              </div>
+              <span>Community</span>
+            </button>
+          );
+        })()}
       </div>
 
       {/* ========================================================================= */}
