@@ -29,19 +29,21 @@ import {
   Volume2,
   Sparkles,
   ExternalLink,
-  ShieldAlert
+  Upload,
+  Image as ImageIcon,
+  UserCheck
 } from 'lucide-react';
 
 // Preset avatar choices
 const PRESET_AVATARS = [
   { id: 'default', label: 'Default Gray Avatar', type: 'svg' },
+  { id: 'mentor', label: 'Mentor Sami DP', url: '/mentor-profile.png' },
   { id: 'boy_car', label: 'Boy with Car', url: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=200&h=200&q=80' },
   { id: 'boy_blazer', label: 'Boy in Blazer (Formal)', url: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?auto=format&fit=crop&w=200&h=200&q=80' },
   { id: 'boy_wings', label: 'Boy Neon / Profile', url: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=200&h=200&q=80' },
   { id: 'boy_beach', label: 'Boy on Beach', url: 'https://images.unsplash.com/photo-1519085360753-af0119f7cbe7?auto=format&fit=crop&w=200&h=200&q=80' },
   { id: 'tool_logo', label: 'Business Logo', url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?auto=format&fit=crop&w=200&h=200&q=80' },
   { id: 'girl_portrait', label: 'Female Student', url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=200&h=200&q=80' },
-  { id: 'sami_gold', label: 'Sami Bahi 🤑', url: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80' },
 ];
 
 export interface ChatItem {
@@ -55,8 +57,6 @@ export interface ChatItem {
   isVoiceNote?: boolean;
   voiceDuration?: string;
   timeDisplay: string;
-  useLiveTime?: boolean;
-  liveMinutesAgo?: number; // relative minutes from current PK time
   unreadCount: number;
   isArchived?: boolean;
   conversation?: Array<{
@@ -73,7 +73,7 @@ const DEFAULT_CHATS: ChatItem[] = [
     id: 'sami_pin',
     name: 'Sami Bahi 🤑',
     isPinned: true,
-    avatarUrl: 'https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=200&h=200&q=80',
+    avatarUrl: '/mentor-profile.png',
     lastMessage: 'Audio',
     isVoiceNote: true,
     voiceDuration: 'Audio',
@@ -226,11 +226,18 @@ const DEFAULT_CHATS: ChatItem[] = [
 export default function WhatsAppSimulatorPage() {
   // Persistence
   const [chats, setChats] = useState<ChatItem[]>(DEFAULT_CHATS);
+  const [myProfilePic, setMyProfilePic] = useState<string>('/mentor-profile.png');
   const [isClient, setIsClient] = useState(false);
+
+  // Hidden file inputs
+  const myProfileInputRef = useRef<HTMLInputElement>(null);
+  const contactAvatarInputRef = useRef<HTMLInputElement>(null);
+  const quickRowAvatarInputRef = useRef<HTMLInputElement>(null);
+  const [activeUploadChatId, setActiveUploadChatId] = useState<string | null>(null);
 
   // View state
   const [activeTab, setActiveTab] = useState<'All' | 'Unread' | 'Favorites' | 'Groups'>('Unread');
-  const [viewMode, setViewMode] = useState<'mobile' | 'web'>('mobile');
+  const [viewMode, setViewMode] = useState<'mobile' | 'web'>('web'); // default to web as per user screenshot
   const [showPhoneFrame, setShowPhoneFrame] = useState(true);
   const [showStatusBar, setShowStatusBar] = useState(true);
   const [disguiseMode, setDisguiseMode] = useState(false); // hides all floating admin controls for screen record
@@ -255,12 +262,16 @@ export default function WhatsAppSimulatorPage() {
   useEffect(() => {
     setIsClient(true);
     try {
-      const saved = localStorage.getItem('sami_whatsapp_simulator_chats_v1');
+      const saved = localStorage.getItem('sami_whatsapp_simulator_chats_v2');
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
           setChats(parsed);
         }
+      }
+      const savedMyPic = localStorage.getItem('sami_whatsapp_my_profile_v2');
+      if (savedMyPic) {
+        setMyProfilePic(savedMyPic);
       }
     } catch {
       // ignore
@@ -289,13 +300,75 @@ export default function WhatsAppSimulatorPage() {
     return () => clearInterval(timer);
   }, []);
 
-  // Save to localStorage
+  // Save chats to localStorage
   const saveChats = (newChats: ChatItem[]) => {
     setChats(newChats);
     try {
-      localStorage.setItem('sami_whatsapp_simulator_chats_v1', JSON.stringify(newChats));
+      localStorage.setItem('sami_whatsapp_simulator_chats_v2', JSON.stringify(newChats));
     } catch {
       // ignore
+    }
+  };
+
+  // Save My Profile Picture
+  const handleSaveMyProfilePic = (url: string) => {
+    setMyProfilePic(url);
+    try {
+      localStorage.setItem('sami_whatsapp_my_profile_v2', url);
+    } catch {
+      // ignore
+    }
+  };
+
+  // Helper to read uploaded image as DataURL
+  const readFileAsDataUrl = (file: File, callback: (dataUrl: string) => void) => {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (e.target?.result) {
+        callback(e.target.result as string);
+      }
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Upload handler for My Profile
+  const handleMyProfileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      readFileAsDataUrl(file, (dataUrl) => {
+        handleSaveMyProfilePic(dataUrl);
+      });
+    }
+  };
+
+  // Upload handler for current Editing Chat
+  const handleEditingChatAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && editingChat) {
+      readFileAsDataUrl(file, (dataUrl) => {
+        setEditingChat({
+          ...editingChat,
+          avatarUrl: dataUrl,
+          isDefaultAvatar: false
+        });
+      });
+    }
+  };
+
+  // Quick upload handler for a row in drawer
+  const handleQuickRowAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && activeUploadChatId) {
+      readFileAsDataUrl(file, (dataUrl) => {
+        const updated = chats.map((c) =>
+          c.id === activeUploadChatId ? { ...c, avatarUrl: dataUrl, isDefaultAvatar: false } : c
+        );
+        saveChats(updated);
+        if (editingChat?.id === activeUploadChatId) {
+          setEditingChat({ ...editingChat, avatarUrl: dataUrl, isDefaultAvatar: false });
+        }
+      });
     }
   };
 
@@ -333,22 +406,27 @@ export default function WhatsAppSimulatorPage() {
   const simulateIncomingMessage = () => {
     const sampleReviews = [
       'Satisfied bahi! Store ka pehla 50k sales milestone cross hogya mashallah ❤️',
-      'Satisfied sir! Facebook ads pe 4.2x ROAS mil raha hai guidance k baad',
+      'Satisfied sir! Facebook ads pe 4.2x ROAS mil raha hai guidance k baad 🔥',
       'Totally Satisfied! Courier portal setup hogya pehle 15 parcels deliver hogye',
       'Satisfied brother, aapki private mentorship best investment thi meri zindagi ki',
-      '100% Satisfied! Aaj store live hua aur 3 orders pehle ghante me aa gaye!'
+      '100% Satisfied! Aaj store live hua aur 3 orders pehle ghante me aa gaye!',
+      'Satisfied sir, pehle week he 80,000 ka revenue touch ho gaya hai!',
+      'Satisfied bahi, guidance bohot zabardast hai, scaling start kardi hai'
     ];
+    const sampleTimestamps = ['Just now', '2m ago', '5m ago', '12m ago', '4:15 PM', '3:48 PM', 'Yesterday'];
     const randomReview = sampleReviews[Math.floor(Math.random() * sampleReviews.length)];
+    const randomTime = sampleTimestamps[Math.floor(Math.random() * sampleTimestamps.length)];
     const randomNum = `+92 3${Math.floor(10 + Math.random() * 38)} ${Math.floor(1000000 + Math.random() * 8999999)}`;
+    const randomPreset = PRESET_AVATARS[1 + Math.floor(Math.random() * (PRESET_AVATARS.length - 1))];
 
     const newChat: ChatItem = {
       id: 'c_' + Date.now(),
       name: randomNum,
-      isDefaultAvatar: Math.random() > 0.4,
-      avatarUrl: Math.random() > 0.5 ? PRESET_AVATARS[1 + Math.floor(Math.random() * 4)].url : undefined,
+      isDefaultAvatar: Math.random() > 0.6,
+      avatarUrl: Math.random() > 0.4 ? randomPreset.url : undefined,
       lastMessage: randomReview,
-      timeDisplay: 'Just now',
-      unreadCount: 1,
+      timeDisplay: randomTime,
+      unreadCount: Math.floor(1 + Math.random() * 3),
       conversation: [
         { id: 'm_' + Date.now(), sender: 'user', text: randomReview, time: pktTime }
       ]
@@ -362,6 +440,7 @@ export default function WhatsAppSimulatorPage() {
   const handleResetDefaults = () => {
     if (confirm('Kya aap chats ko reset karna chahte hain default Pakistani student reviews data par?')) {
       saveChats(DEFAULT_CHATS);
+      handleSaveMyProfilePic('/mentor-profile.png');
     }
   };
 
@@ -436,6 +515,33 @@ export default function WhatsAppSimulatorPage() {
   return (
     <div className="min-h-screen bg-[#0c1317] text-[#e9edef] font-sans antialiased flex flex-col justify-center items-center select-none overflow-x-hidden">
       
+      {/* Hidden File Input for My Profile Pic */}
+      <input
+        type="file"
+        ref={myProfileInputRef}
+        onChange={handleMyProfileUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Editing Chat Avatar */}
+      <input
+        type="file"
+        ref={contactAvatarInputRef}
+        onChange={handleEditingChatAvatarUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
+      {/* Hidden File Input for Quick Row Avatar in Drawer */}
+      <input
+        type="file"
+        ref={quickRowAvatarInputRef}
+        onChange={handleQuickRowAvatarUpload}
+        accept="image/*"
+        className="hidden"
+      />
+
       {/* =========================================================================
           FLOATING ADMIN CONTROL BAR (Hideable for 100% pure screen recording)
       ========================================================================= */}
@@ -455,6 +561,15 @@ export default function WhatsAppSimulatorPage() {
           {/* View Mode Toggle */}
           <div className="flex items-center bg-[#111b21] p-0.5 rounded-xl border border-white/5 text-xs">
             <button
+              onClick={() => { setViewMode('web'); }}
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
+                viewMode === 'web' ? 'bg-[#00a884] text-white shadow-sm' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Monitor size={13} />
+              <span>WhatsApp Web</span>
+            </button>
+            <button
               onClick={() => { setViewMode('mobile'); setShowPhoneFrame(true); }}
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
                 viewMode === 'mobile' && showPhoneFrame ? 'bg-[#00a884] text-white shadow-sm' : 'text-slate-400 hover:text-white'
@@ -471,18 +586,19 @@ export default function WhatsAppSimulatorPage() {
             >
               <span>Full Screen</span>
             </button>
-            <button
-              onClick={() => setViewMode('web')}
-              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg font-bold transition-all ${
-                viewMode === 'web' ? 'bg-[#00a884] text-white shadow-sm' : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              <Monitor size={13} />
-              <span>WhatsApp Web</span>
-            </button>
           </div>
 
           <div className="h-4 w-px bg-white/10" />
+
+          {/* Upload My DP Quick Trigger */}
+          <button
+            onClick={() => myProfileInputRef.current?.click()}
+            className="flex items-center gap-1.5 text-xs font-bold bg-[#2a3942] text-slate-300 hover:text-white hover:bg-[#32434e] px-3 py-1.5 rounded-xl transition-all"
+            title="Apni Profile Picture (DP) device se upload karein"
+          >
+            <Camera size={13} className="text-[#00A0DF]" />
+            <span>Upload My DP</span>
+          </button>
 
           {/* Quick Actions */}
           <button
@@ -496,10 +612,10 @@ export default function WhatsAppSimulatorPage() {
 
           <button
             onClick={() => setIsControlOpen(true)}
-            className="flex items-center gap-1.5 text-xs font-bold bg-[#2a3942] text-white hover:bg-[#32434e] px-3 py-1.5 rounded-xl transition-colors"
+            className="flex items-center gap-1.5 text-xs font-bold bg-[#00A0DF] text-white hover:bg-[#008ec7] px-3 py-1.5 rounded-xl transition-colors shadow-md shadow-[#00A0DF]/20"
           >
             <Edit3 size={13} />
-            <span>Edit Chats</span>
+            <span>Edit Chats & DPs</span>
           </button>
 
           {/* Hide button for video record */}
@@ -518,7 +634,7 @@ export default function WhatsAppSimulatorPage() {
       {disguiseMode && (
         <button
           onClick={() => setDisguiseMode(false)}
-          className="fixed top-2 right-2 z-50 opacity-10 hover:opacity-100 bg-black/80 text-white text-[10px] px-2 py-1 rounded transition-opacity"
+          className="fixed top-2 right-2 z-50 opacity-15 hover:opacity-100 bg-black/80 text-white text-[10px] px-2.5 py-1 rounded-md transition-opacity border border-white/10"
           title="Controls show karein (Ya keyboard se Esc press karein)"
         >
           Exit Record Mode (Esc)
@@ -526,7 +642,260 @@ export default function WhatsAppSimulatorPage() {
       )}
 
       {/* =========================================================================
-          VIEW MODE 1: MOBILE WHATSAPP BUSINESS APP CLONE (Exact User Screenshots)
+          VIEW MODE 1: WHATSAPP WEB DESKTOP CLONE (Updated with Sami Mentor DP & Direct DP Upload)
+      ========================================================================= */}
+      {viewMode === 'web' && (
+        <div className="w-full h-screen flex flex-col bg-[#111b21] p-0 sm:p-5">
+          <div className="flex-1 w-full max-w-7xl mx-auto bg-[#111b21] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl flex border border-[#222e35]">
+            
+            {/* Left Column: Chat List */}
+            <div className="w-full sm:w-[420px] md:w-[460px] border-r border-[#222e35] flex flex-col bg-[#111b21] shrink-0">
+              
+              {/* Web Header (My DP & Controls) */}
+              <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between">
+                
+                {/* User's Own DP (Clickable to change image from device) */}
+                <div
+                  onClick={() => myProfileInputRef.current?.click()}
+                  className="w-10 h-10 rounded-full bg-[#6a7b83] overflow-hidden cursor-pointer relative group border border-white/10 shadow-sm"
+                  title="Click karke apni DP change / upload karein"
+                >
+                  <img
+                    src={myProfilePic}
+                    alt="Sami Mentor DP"
+                    className="w-full h-full object-cover group-hover:opacity-75 transition-opacity"
+                  />
+                  <div className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                    <Camera size={14} className="text-white" />
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-5 text-[#aebac1]">
+                  <svg className="w-5 h-5 cursor-pointer hover:text-white" fill="currentColor" viewBox="0 0 24 24">
+                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
+                  </svg>
+                  <button
+                    onClick={() => setIsControlOpen(true)}
+                    className="hover:text-white transition-colors"
+                    title="Open Chat Editor"
+                  >
+                    <MoreVertical size={20} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Web Search & Filter */}
+              <div className="p-3 bg-[#111b21] border-b border-[#222e35] space-y-2">
+                <div className="bg-[#202c33] rounded-lg px-3 py-1.5 flex items-center gap-3">
+                  <Search size={16} className="text-[#8696a0]" />
+                  <input
+                    type="text"
+                    placeholder="Search or start new chat"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="bg-transparent border-none outline-none text-xs text-[#d1d7db] placeholder-[#8696a0] w-full"
+                  />
+                  {searchQuery && (
+                    <button onClick={() => setSearchQuery('')} className="text-[#8696a0]">
+                      <X size={14} />
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar">
+                  {(['All', 'Unread', 'Favorites', 'Groups'] as const).map((tab) => (
+                    <button
+                      key={tab}
+                      onClick={() => setActiveTab(tab)}
+                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors shrink-0 ${
+                        activeTab === tab
+                          ? 'bg-[#00a884] text-[#111b21]'
+                          : 'bg-[#202c33] text-[#8696a0] hover:text-white'
+                      }`}
+                    >
+                      {tab} {tab === 'Unread' && `(${totalUnreadCount})`}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Web Chat Items */}
+              <div className="flex-1 overflow-y-auto divide-y divide-[#222e35]">
+                {filteredChats.map((chat) => (
+                  <div
+                    key={chat.id}
+                    onClick={() => setActiveChatId(chat.id)}
+                    className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors relative group ${
+                      activeChatId === chat.id ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'
+                    }`}
+                  >
+                    {/* DP with Quick Upload on Hover (When NOT in disguise mode) */}
+                    <div
+                      onClick={(e) => {
+                        if (!disguiseMode) {
+                          e.stopPropagation();
+                          setActiveUploadChatId(chat.id);
+                          quickRowAvatarInputRef.current?.click();
+                        }
+                      }}
+                      className="w-12 h-12 rounded-full overflow-hidden bg-[#6a7b83] shrink-0 flex items-center justify-center relative cursor-pointer"
+                      title={!disguiseMode ? "Click to change this contact's DP" : undefined}
+                    >
+                      {chat.avatarUrl && !chat.isDefaultAvatar ? (
+                        <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
+                      ) : (
+                        <svg className="w-7 h-7 text-[#cfd9de]" fill="currentColor" viewBox="0 0 24 24">
+                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                        </svg>
+                      )}
+                      {!disguiseMode && (
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Camera size={15} className="text-white" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-semibold text-[#e9edef] truncate">{chat.name}</span>
+                        <span className={`text-[11px] ${chat.unreadCount > 0 ? 'text-[#00a884]' : 'text-[#8696a0]'}`}>
+                          {chat.timeDisplay}
+                        </span>
+                      </div>
+                      <div className="flex items-center justify-between mt-1">
+                        <span className="text-xs text-[#8696a0] truncate pr-2">{chat.lastMessage}</span>
+                        {chat.unreadCount > 0 && (
+                          <span className="w-4.5 h-4.5 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-black flex items-center justify-center">
+                            {chat.unreadCount}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+
+                {filteredChats.length === 0 && (
+                  <div className="p-8 text-center text-xs text-[#8696a0]">
+                    Koi chat nahi mili is filter me.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Right Column: Chat Screen or WhatsApp Web Placeholder */}
+            <div className="hidden sm:flex flex-1 flex-col bg-[#222e35] relative">
+              {activeChat ? (
+                <div className="flex-1 flex flex-col bg-[#0b141a]">
+                  {/* Web Chat Header */}
+                  <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#222e35]">
+                    <div className="flex items-center gap-3">
+                      <div
+                        onClick={() => {
+                          if (!disguiseMode) {
+                            setActiveUploadChatId(activeChat.id);
+                            quickRowAvatarInputRef.current?.click();
+                          }
+                        }}
+                        className="w-10 h-10 rounded-full overflow-hidden bg-[#6a7b83] cursor-pointer relative group"
+                        title="Click to change DP"
+                      >
+                        {activeChat.avatarUrl && !activeChat.isDefaultAvatar ? (
+                          <img src={activeChat.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-white">👤</div>
+                        )}
+                        {!disguiseMode && (
+                          <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                            <Camera size={14} className="text-white" />
+                          </div>
+                        )}
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-bold text-[#e9edef]">{activeChat.name}</h3>
+                        <p className="text-[11px] text-[#00a884]">online</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4 text-[#aebac1]">
+                      <Search size={18} />
+                      <MoreVertical size={18} />
+                    </div>
+                  </div>
+
+                  {/* Web Chat Body */}
+                  <div
+                    className="flex-1 p-6 overflow-y-auto space-y-3 flex flex-col"
+                    style={{
+                      backgroundImage: `radial-gradient(#1f2c34 1px, transparent 1px)`,
+                      backgroundSize: '16px 16px',
+                      backgroundColor: '#0b141a',
+                    }}
+                  >
+                    {(activeChat.conversation || [
+                      { id: '1', sender: 'user', text: activeChat.lastMessage, time: activeChat.timeDisplay }
+                    ]).map((msg) => (
+                      <div
+                        key={msg.id}
+                        className={`max-w-[65%] rounded-lg px-3 py-2 text-xs shadow-md ${
+                          msg.sender === 'me'
+                            ? 'self-end bg-[#005c4b] text-[#e9edef]'
+                            : 'self-start bg-[#202c33] text-[#e9edef]'
+                        }`}
+                      >
+                        <p className="pr-10 text-[13px]">{msg.text}</p>
+                        <div className="flex items-center justify-end gap-1 text-[10px] text-[#8696a0] -mt-1 float-right ml-2">
+                          <span>{msg.time}</span>
+                          {msg.sender === 'me' && <CheckCheck size={13} className="text-[#53bdeb]" />}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  {/* Web Chat Reply Bar */}
+                  <div className="bg-[#202c33] p-3 flex items-center gap-3">
+                    <Smile size={22} className="text-[#8696a0] cursor-pointer" />
+                    <Paperclip size={20} className="text-[#8696a0] cursor-pointer" />
+                    <input
+                      type="text"
+                      placeholder="Type a message"
+                      value={replyInput}
+                      onChange={(e) => setReplyInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
+                      className="flex-1 bg-[#2a3942] rounded-lg px-4 py-2.5 text-xs text-[#d1d7db] outline-none"
+                    />
+                    <button
+                      onClick={handleSendReply}
+                      className="text-[#00a884] hover:text-[#25d366] transition-colors p-1"
+                    >
+                      <Send size={20} />
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                /* Authentic WhatsApp Web Lockscreen Graphic */
+                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#8696a0] border-b-[6px] border-[#00a884]">
+                  <div className="w-24 h-24 rounded-full bg-[#111b21] flex items-center justify-center mb-6 border border-[#2a3942]">
+                    <svg className="w-12 h-12 text-[#00a884]" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 6.46 17.5 2 12.04 2M12.05 3.67C16.58 3.67 20.28 7.37 20.28 11.92C20.28 16.46 16.58 20.16 12.05 20.16C10.59 20.16 9.17 19.78 7.93 19.04L7.54 18.81L4.41 19.63L5.25 16.58L5 16.18C4.19 14.89 3.77 13.43 3.77 11.91C3.77 7.37 7.48 3.67 12.05 3.67Z" />
+                    </svg>
+                  </div>
+                  <h2 className="text-2xl font-light text-[#e9edef] mb-2">WhatsApp Web</h2>
+                  <p className="text-xs max-w-sm leading-relaxed mb-6">
+                    Send and receive messages without keeping your phone online.
+                    <br />
+                    Use WhatsApp on up to 4 linked devices and 1 phone.
+                  </p>
+                  <div className="flex items-center gap-1.5 text-xs text-[#8696a0]">
+                    <span>🔒 End-to-end encrypted</span>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* =========================================================================
+          VIEW MODE 2: MOBILE WHATSAPP BUSINESS APP CLONE (Exact User Screenshots)
       ========================================================================= */}
       {viewMode === 'mobile' && (
         <div
@@ -579,8 +948,17 @@ export default function WhatsAppSimulatorPage() {
                       <ArrowLeft size={20} />
                     </button>
                     {/* Contact DP */}
-                    <div className="w-9 h-9 rounded-full overflow-hidden bg-[#e9edef] flex items-center justify-center shrink-0">
-                      {activeChat.avatarUrl ? (
+                    <div
+                      onClick={() => {
+                        if (!disguiseMode) {
+                          setActiveUploadChatId(activeChat.id);
+                          quickRowAvatarInputRef.current?.click();
+                        }
+                      }}
+                      className="w-9 h-9 rounded-full overflow-hidden bg-[#e9edef] flex items-center justify-center shrink-0 cursor-pointer"
+                      title="Click to change DP"
+                    >
+                      {activeChat.avatarUrl && !activeChat.isDefaultAvatar ? (
                         <img src={activeChat.avatarUrl} alt="" className="w-full h-full object-cover" />
                       ) : (
                         <svg className="w-6 h-6 text-[#8696a0]" fill="currentColor" viewBox="0 0 24 24">
@@ -677,7 +1055,10 @@ export default function WhatsAppSimulatorPage() {
                     <button className="hover:opacity-75 transition-opacity">
                       <Camera size={21} strokeWidth={2.1} />
                     </button>
-                    <button className="hover:opacity-75 transition-opacity">
+                    <button
+                      onClick={() => setIsControlOpen(true)}
+                      className="hover:opacity-75 transition-opacity"
+                    >
                       <MoreVertical size={20} strokeWidth={2.2} />
                     </button>
                   </div>
@@ -769,16 +1150,26 @@ export default function WhatsAppSimulatorPage() {
                     <div
                       key={chat.id}
                       onClick={() => setActiveChatId(chat.id)}
-                      className="px-4 py-2.5 flex items-center gap-3.5 hover:bg-[#f5f6f6] active:bg-[#eaebec] cursor-pointer transition-colors relative"
+                      className="px-4 py-2.5 flex items-center gap-3.5 hover:bg-[#f5f6f6] active:bg-[#eaebec] cursor-pointer transition-colors relative group"
                     >
-                      {/* Avatar */}
-                      <div className="relative shrink-0">
+                      {/* Avatar with click-to-upload */}
+                      <div
+                        onClick={(e) => {
+                          if (!disguiseMode) {
+                            e.stopPropagation();
+                            setActiveUploadChatId(chat.id);
+                            quickRowAvatarInputRef.current?.click();
+                          }
+                        }}
+                        className="relative shrink-0"
+                        title={!disguiseMode ? "Click karke picture upload karein" : undefined}
+                      >
                         <div
-                          className={`w-[48px] h-[48px] rounded-full overflow-hidden flex items-center justify-center ${
+                          className={`w-[48px] h-[48px] rounded-full overflow-hidden flex items-center justify-center relative ${
                             chat.avatarRing
                               ? 'ring-2 ring-[#00a884] ring-offset-2'
                               : ''
-                          } ${chat.isDefaultAvatar ? 'bg-[#e9edef]' : 'bg-[#e9edef]'}`}
+                          } bg-[#e9edef]`}
                         >
                           {chat.avatarUrl && !chat.isDefaultAvatar ? (
                             <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
@@ -786,6 +1177,11 @@ export default function WhatsAppSimulatorPage() {
                             <svg className="w-7 h-7 text-[#8696a0]" fill="currentColor" viewBox="0 0 24 24">
                               <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
                             </svg>
+                          )}
+                          {!disguiseMode && (
+                            <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity rounded-full">
+                              <Camera size={15} className="text-white" />
+                            </div>
                           )}
                         </div>
                       </div>
@@ -945,203 +1341,7 @@ export default function WhatsAppSimulatorPage() {
       )}
 
       {/* =========================================================================
-          VIEW MODE 2: WHATSAPP WEB DESKTOP CLONE
-      ========================================================================= */}
-      {viewMode === 'web' && (
-        <div className="w-full h-screen flex flex-col bg-[#111b21] p-0 sm:p-5">
-          <div className="flex-1 w-full max-w-7xl mx-auto bg-[#111b21] rounded-none sm:rounded-2xl overflow-hidden shadow-2xl flex border border-[#222e35]">
-            
-            {/* Left Column: Chat List */}
-            <div className="w-full sm:w-[420px] md:w-[460px] border-r border-[#222e35] flex flex-col bg-[#111b21] shrink-0">
-              
-              {/* Web Header */}
-              <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between">
-                <div className="w-10 h-10 rounded-full bg-[#6a7b83] overflow-hidden">
-                  <img
-                    src="https://images.unsplash.com/photo-1535713875002-d1d0cf377fde?auto=format&fit=crop&w=100&h=100&q=80"
-                    alt=""
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-                <div className="flex items-center gap-5 text-[#aebac1]">
-                  <svg className="w-5 h-5 cursor-pointer hover:text-white" fill="currentColor" viewBox="0 0 24 24">
-                    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm-1-13h2v6h-2zm0 8h2v2h-2z" />
-                  </svg>
-                  <MoreVertical size={20} className="cursor-pointer hover:text-white" />
-                </div>
-              </div>
-
-              {/* Web Search & Filter */}
-              <div className="p-3 bg-[#111b21] border-b border-[#222e35] space-y-2">
-                <div className="bg-[#202c33] rounded-lg px-3 py-1.5 flex items-center gap-3">
-                  <Search size={16} className="text-[#8696a0]" />
-                  <input
-                    type="text"
-                    placeholder="Search or start new chat"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    className="bg-transparent border-none outline-none text-xs text-[#d1d7db] placeholder-[#8696a0] w-full"
-                  />
-                </div>
-
-                <div className="flex items-center gap-1.5 overflow-x-auto">
-                  {(['All', 'Unread', 'Favorites', 'Groups'] as const).map((tab) => (
-                    <button
-                      key={tab}
-                      onClick={() => setActiveTab(tab)}
-                      className={`px-3 py-1 rounded-full text-xs font-semibold transition-colors ${
-                        activeTab === tab
-                          ? 'bg-[#00a884] text-[#111b21]'
-                          : 'bg-[#202c33] text-[#8696a0] hover:text-white'
-                      }`}
-                    >
-                      {tab} {tab === 'Unread' && `(${totalUnreadCount})`}
-                    </button>
-                  ))}
-                </div>
-              </div>
-
-              {/* Web Chat Items */}
-              <div className="flex-1 overflow-y-auto divide-y divide-[#222e35]">
-                {filteredChats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setActiveChatId(chat.id)}
-                    className={`px-4 py-3 flex items-center gap-3 cursor-pointer transition-colors ${
-                      activeChatId === chat.id ? 'bg-[#2a3942]' : 'hover:bg-[#202c33]'
-                    }`}
-                  >
-                    <div className="w-12 h-12 rounded-full overflow-hidden bg-[#6a7b83] shrink-0 flex items-center justify-center">
-                      {chat.avatarUrl && !chat.isDefaultAvatar ? (
-                        <img src={chat.avatarUrl} alt="" className="w-full h-full object-cover" />
-                      ) : (
-                        <svg className="w-7 h-7 text-[#cfd9de]" fill="currentColor" viewBox="0 0 24 24">
-                          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                        </svg>
-                      )}
-                    </div>
-
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm font-semibold text-[#e9edef] truncate">{chat.name}</span>
-                        <span className={`text-[11px] ${chat.unreadCount > 0 ? 'text-[#00a884]' : 'text-[#8696a0]'}`}>
-                          {chat.timeDisplay}
-                        </span>
-                      </div>
-                      <div className="flex items-center justify-between mt-1">
-                        <span className="text-xs text-[#8696a0] truncate pr-2">{chat.lastMessage}</span>
-                        {chat.unreadCount > 0 && (
-                          <span className="w-4.5 h-4.5 rounded-full bg-[#00a884] text-[#111b21] text-[10px] font-black flex items-center justify-center">
-                            {chat.unreadCount}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            {/* Right Column: Chat Screen or WhatsApp Web Placeholder */}
-            <div className="hidden sm:flex flex-1 flex-col bg-[#222e35] relative">
-              {activeChat ? (
-                <div className="flex-1 flex flex-col bg-[#0b141a]">
-                  {/* Web Chat Header */}
-                  <div className="bg-[#202c33] px-4 py-2.5 flex items-center justify-between border-b border-[#222e35]">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full overflow-hidden bg-[#6a7b83]">
-                        {activeChat.avatarUrl ? (
-                          <img src={activeChat.avatarUrl} alt="" className="w-full h-full object-cover" />
-                        ) : (
-                          <div className="w-full h-full flex items-center justify-center text-white">👤</div>
-                        )}
-                      </div>
-                      <div>
-                        <h3 className="text-sm font-bold text-[#e9edef]">{activeChat.name}</h3>
-                        <p className="text-[11px] text-[#00a884]">online</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-4 text-[#aebac1]">
-                      <Search size={18} />
-                      <MoreVertical size={18} />
-                    </div>
-                  </div>
-
-                  {/* Web Chat Body */}
-                  <div
-                    className="flex-1 p-6 overflow-y-auto space-y-3 flex flex-col"
-                    style={{
-                      backgroundImage: `radial-gradient(#1f2c34 1px, transparent 1px)`,
-                      backgroundSize: '16px 16px',
-                      backgroundColor: '#0b141a',
-                    }}
-                  >
-                    {(activeChat.conversation || [
-                      { id: '1', sender: 'user', text: activeChat.lastMessage, time: activeChat.timeDisplay }
-                    ]).map((msg) => (
-                      <div
-                        key={msg.id}
-                        className={`max-w-[65%] rounded-lg px-3 py-2 text-xs shadow-md ${
-                          msg.sender === 'me'
-                            ? 'self-end bg-[#005c4b] text-[#e9edef]'
-                            : 'self-start bg-[#202c33] text-[#e9edef]'
-                        }`}
-                      >
-                        <p className="pr-10 text-[13px]">{msg.text}</p>
-                        <div className="flex items-center justify-end gap-1 text-[10px] text-[#8696a0] -mt-1 float-right ml-2">
-                          <span>{msg.time}</span>
-                          {msg.sender === 'me' && <CheckCheck size={13} className="text-[#53bdeb]" />}
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Web Chat Reply Bar */}
-                  <div className="bg-[#202c33] p-3 flex items-center gap-3">
-                    <Smile size={22} className="text-[#8696a0] cursor-pointer" />
-                    <Paperclip size={20} className="text-[#8696a0] cursor-pointer" />
-                    <input
-                      type="text"
-                      placeholder="Type a message"
-                      value={replyInput}
-                      onChange={(e) => setReplyInput(e.target.value)}
-                      onKeyDown={(e) => e.key === 'Enter' && handleSendReply()}
-                      className="flex-1 bg-[#2a3942] rounded-lg px-4 py-2.5 text-xs text-[#d1d7db] outline-none"
-                    />
-                    <button
-                      onClick={handleSendReply}
-                      className="text-[#00a884] hover:text-[#25d366] transition-colors p-1"
-                    >
-                      <Send size={20} />
-                    </button>
-                  </div>
-                </div>
-              ) : (
-                /* Authentic WhatsApp Web Lockscreen Graphic */
-                <div className="flex-1 flex flex-col items-center justify-center p-8 text-center text-[#8696a0] border-b-[6px] border-[#00a884]">
-                  <div className="w-24 h-24 rounded-full bg-[#111b21] flex items-center justify-center mb-6 border border-[#2a3942]">
-                    <svg className="w-12 h-12 text-[#00a884]" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.45 16.86L2.05 22L7.3 20.62C8.75 21.41 10.38 21.83 12.04 21.83C17.5 21.83 21.95 17.38 21.95 11.92C21.95 6.46 17.5 2 12.04 2M12.05 3.67C16.58 3.67 20.28 7.37 20.28 11.92C20.28 16.46 16.58 20.16 12.05 20.16C10.59 20.16 9.17 19.78 7.93 19.04L7.54 18.81L4.41 19.63L5.25 16.58L5 16.18C4.19 14.89 3.77 13.43 3.77 11.91C3.77 7.37 7.48 3.67 12.05 3.67Z" />
-                    </svg>
-                  </div>
-                  <h2 className="text-2xl font-light text-[#e9edef] mb-2">WhatsApp Web</h2>
-                  <p className="text-xs max-w-sm leading-relaxed mb-6">
-                    Send and receive messages without keeping your phone online.
-                    <br />
-                    Use WhatsApp on up to 4 linked devices and 1 phone.
-                  </p>
-                  <div className="flex items-center gap-1.5 text-xs text-[#8696a0]">
-                    <span>🔒 End-to-end encrypted</span>
-                  </div>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* =========================================================================
-          ADMIN EDIT DRAWER (Control Panel for Customizing Chats)
+          ADMIN EDIT DRAWER (Control Panel for Customizing Chats & Direct DP Uploads)
       ========================================================================= */}
       {isControlOpen && (
         <div className="fixed inset-0 z-50 bg-black/70 backdrop-blur-xs flex justify-end">
@@ -1151,10 +1351,10 @@ export default function WhatsAppSimulatorPage() {
                 <div>
                   <h3 className="font-extrabold text-base flex items-center gap-2">
                     <Edit3 size={16} className="text-[#00A0DF]" />
-                    <span>WhatsApp Chats Editor</span>
+                    <span>WhatsApp Simulator Control</span>
                   </h3>
                   <p className="text-xs text-slate-400 mt-0.5">
-                    Har chat ka Name, Number, Message, Time aur DP customize karein
+                    Har chat ka Name, Number, Message, Time aur DP upload karein
                   </p>
                 </div>
                 <button
@@ -1165,8 +1365,42 @@ export default function WhatsAppSimulatorPage() {
                 </button>
               </div>
 
-              {/* Quick Settings */}
-              <div className="space-y-4 mb-6 bg-slate-900/60 p-3.5 rounded-xl border border-white/5">
+              {/* 1. SAMI APNI DP (MY PROFILE PICTURE MANAGEMENT) */}
+              <div className="bg-gradient-to-br from-slate-900 to-[#1e293b] p-4 rounded-2xl border border-white/10 mb-5 space-y-3 shadow-lg">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-black uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                    <UserCheck size={14} />
+                    <span>Meri Apni DP (WhatsApp Header)</span>
+                  </span>
+                  <button
+                    onClick={() => handleSaveMyProfilePic('/mentor-profile.png')}
+                    className="text-[10px] text-slate-400 hover:text-white underline"
+                  >
+                    Reset Mentor Photo
+                  </button>
+                </div>
+
+                <div className="flex items-center gap-3.5">
+                  <div className="w-14 h-14 rounded-full overflow-hidden bg-slate-800 border-2 border-emerald-500 shrink-0 shadow-md">
+                    <img src={myProfilePic} alt="Sami Profile" className="w-full h-full object-cover" />
+                  </div>
+                  <div className="flex-1 space-y-1.5">
+                    <button
+                      onClick={() => myProfileInputRef.current?.click()}
+                      className="w-full flex items-center justify-center gap-1.5 bg-emerald-500 hover:bg-emerald-600 text-slate-950 font-black text-xs py-2 px-3 rounded-xl transition-all shadow-md active:scale-95"
+                    >
+                      <Upload size={13} />
+                      <span>Upload My DP From Device</span>
+                    </button>
+                    <p className="text-[10px] text-slate-400">
+                      Laptop / Mobile se jo bhi picture select karenge wo top left par lag jayegi.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* 2. QUICK DISPLAY SETTINGS */}
+              <div className="space-y-3 mb-5 bg-slate-900/60 p-3.5 rounded-xl border border-white/5">
                 <span className="text-xs font-bold text-slate-300 block">Display Settings:</span>
                 <div className="grid grid-cols-2 gap-2 text-xs">
                   <label className="flex items-center gap-2 cursor-pointer">
@@ -1190,7 +1424,7 @@ export default function WhatsAppSimulatorPage() {
                 </div>
               </div>
 
-              {/* Edit Selected Chat or Add New */}
+              {/* 3. EDIT SELECTED CHAT OR ADD NEW */}
               {editingChat ? (
                 <div className="space-y-3 bg-[#1e293b] p-4 rounded-xl border border-[#00A0DF]/30">
                   <div className="flex items-center justify-between">
@@ -1201,6 +1435,61 @@ export default function WhatsAppSimulatorPage() {
                     >
                       Cancel
                     </button>
+                  </div>
+
+                  {/* Profile Picture Upload Section */}
+                  <div className="bg-slate-950/70 p-3 rounded-xl border border-white/5 space-y-2.5">
+                    <label className="text-[11px] text-slate-300 block font-bold">Contact Profile Picture (DP):</label>
+                    
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-full overflow-hidden bg-slate-800 border border-white/20 shrink-0 flex items-center justify-center">
+                        {editingChat.avatarUrl && !editingChat.isDefaultAvatar ? (
+                          <img src={editingChat.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <span className="text-xs text-slate-400">Grey</span>
+                        )}
+                      </div>
+
+                      <div className="flex-1 space-y-1">
+                        <button
+                          type="button"
+                          onClick={() => contactAvatarInputRef.current?.click()}
+                          className="w-full flex items-center justify-center gap-1.5 bg-[#00A0DF] hover:bg-[#008ec6] text-white text-xs font-bold py-1.5 px-3 rounded-lg transition-colors"
+                        >
+                          <Upload size={13} />
+                          <span>Device se Picture Upload Karein</span>
+                        </button>
+                        <p className="text-[10px] text-slate-400">Apne computer/mobile se koi bhi photo lagayein</p>
+                      </div>
+                    </div>
+
+                    {/* Presets */}
+                    <div className="pt-2 border-t border-white/5">
+                      <span className="text-[10px] text-slate-400 block mb-1.5">Or Choose Quick Preset:</span>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <button
+                          type="button"
+                          onClick={() => setEditingChat({ ...editingChat, isDefaultAvatar: true, avatarUrl: undefined })}
+                          className={`text-[10px] px-2.5 py-1 rounded-md border ${
+                            editingChat.isDefaultAvatar ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400' : 'bg-slate-800 text-slate-300 border-white/10'
+                          }`}
+                        >
+                          Default Grey
+                        </button>
+                        {PRESET_AVATARS.filter((p) => p.url).map((p) => (
+                          <button
+                            key={p.id}
+                            type="button"
+                            onClick={() => setEditingChat({ ...editingChat, isDefaultAvatar: false, avatarUrl: p.url })}
+                            className={`text-[10px] px-2 py-1 rounded-md border ${
+                              editingChat.avatarUrl === p.url ? 'bg-[#00A0DF] text-white font-bold border-[#00A0DF]' : 'bg-slate-800 text-slate-300 border-white/10'
+                            }`}
+                          >
+                            {p.label}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
                   </div>
 
                   <div>
@@ -1247,44 +1536,17 @@ export default function WhatsAppSimulatorPage() {
                     </div>
                   </div>
 
-                  {/* Preset Avatars */}
-                  <div>
-                    <label className="text-[11px] text-slate-400 block mb-1 font-bold">Profile Picture (DP):</label>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <button
-                        type="button"
-                        onClick={() => setEditingChat({ ...editingChat, isDefaultAvatar: true, avatarUrl: undefined })}
-                        className={`text-[10px] px-2.5 py-1 rounded-md border ${
-                          editingChat.isDefaultAvatar ? 'bg-emerald-500 text-slate-950 font-bold border-emerald-400' : 'bg-slate-800 text-slate-300 border-white/10'
-                        }`}
-                      >
-                        Default Grey
-                      </button>
-                      {PRESET_AVATARS.filter((p) => p.url).map((p) => (
-                        <button
-                          key={p.id}
-                          type="button"
-                          onClick={() => setEditingChat({ ...editingChat, isDefaultAvatar: false, avatarUrl: p.url })}
-                          className={`text-[10px] px-2 py-1 rounded-md border ${
-                            editingChat.avatarUrl === p.url ? 'bg-[#00A0DF] text-white font-bold border-[#00A0DF]' : 'bg-slate-800 text-slate-300 border-white/10'
-                          }`}
-                        >
-                          {p.label}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
                   <div className="flex gap-2 pt-2">
                     <button
                       onClick={handleSaveEditChat}
-                      className="flex-1 bg-[#00A0DF] hover:bg-[#008ec6] text-white font-bold text-xs py-2 rounded-lg transition-colors"
+                      className="flex-1 bg-[#00A0DF] hover:bg-[#008ec6] text-white font-bold text-xs py-2 rounded-lg transition-colors shadow-md"
                     >
                       Save Changes
                     </button>
                     <button
                       onClick={() => handleDeleteChat(editingChat.id)}
                       className="bg-red-500/20 hover:bg-red-500/30 text-red-400 p-2 rounded-lg"
+                      title="Delete Chat"
                     >
                       <Trash2 size={15} />
                     </button>
@@ -1350,29 +1612,73 @@ export default function WhatsAppSimulatorPage() {
                 </div>
               )}
 
-              {/* Chat List for quick click-to-edit */}
+              {/* 4. CHAT LIST WITH DIRECT DP UPLOAD BUTTONS */}
               <div className="mt-6 space-y-2">
-                <span className="text-xs font-bold text-slate-400 block">Existing Chats ({chats.length}):</span>
-                <div className="max-h-60 overflow-y-auto space-y-1.5 pr-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-400 block">Existing Chats ({chats.length}):</span>
+                  <span className="text-[10px] text-slate-500">📷 icon click karke foran DP upload karein</span>
+                </div>
+
+                <div className="max-h-72 overflow-y-auto space-y-1.5 pr-1">
                   {chats.map((c) => (
                     <div
                       key={c.id}
-                      onClick={() => setEditingChat(c)}
-                      className={`p-2.5 rounded-lg border text-xs flex items-center justify-between cursor-pointer transition-colors ${
+                      className={`p-2.5 rounded-xl border text-xs flex items-center justify-between transition-colors ${
                         editingChat?.id === c.id
                           ? 'bg-[#00A0DF]/20 border-[#00A0DF] text-white'
                           : 'bg-slate-900 border-white/5 text-slate-300 hover:border-white/20'
                       }`}
                     >
-                      <div className="min-w-0 pr-2">
+                      {/* Avatar with direct upload trigger */}
+                      <div
+                        onClick={() => {
+                          setActiveUploadChatId(c.id);
+                          quickRowAvatarInputRef.current?.click();
+                        }}
+                        className="w-9 h-9 rounded-full overflow-hidden bg-slate-800 shrink-0 mr-2.5 relative group cursor-pointer border border-white/10"
+                        title="Click to upload DP for this chat"
+                      >
+                        {c.avatarUrl && !c.isDefaultAvatar ? (
+                          <img src={c.avatarUrl} alt="" className="w-full h-full object-cover" />
+                        ) : (
+                          <div className="w-full h-full flex items-center justify-center text-slate-400">👤</div>
+                        )}
+                        <div className="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <Camera size={13} className="text-white" />
+                        </div>
+                      </div>
+
+                      {/* Name & message */}
+                      <div
+                        onClick={() => setEditingChat(c)}
+                        className="min-w-0 flex-1 cursor-pointer pr-2"
+                      >
                         <div className="font-bold truncate">{c.name}</div>
                         <div className="text-[11px] text-slate-400 truncate">{c.lastMessage}</div>
                       </div>
+
+                      {/* Right icons */}
                       <div className="flex items-center gap-1 shrink-0">
+                        <button
+                          onClick={() => {
+                            setActiveUploadChatId(c.id);
+                            quickRowAvatarInputRef.current?.click();
+                          }}
+                          className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+                          title="Upload DP"
+                        >
+                          <Camera size={13} />
+                        </button>
+                        <button
+                          onClick={() => setEditingChat(c)}
+                          className="p-1 rounded-md bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white"
+                          title="Edit Details"
+                        >
+                          <Edit3 size={13} />
+                        </button>
                         <span className="text-[10px] bg-emerald-500/20 text-emerald-400 px-1.5 py-0.5 rounded-full font-bold">
-                          {c.unreadCount} unread
+                          {c.unreadCount}
                         </span>
-                        <Edit3 size={13} className="text-slate-400 ml-1" />
                       </div>
                     </div>
                   ))}
