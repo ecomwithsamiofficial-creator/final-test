@@ -37,19 +37,151 @@ export default function LmsBonusesPage() {
   const [user, setUser] = useState<any>(null);
   const [downloadingId, setDownloadingId] = useState<string | null>(null);
 
+  const handleImmediateForceLogout = (reason: string, type: 'session_locked' | 'rejected' = 'session_locked') => {
+    try {
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/auth/logout');
+      } else {
+        fetch('/api/auth/logout', { method: 'POST', cache: 'no-store', keepalive: true }).catch(() => {});
+      }
+    } catch (e) {}
+
+    try {
+      const pastDate = 'Thu, 01 Jan 1970 00:00:01 GMT';
+      document.cookie = `sami_student_auth=; path=/; expires=${pastDate}; max-age=0;`;
+      document.cookie = `sami_student_session=; path=/; expires=${pastDate}; max-age=0;`;
+    } catch (e) {}
+
+    try {
+      sessionStorage.removeItem('sami_lms_session_active');
+      sessionStorage.removeItem('sami_lms_hidden_at');
+      sessionStorage.removeItem('sami_student_auth');
+      localStorage.removeItem('sami_student_auth');
+    } catch (e) {}
+
+    const targetUrl = `/login?reason=${type}&msg=${encodeURIComponent(reason)}&t=${Date.now()}`;
+    if (typeof window !== 'undefined') {
+      window.location.href = targetUrl;
+    } else {
+      router.replace(targetUrl);
+    }
+  };
+
   useEffect(() => {
+    // 0. Strict Single-Session Security: Require active session key from current browser instance
+    try {
+      const activeSession = sessionStorage.getItem('sami_lms_session_active');
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (!activeSession && !isAdminCookie) {
+        handleImmediateForceLogout('Session locked for account security. Please log in to access your classroom.', 'session_locked');
+        return;
+      }
+    } catch (e) {}
+
+    // 0.1 Cross-Platform Page Lifecycle Protection (iOS Safari, Android Chrome & Modern Web)
+    let hideTimer: any = null;
+
+    const onVisibilityChange = () => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      if (document.visibilityState === 'hidden') {
+        const now = Date.now();
+        try {
+          sessionStorage.setItem('sami_lms_hidden_at', String(now));
+        } catch (e) {}
+
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          try {
+            if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+              navigator.sendBeacon('/api/auth/logout');
+            }
+          } catch (e) {}
+          try {
+            sessionStorage.removeItem('sami_lms_session_active');
+            sessionStorage.setItem('sami_lms_locked_state', 'true');
+          } catch (e) {}
+        }, 5000);
+      } else if (document.visibilityState === 'visible') {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+
+        try {
+          const isLocked = sessionStorage.getItem('sami_lms_locked_state') === 'true';
+          const hiddenAtStr = sessionStorage.getItem('sami_lms_hidden_at');
+          sessionStorage.removeItem('sami_lms_hidden_at');
+          sessionStorage.removeItem('sami_lms_locked_state');
+
+          if (isLocked) {
+            handleImmediateForceLogout('Session locked after leaving app for your account security. Please log in to resume your course.', 'session_locked');
+            return;
+          }
+
+          if (hiddenAtStr) {
+            const hiddenDuration = Date.now() - parseInt(hiddenAtStr, 10);
+            if (hiddenDuration > 5000) {
+              handleImmediateForceLogout('Session locked after leaving app for your account security. Please log in to resume your course.', 'session_locked');
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
+    const onPageHide = () => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      try {
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          navigator.sendBeacon('/api/auth/logout');
+        }
+      } catch (e) {}
+    };
+
+    const onPageShow = (e: PageTransitionEvent) => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      if (e.persisted) {
+        try {
+          const active = sessionStorage.getItem('sami_lms_session_active');
+          if (!active) {
+            handleImmediateForceLogout('Session locked for account security. Please log in to access your classroom.', 'session_locked');
+            return;
+          }
+        } catch (e) {}
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('pageshow', onPageShow);
+
     // 1. Fetch user auth session
     fetch('/api/auth/me?t=' + Date.now(), { cache: 'no-store' })
       .then(r => r.json())
       .then(res => {
         if (res.authenticated && res.user) {
           setUser(res.user);
+        } else {
+          handleImmediateForceLogout('Session expired. Please log in again.', 'session_locked');
         }
       })
       .catch(() => {});
 
     // 2. Fetch bonus resources
     loadResources();
+
+    return () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onPageShow);
+    };
   }, []);
 
   const loadResources = async () => {

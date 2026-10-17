@@ -105,22 +105,20 @@ export async function POST(request: NextRequest) {
       redirectTo: '/lms'
     });
 
-    // 1. Secure HTTP-only signed cookie for Next.js middleware & server auth
+    // 1. Secure HTTP-only signed cookie for Next.js middleware & server auth (Session Cookie - cleared on browser close)
     response.cookies.set('sami_student_session', sessionToken, {
       path: '/',
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30 // 30 days
+      sameSite: 'lax'
     });
 
-    // 2. Client-readable cookie for instant frontend synchronization
+    // 2. Client-readable session cookie for instant frontend synchronization (cleared on browser close)
     response.cookies.set('sami_student_auth', JSON.stringify(studentProfile), {
       path: '/',
       httpOnly: false,
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
-      maxAge: 60 * 60 * 24 * 30
+      sameSite: 'lax'
     });
 
     return response;

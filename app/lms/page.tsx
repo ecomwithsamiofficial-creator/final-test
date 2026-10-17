@@ -673,7 +673,10 @@ export default function LmsClassroomPage() {
     return trimmed === '12m' || trimmed === '15:00' || trimmed === '12:40 mins' || trimmed === '12:40' || trimmed === '00:00';
   };
 
-  const handleImmediateForceLogout = (reason = 'Your student access has been suspended or rejected by the administrator.') => {
+  const handleImmediateForceLogout = (
+    reason = 'Your student access has been suspended or rejected by the administrator.',
+    type: 'rejected' | 'session_locked' = 'rejected'
+  ) => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
 
@@ -694,7 +697,11 @@ export default function LmsClassroomPage() {
     } catch (e) {}
 
     try {
-      fetch('/api/auth/logout', { method: 'POST', cache: 'no-store' }).catch(() => {});
+      if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+        navigator.sendBeacon('/api/auth/logout');
+      } else {
+        fetch('/api/auth/logout', { method: 'POST', cache: 'no-store', keepalive: true }).catch(() => {});
+      }
     } catch (e) {}
 
     try {
@@ -705,6 +712,9 @@ export default function LmsClassroomPage() {
     } catch (e) {}
 
     try {
+      sessionStorage.removeItem('sami_lms_session_active');
+      sessionStorage.removeItem('sami_lms_hidden_at');
+      sessionStorage.removeItem('sami_student_auth');
       localStorage.removeItem('sami_student_auth');
       localStorage.removeItem('sami_lms_completed_cache');
       localStorage.removeItem('sami_lms_watch_progress');
@@ -721,7 +731,7 @@ export default function LmsClassroomPage() {
       localStorage.setItem('sami_force_logout_signal', `${Date.now()}_${tabIdRef.current}`);
     } catch (e) {}
 
-    const targetUrl = `/login?reason=rejected&msg=${encodeURIComponent(reason)}&t=${Date.now()}`;
+    const targetUrl = `/login?reason=${type}&msg=${encodeURIComponent(reason)}&t=${Date.now()}`;
     if (typeof window !== 'undefined') {
       try {
         window.location.href = targetUrl;
@@ -738,7 +748,7 @@ export default function LmsClassroomPage() {
         } catch (e) {}
       }, 250);
     } else {
-      router.replace('/login?reason=rejected');
+      router.replace(targetUrl);
     }
   };
 
@@ -787,6 +797,102 @@ export default function LmsClassroomPage() {
     let realtimeEnrChannel: any = null;
     let heartbeatInterval: any = null;
     let bc: BroadcastChannel | null = null;
+
+    // 0. Strict Single-Session Security: Require active session key from current browser instance
+    try {
+      const activeSession = sessionStorage.getItem('sami_lms_session_active');
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (!activeSession && !isAdminCookie) {
+        handleImmediateForceLogout('Session locked for account security. Please log in to access your classroom.', 'session_locked');
+        return;
+      }
+    } catch (e) {}
+
+    // 0.1 Cross-Platform Page Lifecycle Protection (iOS Safari, Android Chrome & Modern Web)
+    let hideTimer: any = null;
+
+    const onVisibilityChange = () => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      if (document.visibilityState === 'hidden') {
+        const now = Date.now();
+        try {
+          sessionStorage.setItem('sami_lms_hidden_at', String(now));
+        } catch (e) {}
+
+        // Grace buffer (5 seconds): prevents accidental kick if user briefly swipes notification shade or status bar
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => {
+          try {
+            if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+              navigator.sendBeacon('/api/auth/logout');
+            }
+          } catch (e) {}
+          try {
+            sessionStorage.removeItem('sami_lms_session_active');
+            sessionStorage.setItem('sami_lms_locked_state', 'true');
+          } catch (e) {}
+        }, 5000);
+      } else if (document.visibilityState === 'visible') {
+        if (hideTimer) {
+          clearTimeout(hideTimer);
+          hideTimer = null;
+        }
+
+        try {
+          const isLocked = sessionStorage.getItem('sami_lms_locked_state') === 'true';
+          const hiddenAtStr = sessionStorage.getItem('sami_lms_hidden_at');
+          sessionStorage.removeItem('sami_lms_hidden_at');
+          sessionStorage.removeItem('sami_lms_locked_state');
+
+          if (isLocked) {
+            handleImmediateForceLogout('Session locked after leaving app for your account security. Please log in to resume your course.', 'session_locked');
+            return;
+          }
+
+          if (hiddenAtStr) {
+            const hiddenDuration = Date.now() - parseInt(hiddenAtStr, 10);
+            if (hiddenDuration > 5000) {
+              handleImmediateForceLogout('Session locked after leaving app for your account security. Please log in to resume your course.', 'session_locked');
+              return;
+            }
+          }
+        } catch (e) {}
+      }
+    };
+
+    const onPageHide = () => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      // On browser close / tab cut / app switch unload: instantly terminate session on server
+      try {
+        if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
+          navigator.sendBeacon('/api/auth/logout');
+        }
+      } catch (e) {}
+    };
+
+    const onPageShow = (e: PageTransitionEvent) => {
+      const isAdminCookie = typeof document !== 'undefined' && document.cookie.includes('sami_admin_session=');
+      if (isAdminCookie) return;
+
+      // Handle iOS Safari Back-Forward Cache (bfcache) restore
+      if (e.persisted) {
+        try {
+          const active = sessionStorage.getItem('sami_lms_session_active');
+          if (!active) {
+            handleImmediateForceLogout('Session locked for account security. Please log in to access your classroom.', 'session_locked');
+            return;
+          }
+        } catch (e) {}
+      }
+    };
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('pagehide', onPageHide);
+    window.addEventListener('pageshow', onPageShow);
 
     try {
       if (typeof window !== 'undefined' && 'BroadcastChannel' in window) {
@@ -1006,6 +1112,10 @@ export default function LmsClassroomPage() {
       .catch(() => {});
 
     return () => {
+      if (hideTimer) clearTimeout(hideTimer);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('pagehide', onPageHide);
+      window.removeEventListener('pageshow', onPageShow);
       clearInterval(heartbeatInterval);
       window.removeEventListener('storage', onStorage);
       if (bc) bc.close();

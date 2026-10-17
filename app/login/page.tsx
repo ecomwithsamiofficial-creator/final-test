@@ -21,12 +21,16 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [suspendedNotice, setSuspendedNotice] = useState<string | null>(null);
 
+  const [sessionLockNotice, setSessionLockNotice] = useState<string | null>(null);
+
   React.useEffect(() => {
     if (typeof window !== 'undefined') {
       const params = new URLSearchParams(window.location.search);
       const reason = params.get('reason');
       const msg = params.get('msg');
-      if (reason === 'rejected' || reason === 'suspended' || msg) {
+      if (reason === 'session_locked' || reason === 'session_expired') {
+        setSessionLockNotice(msg || 'For your account security, you were logged out because you switched apps or closed your previous session. Please re-enter your password to continue.');
+      } else if (reason === 'rejected' || reason === 'suspended' || msg) {
         setSuspendedNotice(msg || 'Your student enrollment has been rejected or suspended by the administrator.');
       }
     }
@@ -48,7 +52,10 @@ export default function LoginPage() {
       if (data.success) {
         if (data.user) {
           try {
-            localStorage.setItem('sami_student_auth', JSON.stringify(data.user));
+            sessionStorage.setItem('sami_lms_session_active', Date.now().toString());
+            sessionStorage.setItem('sami_student_auth', JSON.stringify(data.user));
+            sessionStorage.removeItem('sami_lms_hidden_at');
+            localStorage.removeItem('sami_student_auth');
           } catch (e) {}
         }
         const searchParams = new URLSearchParams(window.location.search);
@@ -81,6 +88,18 @@ export default function LoginPage() {
               <h1 className="text-xl sm:text-2xl font-black text-slate-900">Student LMS Login</h1>
               <p className="text-xs text-slate-500 mt-1">Access your 8 video modules &amp; supplier directory</p>
             </div>
+
+            {sessionLockNotice && (
+              <div className="bg-amber-500/10 border-2 border-amber-500/30 text-amber-900 text-xs rounded-2xl p-4 mb-4 space-y-2 animate-in fade-in">
+                <div className="flex items-center gap-2 font-black text-amber-800">
+                  <Lock size={16} className="text-amber-600 flex-shrink-0" />
+                  <span>Session Protected • Auto-Logout Active</span>
+                </div>
+                <p className="text-[11.5px] text-amber-800/90 leading-relaxed font-medium">
+                  {sessionLockNotice}
+                </p>
+              </div>
+            )}
 
             {suspendedNotice && (
               <div className="bg-red-500/10 border-2 border-red-500/30 text-red-700 text-xs rounded-2xl p-4 mb-4 space-y-2">
@@ -144,10 +163,10 @@ export default function LoginPage() {
               </div>
 
               <div className="flex items-center justify-between text-xs text-slate-600 pt-1">
-                <label className="flex items-center gap-2 cursor-pointer">
-                  <input type="checkbox" defaultChecked className="rounded text-[#00A0DF]" />
-                  <span>Remember me</span>
-                </label>
+                <div className="flex items-center gap-1.5 text-[11px] text-slate-500 font-medium">
+                  <Lock size={12} className="text-emerald-600 shrink-0" />
+                  <span>Auto-Logout on App Exit</span>
+                </div>
                 <a
                   href={getWhatsAppUrl('Hi Sami! I forgot my LMS password. Can you please reset it for me?')}
                   target="_blank"
