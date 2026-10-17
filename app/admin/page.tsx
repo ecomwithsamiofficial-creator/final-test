@@ -104,6 +104,21 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
+
+  // Single audio coordinator: Pause when another audio starts playing
+  useEffect(() => {
+    const handleOtherPlay = (e: any) => {
+      if (e.detail?.id !== instanceIdRef.current && audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+    window.addEventListener('sami-voice-play', handleOtherPlay);
+    return () => {
+      window.removeEventListener('sami-voice-play', handleOtherPlay);
+    };
+  }, []);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -113,6 +128,11 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
       setIsPlaying(false);
     } else {
       setIsLoading(true);
+      // Notify other players to pause
+      try {
+        window.dispatchEvent(new CustomEvent('sami-voice-play', { detail: { id: instanceIdRef.current } }));
+      } catch (err) {}
+
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
@@ -121,19 +141,33 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
             setIsLoading(false);
           })
           .catch((err) => {
-            console.warn('Audio playback error:', err);
-            setIsLoading(false);
-            setIsPlaying(false);
+            console.warn('Audio playback error, retrying with load():', err);
+            if (audioRef.current) {
+              audioRef.current.load();
+              audioRef.current
+                .play()
+                .then(() => {
+                  setIsPlaying(true);
+                  setIsLoading(false);
+                })
+                .catch((e2) => {
+                  console.error('Audio play failed:', e2);
+                  setIsLoading(false);
+                  setIsPlaying(false);
+                });
+            } else {
+              setIsLoading(false);
+              setIsPlaying(false);
+            }
           });
       }
     }
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!audioRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
+  const seekToClientX = (clientX: number, target: HTMLDivElement) => {
+    if (!audioRef.current || !duration || isNaN(duration) || !isFinite(duration)) return;
+    const rect = target.getBoundingClientRect();
+    const clickX = clientX - rect.left;
     const newPercent = Math.max(0, Math.min(1, clickX / rect.width));
     const newTime = newPercent * duration;
     audioRef.current.currentTime = newTime;
@@ -141,13 +175,13 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
   };
 
   const formatTime = (secs: number) => {
-    if (isNaN(secs) || secs < 0) return '0:00';
+    if (isNaN(secs) || secs < 0 || !isFinite(secs)) return '0:00';
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progressPercent = duration > 0 && isFinite(duration) ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
@@ -159,14 +193,25 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
         src={audioUrl}
         preload="metadata"
         playsInline
-        onTimeUpdate={() => {
-          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
-        }}
         onLoadedMetadata={() => {
-          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration);
+          }
         }}
         onDurationChange={() => {
-          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration);
+          }
+        }}
+        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => {
+          setIsLoading(false);
+          setIsPlaying(true);
+        }}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
         }}
         onEnded={() => {
           setIsPlaying(false);
@@ -206,7 +251,18 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
         </div>
 
         <div
-          onClick={handleSeek}
+          onClick={(e) => {
+            e.stopPropagation();
+            seekToClientX(e.clientX, e.currentTarget);
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            if (e.touches[0]) seekToClientX(e.touches[0].clientX, e.currentTarget);
+          }}
+          onTouchMove={(e) => {
+            e.stopPropagation();
+            if (e.touches[0]) seekToClientX(e.touches[0].clientX, e.currentTarget);
+          }}
           className="h-2.5 bg-slate-800 hover:bg-slate-700 rounded-full cursor-pointer relative overflow-hidden transition-colors"
         >
           <div

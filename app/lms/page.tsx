@@ -58,6 +58,21 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
+
+  // Single audio coordinator: Pause when another audio starts playing
+  useEffect(() => {
+    const handleOtherPlay = (e: any) => {
+      if (e.detail?.id !== instanceIdRef.current && audioRef.current) {
+        audioRef.current.pause();
+        setIsPlaying(false);
+      }
+    };
+    window.addEventListener('sami-voice-play', handleOtherPlay);
+    return () => {
+      window.removeEventListener('sami-voice-play', handleOtherPlay);
+    };
+  }, []);
 
   const togglePlay = (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -67,6 +82,11 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
       setIsPlaying(false);
     } else {
       setIsLoading(true);
+      // Notify other players to pause
+      try {
+        window.dispatchEvent(new CustomEvent('sami-voice-play', { detail: { id: instanceIdRef.current } }));
+      } catch (err) {}
+
       const playPromise = audioRef.current.play();
       if (playPromise !== undefined) {
         playPromise
@@ -75,19 +95,33 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
             setIsLoading(false);
           })
           .catch((err) => {
-            console.warn('Audio playback error:', err);
-            setIsLoading(false);
-            setIsPlaying(false);
+            console.warn('Audio playback error, retrying with load():', err);
+            if (audioRef.current) {
+              audioRef.current.load();
+              audioRef.current
+                .play()
+                .then(() => {
+                  setIsPlaying(true);
+                  setIsLoading(false);
+                })
+                .catch((e2) => {
+                  console.error('Audio play failed:', e2);
+                  setIsLoading(false);
+                  setIsPlaying(false);
+                });
+            } else {
+              setIsLoading(false);
+              setIsPlaying(false);
+            }
           });
       }
     }
   };
 
-  const handleSeek = (e: React.MouseEvent<HTMLDivElement>) => {
-    e.stopPropagation();
-    if (!audioRef.current || !duration) return;
-    const rect = e.currentTarget.getBoundingClientRect();
-    const clickX = e.clientX - rect.left;
+  const seekToClientX = (clientX: number, target: HTMLDivElement) => {
+    if (!audioRef.current || !duration || isNaN(duration) || !isFinite(duration)) return;
+    const rect = target.getBoundingClientRect();
+    const clickX = clientX - rect.left;
     const newPercent = Math.max(0, Math.min(1, clickX / rect.width));
     const newTime = newPercent * duration;
     audioRef.current.currentTime = newTime;
@@ -95,18 +129,18 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
   };
 
   const formatTime = (secs: number) => {
-    if (isNaN(secs) || secs < 0) return '0:00';
+    if (isNaN(secs) || secs < 0 || !isFinite(secs)) return '0:00';
     const m = Math.floor(secs / 60);
     const s = Math.floor(secs % 60);
     return `${m}:${s < 10 ? '0' : ''}${s}`;
   };
 
-  const progressPercent = duration > 0 ? (currentTime / duration) * 100 : 0;
+  const progressPercent = duration > 0 && isFinite(duration) ? (currentTime / duration) * 100 : 0;
 
   return (
     <div
       onClick={(e) => e.stopPropagation()}
-      className={`p-2.5 sm:p-3 rounded-2xl border flex items-center gap-3 shadow-xs my-1.5 select-none transition-all ${
+      className={`p-2 sm:p-2.5 rounded-xl sm:rounded-2xl border flex items-center gap-2.5 shadow-2xs my-1 select-none transition-all ${
         isMentor
           ? 'bg-white/95 border-emerald-300 text-slate-800'
           : 'bg-emerald-50/90 border-emerald-200 text-slate-800'
@@ -117,14 +151,25 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
         src={audioUrl}
         preload="metadata"
         playsInline
-        onTimeUpdate={() => {
-          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
-        }}
         onLoadedMetadata={() => {
-          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration);
+          }
         }}
         onDurationChange={() => {
-          if (audioRef.current && !isNaN(audioRef.current.duration)) setDuration(audioRef.current.duration);
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+            setDuration(audioRef.current.duration);
+          }
+        }}
+        onCanPlay={() => setIsLoading(false)}
+        onWaiting={() => setIsLoading(true)}
+        onPlaying={() => {
+          setIsLoading(false);
+          setIsPlaying(true);
+        }}
+        onPause={() => setIsPlaying(false)}
+        onTimeUpdate={() => {
+          if (audioRef.current) setCurrentTime(audioRef.current.currentTime);
         }}
         onEnded={() => {
           setIsPlaying(false);
@@ -140,34 +185,45 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
         type="button"
         onClick={togglePlay}
         disabled={isLoading}
-        className={`w-11 h-11 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90 cursor-pointer shadow-md ${
+        className={`w-9 h-9 sm:w-10 sm:h-10 rounded-full flex items-center justify-center shrink-0 transition-transform active:scale-90 cursor-pointer shadow-xs ${
           isMentor ? 'bg-[#008069] hover:bg-[#075e54] text-white' : 'bg-[#128c7e] hover:bg-[#075e54] text-white'
         }`}
         title={isPlaying ? 'Pause voice note' : 'Play voice note'}
       >
         {isLoading ? (
-          <Loader2 size={18} className="animate-spin text-white" />
+          <Loader2 size={16} className="animate-spin text-white" />
         ) : isPlaying ? (
-          <Pause size={18} className="fill-white text-white" />
+          <Pause size={16} className="fill-white text-white" />
         ) : (
-          <Play size={18} className="fill-white text-white ml-0.5" />
+          <Play size={16} className="fill-white text-white ml-0.5" />
         )}
       </button>
 
       <div className="flex-1 min-w-0 space-y-1">
-        <div className="flex items-center justify-between text-[11px] font-bold">
+        <div className="flex items-center justify-between text-[10.5px] sm:text-[11px] font-bold">
           <span className="text-[#008069] flex items-center gap-1">
-            <Mic size={12} />
+            <Mic size={11} />
             <span>{isMentor ? 'Mentor Voice Note' : 'Voice Note'}</span>
           </span>
-          <span className="text-[10px] text-slate-500 font-mono">
+          <span className="text-[9.5px] text-slate-500 font-mono">
             {formatTime(currentTime)} / {formatTime(duration || 0)}
           </span>
         </div>
 
         <div
-          onClick={handleSeek}
-          className="h-2.5 bg-slate-200/90 hover:bg-slate-300 rounded-full cursor-pointer relative overflow-hidden transition-colors"
+          onClick={(e) => {
+            e.stopPropagation();
+            seekToClientX(e.clientX, e.currentTarget);
+          }}
+          onTouchStart={(e) => {
+            e.stopPropagation();
+            if (e.touches[0]) seekToClientX(e.touches[0].clientX, e.currentTarget);
+          }}
+          onTouchMove={(e) => {
+            e.stopPropagation();
+            if (e.touches[0]) seekToClientX(e.touches[0].clientX, e.currentTarget);
+          }}
+          className="h-2 sm:h-2.5 bg-slate-200/90 hover:bg-slate-300 rounded-full cursor-pointer relative overflow-hidden transition-colors"
         >
           <div
             className="h-full bg-[#008069] rounded-full transition-all duration-100"
@@ -258,6 +314,8 @@ export default function LmsClassroomPage() {
   const [zoomedImage, setZoomedImage] = useState<string | null>(null);
   const chatFileInputRef = useRef<HTMLInputElement>(null);
   const chatMessagesEndRef = useRef<HTMLDivElement>(null);
+  const chatScrollContainerRef = useRef<HTMLDivElement>(null);
+  const [pinnedNoticeExpanded, setPinnedNoticeExpanded] = useState(false);
   const knownChatMsgIdsRef = useRef<Set<string>>(new Set());
   const hasInitialChatLoadedRef = useRef<boolean>(false);
   const lastAudioNotificationTimeRef = useRef<number>(0);
@@ -998,11 +1056,16 @@ export default function LmsClassroomPage() {
     };
   }, [activeTab]);
 
-  // Auto-scroll WhatsApp chat to newest message
+  // Auto-scroll WhatsApp chat to newest message internally WITHOUT pushing outer container up
   useEffect(() => {
     if (activeTab === 'community' && communitySubView === 'chat') {
       const timer = setTimeout(() => {
-        chatMessagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        if (chatScrollContainerRef.current) {
+          chatScrollContainerRef.current.scrollTo({
+            top: chatScrollContainerRef.current.scrollHeight,
+            behavior: 'smooth'
+          });
+        }
       }, 100);
       return () => clearTimeout(timer);
     }
@@ -2754,22 +2817,22 @@ export default function LmsClassroomPage() {
                 {/* ------------------------------------------------------------- */}
                 {/* WHATSAPP GROUP CHAT BOX CONTAINER */}
                 {/* ------------------------------------------------------------- */}
-                <div className="bg-[#efeae2] border border-slate-300 rounded-2xl sm:rounded-3xl shadow-lg overflow-hidden flex flex-col h-[680px] sm:h-[730px] relative">
+                <div className="bg-[#efeae2] border border-slate-300/80 rounded-2xl sm:rounded-3xl shadow-md sm:shadow-xl overflow-hidden flex flex-col h-[calc(100dvh-130px)] sm:h-[640px] lg:h-[700px] max-h-[84vh] sm:max-h-[720px] min-h-[460px] relative">
                   
                   {/* 1. WHATSAPP HEADER */}
-                  <div className="bg-[#008069] text-white px-3 sm:px-5 py-3 sm:py-3.5 flex items-center justify-between shadow-sm z-10">
-                    <div className="flex items-center gap-2.5 sm:gap-3 min-w-0">
+                  <div className="bg-[#008069] text-white px-3 sm:px-5 py-2.5 sm:py-3 flex items-center justify-between shadow-sm z-10 shrink-0">
+                    <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                       <div className="relative shrink-0">
-                        <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-sm shadow-xs overflow-hidden">
+                        <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/20 border border-white/30 flex items-center justify-center text-white font-black text-xs sm:text-sm shadow-xs overflow-hidden">
                           <span className="tracking-tighter font-extrabold">SS</span>
                         </div>
-                        <span className={`absolute bottom-0 right-0 w-3 h-3 rounded-full border-2 border-[#008069] ${lmsChatConfig.isOpen ? 'bg-emerald-400' : 'bg-amber-400'}`} />
+                        <span className={`absolute bottom-0 right-0 w-2.5 h-2.5 sm:w-3 sm:h-3 rounded-full border-2 border-[#008069] ${lmsChatConfig.isOpen ? 'bg-emerald-400' : 'bg-amber-400'}`} />
                       </div>
                       <div className="min-w-0">
-                        <h2 className="text-sm sm:text-base font-bold text-white truncate leading-tight">
+                        <h2 className="text-xs sm:text-base font-bold text-white truncate leading-tight">
                           Ecom With Sami — VIP Community Group 🇵🇰
                         </h2>
-                        <p className="text-[11px] text-white/85 truncate mt-0.5 flex items-center gap-1.5">
+                        <p className="text-[10px] sm:text-[11px] text-white/85 truncate mt-0.5 flex items-center gap-1.5">
                           {lmsChatConfig.isOpen ? (
                             <>
                               <span className="w-1.5 h-1.5 rounded-full bg-emerald-300 animate-pulse shrink-0" />
@@ -2788,27 +2851,27 @@ export default function LmsClassroomPage() {
                     {/* Header Right Actions */}
                     <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
                       {/* Sub-View Switcher */}
-                      <div className="flex items-center bg-[#075e54] p-0.5 rounded-xl border border-white/10 text-[11px]">
+                      <div className="flex items-center bg-[#075e54] p-0.5 rounded-xl border border-white/10 text-[10px] sm:text-[11px]">
                         <button
                           onClick={() => setCommunitySubView('chat')}
-                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             communitySubView === 'chat'
                               ? 'bg-white text-[#008069] shadow-xs'
                               : 'text-white/80 hover:text-white'
                           }`}
                         >
-                          <MessageCircle size={12} />
+                          <MessageCircle size={11} />
                           <span className="hidden sm:inline">Group Chat</span>
                         </button>
                         <button
                           onClick={() => setCommunitySubView('broadcasts')}
-                          className={`px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
+                          className={`px-2 sm:px-2.5 py-1 rounded-lg font-bold transition-all flex items-center gap-1 cursor-pointer ${
                             communitySubView === 'broadcasts'
                               ? 'bg-white text-[#008069] shadow-xs'
                               : 'text-white/80 hover:text-white'
                           }`}
                         >
-                          <Radio size={12} />
+                          <Radio size={11} />
                           <span>SOPs ({communityUpdates.length})</span>
                         </button>
                       </div>
@@ -2816,40 +2879,46 @@ export default function LmsClassroomPage() {
                       <button
                         onClick={() => fetchLmsChat(false)}
                         title="Refresh Messages"
-                        className="w-8 h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/10 hover:bg-white/20 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95"
                       >
-                        <RotateCcw size={14} className={lmsChatLoading ? 'animate-spin' : ''} />
+                        <RotateCcw size={13} className={lmsChatLoading ? 'animate-spin' : ''} />
                       </button>
 
                       {/* Close / Cross Button */}
                       <button
                         onClick={() => setActiveTab('video')}
                         title="Close Chat & Return to Lessons"
-                        className="w-8 h-8 rounded-xl bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
+                        className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-white/20 hover:bg-rose-600 text-white flex items-center justify-center transition-all cursor-pointer active:scale-95 shadow-xs"
                       >
-                        <X size={17} />
+                        <X size={15} />
                       </button>
                     </div>
                   </div>
 
                   {/* 2. PINNED NOTICE BAR (Slim WhatsApp Style) */}
-                  <div className={`px-4 py-2 border-b text-xs flex items-center justify-between gap-2 z-10 transition-all ${
+                  <div className={`sticky top-0 z-20 px-3 sm:px-4 py-1.5 sm:py-2 border-b text-xs flex items-center justify-between gap-2 transition-all shadow-2xs backdrop-blur-xs shrink-0 ${
                     lmsChatConfig.isOpen
-                      ? 'bg-emerald-100/90 border-emerald-300 text-emerald-950 font-medium'
+                      ? 'bg-emerald-100/95 border-emerald-300 text-emerald-950 font-medium'
                       : 'bg-amber-100/95 border-amber-300 text-amber-950 font-medium'
                   }`}>
-                    <div className="flex items-center gap-2 min-w-0">
+                    <div
+                      onClick={() => setPinnedNoticeExpanded(!pinnedNoticeExpanded)}
+                      className="flex items-center gap-2 min-w-0 cursor-pointer flex-1"
+                      title="Click to toggle full notice"
+                    >
                       <Pin size={13} className="shrink-0 text-slate-700" />
-                      <span className="text-[11px] truncate">
+                      <span className={`text-[10.5px] sm:text-[11px] leading-tight ${pinnedNoticeExpanded ? '' : 'truncate'}`}>
                         <strong>{lmsChatConfig.isOpen ? 'Sunday Live:' : 'Notice:'}</strong>{' '}
                         {lmsChatConfig.isOpen
                           ? 'Chat is OPEN! Share your Shopify sales proofs, order milestones, or ask questions.'
                           : lmsChatConfig.noticeText}
                       </span>
                     </div>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/70 text-slate-800 shrink-0">
-                      {lmsChatConfig.isOpen ? 'LIVE NOW' : 'SCHEDULED'}
-                    </span>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <span className="text-[9.5px] sm:text-[10px] font-bold px-2 py-0.5 rounded-full bg-white/80 text-slate-800 shadow-2xs">
+                        {lmsChatConfig.isOpen ? 'LIVE NOW' : 'SCHEDULED'}
+                      </span>
+                    </div>
                   </div>
 
                   {/* 3. SUB-VIEW 1: WHATSAPP CHAT FEED */}
@@ -2857,7 +2926,10 @@ export default function LmsClassroomPage() {
                     <div className="flex-1 flex flex-col min-h-0 bg-[#efeae2]">
                       
                       {/* Scrollable Messages Area */}
-                      <div className="flex-1 overflow-y-auto p-3 sm:p-5 space-y-3">
+                      <div
+                        ref={chatScrollContainerRef}
+                        className="flex-1 min-h-0 overflow-y-auto p-2.5 sm:p-4 space-y-2 sm:space-y-2.5 touch-pan-y"
+                      >
                         {/* Group Creation Date Pill */}
                         <div className="flex justify-center my-1">
                           <span className="bg-white/90 text-slate-600 text-[10px] font-semibold px-3 py-1 rounded-full shadow-2xs border border-slate-200/60 uppercase tracking-wider">
@@ -2953,7 +3025,7 @@ export default function LmsClassroomPage() {
                                 className={`flex ${isMe ? 'justify-end' : 'justify-start'}`}
                               >
                                 <div
-                                  className={`relative p-3 rounded-2xl shadow-xs max-w-[85%] sm:max-w-[70%] transition-all ${
+                                  className={`relative p-2 sm:p-2.5 rounded-xl sm:rounded-2xl shadow-2xs max-w-[85%] sm:max-w-[70%] transition-all ${
                                     isMe
                                       ? 'bg-[#d9fdd3] text-slate-900 rounded-tr-xs border border-[#c1e7bb]'
                                       : 'bg-white text-slate-900 rounded-tl-xs border border-slate-200/80'
@@ -2977,22 +3049,22 @@ export default function LmsClassroomPage() {
                                   {msg.imageUrl && (
                                     <div
                                       onClick={() => setZoomedImage(msg.imageUrl)}
-                                      className="relative cursor-pointer rounded-xl overflow-hidden border border-black/10 shadow-2xs mb-2 max-w-xs group"
+                                      className="relative cursor-pointer rounded-lg sm:rounded-xl overflow-hidden border border-black/10 shadow-2xs my-1 max-w-xs group"
                                     >
                                       <img
                                         src={msg.imageUrl}
                                         alt="Student Proof"
-                                        className="max-h-56 w-auto object-cover rounded-xl group-hover:scale-101 transition-transform"
+                                        className="max-h-36 sm:max-h-44 w-auto object-cover rounded-lg group-hover:scale-101 transition-transform"
                                       />
-                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-xs font-bold transition-opacity">
-                                        <Eye size={14} className="mr-1" /> Zoom Proof
+                                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 flex items-center justify-center text-white text-[10px] font-bold transition-opacity">
+                                        <Eye size={12} className="mr-1" /> Zoom Proof
                                       </div>
                                     </div>
                                   )}
 
                                   {/* Message Text */}
                                   {msg.message && (
-                                    <p className="text-xs leading-relaxed whitespace-pre-wrap break-words">
+                                    <p className="text-[11.5px] sm:text-xs leading-relaxed whitespace-pre-wrap break-words">
                                       {msg.message}
                                     </p>
                                   )}
@@ -3003,9 +3075,11 @@ export default function LmsClassroomPage() {
                                   )}
 
                                   {/* Bottom Ticks for outgoing */}
-                                  <div className="flex items-center justify-end gap-1 mt-1 text-[10px] text-slate-400">
-                                    {isMe && <CheckCheck size={13} className="text-blue-500" />}
-                                  </div>
+                                  {isMe && (
+                                    <div className="flex items-center justify-end gap-1 mt-0.5 text-[9px] text-slate-400">
+                                      <CheckCheck size={12} className="text-blue-500" />
+                                    </div>
+                                  )}
                                 </div>
                               </div>
                             );

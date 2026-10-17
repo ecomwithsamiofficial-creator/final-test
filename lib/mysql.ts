@@ -2218,7 +2218,7 @@ export async function mysqlUpdateCommunityChatConfig(config: Partial<CommunityCh
   return updated;
 }
 
-export async function mysqlGetCommunityChatMessages(limit: number = 80): Promise<CommunityChatMessageItem[]> {
+export async function mysqlGetCommunityChatMessages(limit: number = 150): Promise<CommunityChatMessageItem[]> {
   const hasTables = await ensureAnalyticsTables();
   if (hasTables && pool) {
     try {
