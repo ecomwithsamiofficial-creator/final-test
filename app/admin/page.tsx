@@ -50,7 +50,8 @@ import {
   Square,
   Upload,
   Power,
-  MessageCircle
+  MessageCircle,
+  Sliders
 } from 'lucide-react';
 import { Enrollment, Student } from '@/utils/db';
 import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
@@ -1333,12 +1334,21 @@ export default function AdminDashboardPage() {
           </div>
         </div>
 
-        <Link
-          href="/admin/cms"
-          className="px-3 py-1.5 rounded-xl bg-[#00A0DF] text-xs font-black text-white"
-        >
-          CMS
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href="/admin/simulator"
+            target="_blank"
+            className="px-2.5 py-1.5 rounded-xl bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 text-xs font-bold"
+          >
+            Simulators
+          </Link>
+          <Link
+            href="/admin/cms"
+            className="px-3 py-1.5 rounded-xl bg-[#00A0DF] text-xs font-black text-white"
+          >
+            CMS
+          </Link>
+        </div>
       </header>
 
       {/* Mobile Backdrop */}
@@ -1466,6 +1476,19 @@ export default function AdminDashboardPage() {
               </div>
               <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-emerald-500 text-slate-950 animate-pulse">
                 Live
+              </span>
+            </Link>
+            <Link
+              href="/admin/simulator"
+              target="_blank"
+              className="w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl text-cyan-400 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 transition-all font-bold group shadow-sm shadow-cyan-500/10"
+            >
+              <div className="flex items-center gap-3">
+                <Sliders size={16} className="text-cyan-400 group-hover:scale-110 transition-transform" />
+                <span>Video Ads & Store Simulator</span>
+              </div>
+              <span className="text-[10px] font-black uppercase px-2 py-0.5 rounded-full bg-cyan-400 text-slate-950 animate-pulse">
+                New
               </span>
             </Link>
           </nav>
