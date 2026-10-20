@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { dbGetCmsSettings } from '@/lib/database';
 
+export const dynamic = 'force-dynamic';
 export const revalidate = 60;
 
 const CACHE_HEADERS = {
