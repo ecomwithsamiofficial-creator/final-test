@@ -17,6 +17,9 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '250mb',
     },
+    cpus: 1,
+    workerThreads: false,
+    staticGenerationMaxConcurrency: 1,
   },
   typescript: {
     ignoreBuildErrors: true,
