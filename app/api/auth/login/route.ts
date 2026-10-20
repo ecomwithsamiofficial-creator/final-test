@@ -94,6 +94,8 @@ export async function POST(request: NextRequest) {
       email: student.email,
       phone: student.phone,
       city: student.city,
+      password: student.password,
+      enrollmentCode: student.enrollmentCode || `SAMI-ENR-${String(student.id).slice(-5).toUpperCase()}`,
       role: 'student'
     };
 

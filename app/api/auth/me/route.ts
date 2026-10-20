@@ -9,6 +9,9 @@ export async function GET(request: NextRequest) {
   try {
     // 1. Check Admin Session
     const adminSession = getAdminSessionFromRequest(request);
+    const forwarded = request.headers.get('x-forwarded-for');
+    const clientIp = forwarded ? forwarded.split(',')[0].trim() : (request.headers.get('x-real-ip') || '127.0.0.1');
+
     if (adminSession) {
       let adminCompletedLessons: string[] = [];
       if (supabase) {
@@ -34,7 +37,12 @@ export async function GET(request: NextRequest) {
           id: adminSession.id,
           name: 'Sardar Samiullah',
           email: adminSession.email || 'admin@samiecom.com',
+          phone: '03258341710',
+          city: 'Islamabad / Rawalpindi',
+          enrollmentCode: 'SAMI-OFFICIAL-MENTOR',
+          password: '••••••••',
           role: 'SUPER_ADMIN',
+          ip: clientIp,
           completedLessons: adminCompletedLessons
         }
       });
@@ -43,9 +51,6 @@ export async function GET(request: NextRequest) {
     // 2. Check Student Session
     const studentSession = getStudentSessionFromRequest(request);
     if (studentSession) {
-      const forwarded = request.headers.get('x-forwarded-for');
-      const clientIp = forwarded ? forwarded.split(',')[0].trim() : (request.headers.get('x-real-ip') || '127.0.0.1');
-
       let student = null;
       if (studentSession.email) {
         student = await dbGetStudentByEmail(studentSession.email);
@@ -68,6 +73,8 @@ export async function GET(request: NextRequest) {
         return res;
       }
 
+      const officialCode = student.enrollmentCode || `SAMI-ENR-${String(student.id).slice(-5).toUpperCase()}`;
+
       return NextResponse.json({
         authenticated: true,
         role: 'STUDENT',
@@ -77,6 +84,8 @@ export async function GET(request: NextRequest) {
           email: student.email,
           phone: student.phone,
           city: student.city,
+          password: student.password,
+          enrollmentCode: officialCode,
           completedLessons: student.completedLessons || [],
           role: 'student',
           ip: clientIp,

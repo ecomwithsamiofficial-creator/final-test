@@ -1315,9 +1315,11 @@ export async function mysqlGetStudents(): Promise<Student[]> {
   const p = getMysqlPool();
   try {
     const [rows]: any = await p.query(
-      `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
-       FROM students 
-       ORDER BY enrolled_at DESC`
+      `SELECT s.id, s.name, s.email, s.phone, s.city, s.password, s.is_active, s.enrolled_at, s.completed_lessons_json, s.last_login, s.strike_count,
+              (SELECT e.tracking_code FROM enrollments e WHERE LOWER(e.email) = LOWER(s.email) OR e.student_id = s.id ORDER BY e.created_at DESC LIMIT 1) as tracking_code,
+              (SELECT e.password FROM enrollments e WHERE LOWER(e.email) = LOWER(s.email) OR e.student_id = s.id ORDER BY e.created_at DESC LIMIT 1) as enr_password
+       FROM students s 
+       ORDER BY s.enrolled_at DESC`
     );
     if (Array.isArray(rows) && rows.length > 0) {
       return rows.map((r: any) => ({
@@ -1326,12 +1328,13 @@ export async function mysqlGetStudents(): Promise<Student[]> {
         email: r.email || '',
         phone: r.phone || '',
         city: r.city || '',
-        password: r.password || '',
+        password: r.password || r.enr_password || '',
         isActive: Boolean(r.is_active),
         enrolledAt: r.enrolled_at || '',
         completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
         lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
-        strikeCount: Number(r.strike_count || 0)
+        strikeCount: Number(r.strike_count || 0),
+        enrollmentCode: r.tracking_code || `SAMI-ENR-${String(r.id).slice(-5).toUpperCase()}`
       }));
     }
   } catch (err) {
@@ -1346,26 +1349,30 @@ export async function mysqlGetStudentByEmail(email: string): Promise<Student | n
   const p = getMysqlPool();
   try {
     const [rows]: any = await p.query(
-      `SELECT id, name, email, phone, city, password, is_active, enrolled_at, completed_lessons_json, last_login, strike_count 
-       FROM students 
-       WHERE LOWER(email) = LOWER(?) 
+      `SELECT s.id, s.name, s.email, s.phone, s.city, s.password, s.is_active, s.enrolled_at, s.completed_lessons_json, s.last_login, s.strike_count,
+              (SELECT e.tracking_code FROM enrollments e WHERE LOWER(e.email) = LOWER(s.email) OR e.student_id = s.id ORDER BY e.created_at DESC LIMIT 1) as tracking_code,
+              (SELECT e.password FROM enrollments e WHERE LOWER(e.email) = LOWER(s.email) OR e.student_id = s.id ORDER BY e.created_at DESC LIMIT 1) as enr_password
+       FROM students s 
+       WHERE LOWER(s.email) = LOWER(?) 
        LIMIT 1`,
       [email.trim()]
     );
     if (Array.isArray(rows) && rows.length > 0) {
       const r = rows[0];
+      const trackingCode = r.tracking_code || `SAMI-ENR-${String(r.id).slice(-5).toUpperCase()}`;
       return {
         id: r.id,
         name: r.name || '',
         email: r.email || '',
         phone: r.phone || '',
         city: r.city || '',
-        password: r.password || '',
+        password: r.password || r.enr_password || '',
         isActive: Boolean(r.is_active),
         enrolledAt: r.enrolled_at || '',
         completedLessons: typeof r.completed_lessons_json === 'string' ? JSON.parse(r.completed_lessons_json || '[]') : (r.completed_lessons_json || []),
         lastLogin: r.last_login ? new Date(r.last_login).toISOString() : undefined,
-        strikeCount: Number(r.strike_count || 0)
+        strikeCount: Number(r.strike_count || 0),
+        enrollmentCode: trackingCode
       };
     }
   } catch (err) {

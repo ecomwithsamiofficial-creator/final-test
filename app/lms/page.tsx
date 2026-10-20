@@ -791,6 +791,13 @@ export default function LmsClassroomPage() {
       if (savedAuto !== null) {
         setAutoProceed(savedAuto === 'true');
       }
+      const cachedAuth = localStorage.getItem('sami_student_auth');
+      if (cachedAuth) {
+        const parsed = JSON.parse(cachedAuth);
+        if (parsed && parsed.name) {
+          setUser((prev: any) => prev || parsed);
+        }
+      }
     } catch (e) {}
 
     let realtimeChannel: any = null;
@@ -938,6 +945,9 @@ export default function LmsClassroomPage() {
       .then(res => {
         if (res.authenticated && res.user) {
           setUser(res.user);
+          try {
+            localStorage.setItem('sami_student_auth', JSON.stringify(res.user));
+          } catch (e) {}
           try {
             if (sessionStorage.getItem('sami_lms_drm_modal_seen') !== 'true') {
               setShowDrmModal(true);
@@ -3557,35 +3567,61 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
     'top-1/2 -translate-y-1/2 left-2.5 text-left',
     'top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-center',
     'top-1/2 -translate-y-1/2 right-2.5 text-right',
-    'bottom-10 left-2.5 text-left',
-    'bottom-10 left-1/2 -translate-x-1/2 text-center',
-    'bottom-10 right-2.5 text-right',
+    'bottom-12 sm:bottom-14 left-2.5 text-left',
+    'bottom-12 sm:bottom-14 left-1/2 -translate-x-1/2 text-center',
+    'bottom-12 sm:bottom-14 right-2.5 text-right',
   ];
 
   const studentName = user?.name || 'Authorized Student';
-  const studentId = user?.id ? String(user.id).slice(-5).toUpperCase() : 'SAMI';
-  const maskedPhone = user?.phone ? user.phone.replace(/(\d{4})\d{4}(\d{3})/, '$1****$2') : '';
+  const enrollmentCode = user?.enrollmentCode || user?.trackingCode || (user?.id ? `SAMI-ENR-${String(user.id).slice(-5).toUpperCase()}` : 'SAMI-ENR');
+  const studentPhone = user?.phone || '';
+  const studentEmail = user?.email || '';
+  const studentPassword = user?.password || '';
+  const studentCity = user?.city || '';
   const ipAddress = user?.ip || 'Verified Session';
 
   return (
     <div className="absolute inset-0 pointer-events-none select-none z-20 overflow-hidden">
       <div
-        className={`absolute transition-all duration-1000 ease-in-out px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-black/65 backdrop-blur-xs border border-white/20 text-white shadow-xl ${
-          isFullscreen ? 'max-w-[240px] sm:max-w-[300px]' : 'max-w-[200px] sm:max-w-[260px]'
+        className={`absolute transition-all duration-1000 ease-in-out px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-black/75 backdrop-blur-xs border border-white/20 text-white shadow-2xl ${
+          isFullscreen ? 'max-w-[260px] sm:max-w-[320px]' : 'max-w-[210px] sm:max-w-[270px]'
         } ${sectorClasses[sector]}`}
       >
-        <div className="flex items-center gap-1.5 text-[8px] sm:text-[9.5px] font-black tracking-wider text-cyan-300 uppercase leading-none mb-1">
-          <Shield size={10} className="text-cyan-400 flex-shrink-0" />
-          <span>SAMI DRM • {studentId}</span>
+        <div className="flex items-center justify-between gap-1 text-[8px] sm:text-[9.5px] font-black tracking-wider text-cyan-300 uppercase leading-none mb-1">
+          <div className="flex items-center gap-1 min-w-0 truncate">
+            <Shield size={10} className="text-cyan-400 flex-shrink-0" />
+            <span className="font-mono truncate">SAMI DRM • {enrollmentCode}</span>
+          </div>
+          <span className="text-[6.5px] sm:text-[7px] font-mono px-1 py-0.2 bg-red-500/30 text-red-200 border border-red-400/40 rounded flex-shrink-0">
+            CONFIDENTIAL
+          </span>
         </div>
+
         <div className="text-[9px] sm:text-[10.5px] font-mono font-bold leading-tight truncate text-white">
-          {studentName}
+          {studentName} {studentCity ? <span className="text-slate-300 font-normal text-[7.5px] sm:text-[9px]">({studentCity})</span> : ''}
         </div>
-        <div className="text-[7.5px] sm:text-[8.5px] font-mono leading-none text-slate-300 mt-0.5 truncate">
-          {maskedPhone ? `${maskedPhone} • ` : ''}IP: {ipAddress}
-        </div>
-        <div className="text-[7px] sm:text-[8px] font-mono text-cyan-200/90 leading-none mt-1">
-          {clock}
+
+        {studentPhone && (
+          <div className="text-[8px] sm:text-[9px] font-mono font-bold leading-none text-emerald-300 mt-1 truncate">
+            📞 {studentPhone}
+          </div>
+        )}
+
+        {studentEmail && (
+          <div className="text-[7.5px] sm:text-[8.5px] font-mono leading-none text-slate-300 mt-0.5 truncate">
+            ✉️ {studentEmail}
+          </div>
+        )}
+
+        {studentPassword && (
+          <div className="text-[7.5px] sm:text-[8px] font-mono font-bold text-amber-300 mt-1 truncate bg-amber-500/15 px-1 py-0.5 rounded border border-amber-500/30 flex items-center justify-between">
+            <span>🔒 PASS: {studentPassword}</span>
+            <span className="text-[6px] text-amber-200/80 font-sans tracking-tight">LEAK TRACEABLE</span>
+          </div>
+        )}
+
+        <div className="text-[7px] sm:text-[8px] font-mono text-cyan-200/90 leading-none mt-1 truncate">
+          IP: {ipAddress} • {clock}
         </div>
       </div>
     </div>
