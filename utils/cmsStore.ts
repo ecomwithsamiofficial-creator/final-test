@@ -306,6 +306,26 @@ export interface CmsContentSchema {
     order_booster_title?: string;
     order_booster_desc?: string;
   };
+  lms_frameworks?: LmsFrameworkItem[];
+}
+
+export interface LmsFrameworkLesson {
+  id: string;
+  title: string;
+  duration?: string;
+  videoUrl?: string;
+  notes?: string;
+}
+
+export interface LmsFrameworkItem {
+  id: string;
+  is_active: boolean;
+  badge: string;
+  tag: string;
+  title: string;
+  subtitle: string;
+  description?: string;
+  lessons: LmsFrameworkLesson[];
 }
 
 export interface ThemeCustomColors {
@@ -639,6 +659,60 @@ export const defaultCmsContent: CmsContentSchema = {
     highlight_tag: 'PROPRIETARY 24-HOUR MARKETING STRATEGY',
     cta_text: 'ENROLL NOW & GET THE 3S SYSTEM →'
   },
+  lms_frameworks: [
+    {
+      id: 'fw_3s',
+      is_active: true,
+      badge: '★ SIGNATURE FRAMEWORK',
+      tag: 'PROPRIETARY 24-HOUR MARKETING STRATEGY',
+      title: 'THE 3-SHIFT SCALING FORMULA™',
+      subtitle: '(That Is Also Called The Order Booster System)',
+      description: 'My proprietary 24-hour marketing & campaign shift strategy designed to maximize ad efficiency, boost confirmed daily orders, and scale profitability systematically.',
+      lessons: [
+        {
+          id: 'fw_3s_l1',
+          title: 'Shift 1: Morning Campaign Realignment & Budget Pacing',
+          duration: '18 mins',
+          videoUrl: ''
+        },
+        {
+          id: 'fw_3s_l2',
+          title: 'Shift 2: Afternoon Retargeting & Creative ROAS Maximizer',
+          duration: '24 mins',
+          videoUrl: ''
+        },
+        {
+          id: 'fw_3s_l3',
+          title: 'Shift 3: Night Conversion Blast & Order Confirmation Booster',
+          duration: '20 mins',
+          videoUrl: ''
+        }
+      ]
+    },
+    {
+      id: 'fw_vip',
+      is_active: false,
+      badge: '★ FINAL FRAMEWORK',
+      tag: 'EXCLUSIVE 7-FIGURE SCALING PROTOCOL',
+      title: 'FINAL FRAMEWORK: HIGH-TICKET SCALING PROTOCOL™',
+      subtitle: '(Direct Private Mentorship Secret)',
+      description: 'Step-by-step masterclass on scaling winning products to 1,000+ orders daily across UAE, KSA and Pakistan.',
+      lessons: [
+        {
+          id: 'fw_vip_l1',
+          title: 'Phase 1: High-Ticket Offer Architecture & Risk-Free Arbitrage',
+          duration: '22 mins',
+          videoUrl: ''
+        },
+        {
+          id: 'fw_vip_l2',
+          title: 'Phase 2: Aggressive Multi-Channel Scaling (Meta + TikTok)',
+          duration: '28 mins',
+          videoUrl: ''
+        }
+      ]
+    }
+  ],
   who_is_this_for: {
     badge: 'PERFECT FOR YOU IF…',
     title: 'Who Is This For?',

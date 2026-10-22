@@ -47,10 +47,12 @@ import {
   CheckCheck,
   Paperclip,
   Bell,
-  Users
+  Users,
+  Star
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
+import { LmsFrameworkItem, defaultCmsContent } from '@/utils/cmsStore';
 
 function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; isMentor?: boolean }) {
   const [isPlaying, setIsPlaying] = useState(false);
@@ -240,6 +242,10 @@ export default function LmsClassroomPage() {
   const [modules, setModules] = useState<Module[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
+  const [lmsFrameworks, setLmsFrameworks] = useState<LmsFrameworkItem[]>(
+    defaultCmsContent.lms_frameworks || []
+  );
+  const [openFrameworkId, setOpenFrameworkId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [accountRevoked, setAccountRevoked] = useState<string | null>(null);
@@ -1097,6 +1103,22 @@ export default function LmsClassroomPage() {
         if (res.success && res.resources) setResources(res.resources);
       });
 
+    // Fetch CMS settings (including special LMS frameworks) directly from DB
+    fetch(`/api/cms/content?t=${timestamp}`, {
+      cache: 'no-store',
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache'
+      }
+    })
+      .then(r => r.json())
+      .then(res => {
+        if (res.success && res.content?.lms_frameworks && Array.isArray(res.content.lms_frameworks)) {
+          setLmsFrameworks(res.content.lms_frameworks);
+        }
+      })
+      .catch(() => {});
+
     // Fetch Community Updates & Announcements
     fetch(`/api/community?t=${timestamp}`, {
       cache: 'no-store',
@@ -1341,7 +1363,9 @@ export default function LmsClassroomPage() {
   };
 
   // 100% Dynamic Lesson & Module Calculations (Zero Hardcoding)
-  const allLessons = modules.flatMap(m => m.lessons || []);
+  const activeFrameworks = (lmsFrameworks || []).filter(f => f.is_active !== false);
+  const frameworkLessons = activeFrameworks.flatMap(f => (f.lessons || []).map(l => ({ ...l, moduleId: f.id, isFramework: true })));
+  const allLessons = [...modules.flatMap(m => m.lessons || []), ...frameworkLessons];
   const currentLessonIndex = allLessons.findIndex(l => l.id === activeLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
@@ -1626,8 +1650,15 @@ export default function LmsClassroomPage() {
     return () => window.removeEventListener('message', handleWindowMessage);
   }, [activeLesson, completedLessons]);
 
-  const activeModule = modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || modules[0];
-  const activeModuleCompletedCount = activeModule ? activeModule.lessons.filter(l => completedLessons.includes(l.id)).length : 0;
+  const activeFrameworkObj = activeFrameworks.find(f => f.lessons?.some((l: any) => l.id === activeLesson?.id));
+  const activeModule = modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || (activeFrameworkObj ? {
+    id: 999,
+    title: activeFrameworkObj.title,
+    duration: '',
+    description: activeFrameworkObj.description || '',
+    lessons: (activeFrameworkObj.lessons || []) as any
+  } : modules[0]);
+  const activeModuleCompletedCount = activeModule ? (activeModule.lessons || []).filter((l: any) => completedLessons.includes(l.id)).length : 0;
   const activeModuleTotalCount = activeModule?.lessons?.length || 1;
   const activeModulePercent = Math.round((activeModuleCompletedCount / activeModuleTotalCount) * 100);
 
@@ -2111,6 +2142,193 @@ export default function LmsClassroomPage() {
                             );
                           })}
                       </div>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {/* ========================================================================= */}
+            {/* SPECIAL SIGNATURE & FINAL FRAMEWORK MODULES (PREMIUM HIGHLIGHTED SECTION) */}
+            {/* ========================================================================= */}
+            {activeFrameworks.map((fw) => {
+              const isOpen = openFrameworkId === fw.id;
+              const fwCompletedCount = fw.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
+              const activeLessonsCount = fw.lessons?.filter(l => Boolean(l.videoUrl && l.videoUrl.trim())).length || 0;
+              const totalLessonsCount = fw.lessons?.length || 0;
+              const isAllCompleted = fwCompletedCount === totalLessonsCount && totalLessonsCount > 0;
+              const isActiveFramework = fw.lessons?.some(l => l.id === activeLesson?.id);
+
+              const filteredLessons = (fw.lessons || []).filter(l => 
+                l.title.toLowerCase().includes(searchQuery.toLowerCase())
+              );
+
+              return (
+                <div 
+                  key={fw.id}
+                  className={`relative rounded-2xl transition-all duration-300 mt-5 mb-2 overflow-visible ${
+                    isActiveFramework 
+                      ? 'ring-2 ring-[#00A0DF] shadow-[0_0_25px_rgba(0,160,223,0.35)]' 
+                      : 'shadow-xl hover:shadow-[0_0_20px_rgba(0,160,223,0.2)]'
+                  } bg-gradient-to-br from-[#0B0F19] via-[#0d1627] to-[#070b13] border-2 border-[#00A0DF] text-white`}
+                >
+                  {/* Floating Signature/Final Badge on top right */}
+                  <div className="absolute -top-3 right-3 sm:right-4 bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 font-black text-[10px] px-2.5 py-0.5 rounded-full uppercase tracking-wider shadow-md flex items-center gap-1 select-none z-10">
+                    <Star size={10} className="fill-slate-950 text-slate-950" />
+                    <span>{fw.badge || '★ SIGNATURE FRAMEWORK'}</span>
+                  </div>
+
+                  {/* Ambient soft glow inside card */}
+                  <div className="absolute top-0 right-0 w-32 h-32 bg-[#00A0DF]/15 rounded-full blur-2xl pointer-events-none" />
+
+                  {/* Card Header Button */}
+                  <button
+                    type="button"
+                    onClick={() => setOpenFrameworkId(isOpen ? null : fw.id)}
+                    className="w-full p-3.5 text-left rounded-2xl transition-colors cursor-pointer relative z-1"
+                  >
+                    {/* Tag Pill */}
+                    {fw.tag && (
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#00A0DF]/20 border border-[#00A0DF]/40 text-[#00A0DF] text-[9.5px] font-black tracking-wider uppercase mb-1.5 shadow-2xs">
+                        <Sparkles size={10} className="text-[#00A0DF]" />
+                        <span className="truncate max-w-[210px]">{fw.tag}</span>
+                      </div>
+                    )}
+
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-xs sm:text-sm font-black text-white uppercase tracking-tight leading-snug line-clamp-2">
+                          {fw.title}
+                        </h3>
+                        {fw.subtitle && (
+                          <p className="text-[10px] font-bold text-amber-400 tracking-wide mt-0.5 truncate">
+                            {fw.subtitle}
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5 text-[10px] flex-shrink-0 pt-0.5">
+                        <span className="px-2 py-0.5 rounded-full font-bold bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/40">
+                          {activeLessonsCount}/{totalLessonsCount} Active
+                        </span>
+                        {isOpen ? (
+                          <ChevronDown size={14} className="text-slate-300" />
+                        ) : (
+                          <ChevronRight size={14} className="text-slate-300" />
+                        )}
+                      </div>
+                    </div>
+                  </button>
+
+                  {/* Collapsed Lectures Tree (Dark Mode Glassmorphism) */}
+                  {isOpen && (
+                    <div className="px-3 pb-3 pt-1 border-t border-white/10 relative z-1">
+                      {filteredLessons.length === 0 ? (
+                        <p className="text-[11px] text-slate-400 py-2 text-center">
+                          No lectures found
+                        </p>
+                      ) : (
+                        <div className="relative pl-5 ml-3 border-l-2 border-[#00A0DF]/40 space-y-2 py-1">
+                          {filteredLessons.map((lesson) => {
+                            const isDone = completedLessons.includes(lesson.id);
+                            const isCurrent = activeLesson?.id === lesson.id;
+                            const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
+
+                            return (
+                              <div
+                                key={lesson.id}
+                                onClick={() => {
+                                  setActiveLesson({ ...lesson, moduleId: fw.id, isFramework: true } as any);
+                                  setActiveTab('video');
+                                  setSidebarOpen(false);
+                                }}
+                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 text-xs transition-all ${
+                                  isCurrent
+                                    ? 'bg-[#00A0DF]/25 text-white font-bold border-2 border-[#00A0DF] shadow-md shadow-[#00A0DF]/20'
+                                    : 'bg-[#111827]/90 hover:bg-[#1a2336] text-slate-200 border border-white/10 hover:border-[#00A0DF]/40'
+                                }`}
+                              >
+                                {/* Tree Branch Connector Line */}
+                                <div 
+                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 pointer-events-none ${
+                                    isCurrent ? 'bg-[#00A0DF]' : 'bg-[#00A0DF]/40'
+                                  }`}
+                                />
+
+                                <div className="flex items-center gap-2.5 min-w-0">
+                                  {isCurrent ? (
+                                    <div 
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-[#00A0DF] text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-[#00A0DF]/40"
+                                    >
+                                      <Play size={10} className="fill-white ml-0.5" />
+                                    </div>
+                                  ) : isDone ? (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        toggleLessonComplete(lesson.id);
+                                      }}
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                      title="Completed (Click to Toggle)"
+                                    >
+                                      <CheckCircle2 size={18} className="shrink-0 aspect-square" />
+                                    </button>
+                                  ) : (
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        if (isAdmin || isDone) {
+                                          toggleLessonComplete(lesson.id);
+                                        } else {
+                                          setSyncFeedback('Watch 90% to complete');
+                                          setTimeout(() => setSyncFeedback(''), 3000);
+                                        }
+                                      }}
+                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-500 hover:text-[#00A0DF] cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                      title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
+                                    >
+                                      <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
+                                    </button>
+                                  )}
+
+                                  <div className="truncate">
+                                    <span className={`block truncate text-xs ${isCurrent ? 'font-black text-white' : isDone ? 'text-slate-400 line-through' : 'text-slate-200 font-semibold'}`}>
+                                      {lesson.title}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                  {hasVideo ? (
+                                    <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                      isCurrent 
+                                        ? 'bg-[#00A0DF] text-white shadow-xs' 
+                                        : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                                    }`}>
+                                      <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-emerald-400 animate-pulse'}`} />
+                                      <span>Active</span>
+                                      {lesson.duration && (
+                                        <span className={`font-medium ${isCurrent ? 'text-blue-100' : 'text-emerald-200'}`}>
+                                          • {lesson.duration}
+                                        </span>
+                                      )}
+                                    </span>
+                                  ) : (
+                                    <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-800 border border-white/10">
+                                      Upcoming
+                                    </span>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>

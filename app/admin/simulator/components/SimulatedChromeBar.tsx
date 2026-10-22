@@ -71,7 +71,9 @@ export function SimulatedChromeBar({
           <div className="flex items-center gap-4 text-slate-400 pl-2">
             <Minus size={13} className="cursor-pointer hover:text-white" />
             <Square size={11} className="cursor-pointer hover:text-white" />
-            <X size={14} onClick={onToggleChromeBar} className="cursor-pointer hover:text-red-400" title="Hide Chrome Bar" />
+            <span onClick={onToggleChromeBar} title="Hide Chrome Bar" className="cursor-pointer hover:text-red-400">
+              <X size={14} />
+            </span>
           </div>
         </div>
       </div>
@@ -81,12 +83,9 @@ export function SimulatedChromeBar({
         <div className="flex items-center gap-2 text-slate-400">
           <ArrowLeft size={14} className="hover:text-white cursor-pointer" />
           <ArrowRight size={14} className="text-slate-600 cursor-not-allowed" />
-          <RotateCw
-            size={14}
-            onClick={onReload}
-            className="hover:text-white cursor-pointer active:rotate-180 transition-transform"
-            title="Reload Page"
-          />
+          <span onClick={onReload} title="Reload Page" className="hover:text-white cursor-pointer active:rotate-180 transition-transform">
+            <RotateCw size={14} />
+          </span>
         </div>
 
         {/* Omnibox / URL field */}

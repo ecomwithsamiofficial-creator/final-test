@@ -2596,6 +2596,412 @@ export default function AdminCmsPage() {
                 >
                   🎁 Power Bonuses &amp; Themes ({resources.length})
                 </a>
+                <a
+                  href="#lms-frameworks-section"
+                  className="px-3 py-1.5 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 text-amber-300 border border-amber-500/30 font-bold transition-colors flex items-center gap-1"
+                >
+                  <Star size={13} className="fill-amber-400 text-amber-400" />
+                  <span>⭐ Special Frameworks ({(cmsData.lms_frameworks || defaultCmsContent.lms_frameworks || []).length})</span>
+                </a>
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* SECTION: SPECIAL FRAMEWORK & SIGNATURE FORMULA MODULES (LMS HIGHLIGHTED) */}
+            {/* ========================================================================= */}
+            <div id="lms-frameworks-section" className="bg-[#111827] border-2 border-[#00A0DF]/60 rounded-2xl sm:rounded-3xl p-4 sm:p-7 space-y-6 shadow-2xl relative overflow-hidden">
+              {/* Top ambient glow */}
+              <div className="absolute top-0 right-0 w-80 h-80 bg-[#00A0DF]/10 rounded-full blur-3xl pointer-events-none" />
+
+              {/* Header Bar */}
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10 relative z-10">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-400/10 border border-amber-400/30 text-amber-400 text-[11px] font-black uppercase tracking-wider">
+                    <Star size={12} className="fill-amber-400 text-amber-400" />
+                    <span>LMS Highlighted Modules</span>
+                  </div>
+                  <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
+                    <span>Special Signature &amp; Final Framework Modules</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    Yeh special modules LMS portal ke sidebar mein standard Module 8 ke theek neeche alag highlighted style mein nazar aatay hain. 
+                    Inka floating badge, category tag, title, subtitle aur video lectures yahan se update karein. Kisi bhi module ko aap 1-click mein <strong>Hide (Off)</strong> ya <strong>Visible (Active)</strong> kar sakte hain.
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap items-center gap-2.5 w-full sm:w-auto">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const newFw = {
+                        id: `fw_${Date.now()}`,
+                        is_active: true,
+                        badge: '★ SIGNATURE FRAMEWORK',
+                        tag: 'PROPRIETARY 24-HOUR MARKETING STRATEGY',
+                        title: 'NEW SCALING FORMULA™',
+                        subtitle: '(Custom Masterclass Series)',
+                        description: 'Custom strategy breakdown and scaling videos.',
+                        lessons: [
+                          {
+                            id: `fw_${Date.now()}_l1`,
+                            title: 'Shift 1: Framework Fundamentals & Setup',
+                            duration: '15 mins',
+                            videoUrl: ''
+                          }
+                        ]
+                      };
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_frameworks: [...(prev.lms_frameworks || defaultCmsContent.lms_frameworks || []), newFw]
+                      }));
+                    }}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-3.5 py-2 sm:py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-xs font-black text-white shadow-lg shadow-emerald-600/20 transition-all active:scale-95 cursor-pointer"
+                  >
+                    <Plus size={14} />
+                    <span>Add New Framework</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveAll}
+                    disabled={loading}
+                    className="flex-1 sm:flex-initial inline-flex items-center justify-center gap-1.5 px-4 py-2 sm:py-2.5 rounded-xl bg-[#00A0DF] hover:bg-[#0082b4] text-xs font-black text-white shadow-lg shadow-[#00A0DF]/20 transition-all active:scale-95 cursor-pointer disabled:opacity-50"
+                  >
+                    <Save size={14} />
+                    <span>{loading ? 'Saving...' : 'Save Frameworks'}</span>
+                  </button>
+                </div>
+              </div>
+
+              {/* Framework Cards List */}
+              <div className="space-y-6 relative z-10">
+                {(cmsData.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((fw, fwIdx) => {
+                  const isActive = fw.is_active !== false;
+
+                  return (
+                    <div 
+                      key={fw.id || fwIdx}
+                      className={`rounded-2xl border-2 transition-all p-4 sm:p-6 space-y-4 ${
+                        isActive 
+                          ? 'bg-[#0B0F19] border-[#00A0DF] shadow-lg shadow-[#00A0DF]/10' 
+                          : 'bg-[#0e1422]/60 border-slate-700/60 opacity-80'
+                      }`}
+                    >
+                      {/* Top Bar inside each framework */}
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-3 border-b border-white/10">
+                        <div className="flex items-center gap-2.5 flex-wrap">
+                          <span className="px-2.5 py-1 rounded-lg bg-white/10 text-white font-mono text-xs font-black">
+                            #{fwIdx + 1}
+                          </span>
+                          <span className="text-sm font-black text-white">
+                            {fw.title || `Framework ${fwIdx + 1}`}
+                          </span>
+                          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-400 text-slate-950 font-black text-[10px] uppercase shadow-xs">
+                            <Star size={10} className="fill-slate-950 text-slate-950" />
+                            <span>{fw.badge || '★ SIGNATURE FRAMEWORK'}</span>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center gap-2">
+                          {/* Visibility Toggle Button */}
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? { ...f, is_active: !isActive } : f
+                                )
+                              }));
+                            }}
+                            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black transition-all cursor-pointer shadow-xs ${
+                              isActive
+                                ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/40 hover:bg-emerald-500/30'
+                                : 'bg-slate-800 text-slate-400 border border-slate-700 hover:bg-slate-700 hover:text-white'
+                            }`}
+                            title="Click to toggle visibility on LMS Portal"
+                          >
+                            <span className={`w-2 h-2 rounded-full ${isActive ? 'bg-emerald-400 animate-pulse' : 'bg-slate-500'}`} />
+                            <span>{isActive ? '✅ VISIBLE ON LMS' : '👁️‍🗨️ HIDDEN (OFF)'}</span>
+                          </button>
+
+                          {/* Delete Framework Button (if more than 1) */}
+                          {(cmsData.lms_frameworks || defaultCmsContent.lms_frameworks || []).length > 1 && (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (!confirm(`Delete "${fw.title}" and its lectures?`)) return;
+                                setCmsData(prev => ({
+                                  ...prev,
+                                  lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).filter((_, i) => i !== fwIdx)
+                                }));
+                              }}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer"
+                              title="Delete this framework"
+                            >
+                              <Trash2 size={16} />
+                            </button>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Inputs Grid */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3.5 sm:gap-4 text-xs">
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Floating Badge Text (Pill on Top Right)
+                          </label>
+                          <input
+                            type="text"
+                            value={fw.badge || ''}
+                            placeholder="e.g. ★ SIGNATURE FRAMEWORK or ★ FINAL FRAMEWORK"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? { ...f, badge: val } : f
+                                )
+                              }));
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#030712] border border-white/10 text-white focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Highlight Tag Pill (e.g. Strategy / Formula Name)
+                          </label>
+                          <input
+                            type="text"
+                            value={fw.tag || ''}
+                            placeholder="e.g. PROPRIETARY 24-HOUR MARKETING STRATEGY"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? { ...f, tag: val } : f
+                                )
+                              }));
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#030712] border border-white/10 text-white focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Framework Main Title
+                          </label>
+                          <input
+                            type="text"
+                            value={fw.title || ''}
+                            placeholder="e.g. THE 3-SHIFT SCALING FORMULA™"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? { ...f, title: val } : f
+                                )
+                              }));
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#030712] border border-white/10 text-white font-bold focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block text-[10px] font-bold text-slate-300 uppercase tracking-wider mb-1">
+                            Subtitle / Secondary Note (Gold Text)
+                          </label>
+                          <input
+                            type="text"
+                            value={fw.subtitle || ''}
+                            placeholder="e.g. (That Is Also Called The Order Booster System)"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? { ...f, subtitle: val } : f
+                                )
+                              }));
+                            }}
+                            className="w-full px-3 py-2 rounded-xl bg-[#030712] border border-white/10 text-amber-300 font-bold focus:outline-none focus:border-[#00A0DF]"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Framework Lectures Section */}
+                      <div className="pt-3 border-t border-white/10 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="text-xs font-black text-[#00A0DF] uppercase tracking-wider flex items-center gap-1.5">
+                            <BookOpen size={13} />
+                            <span>Framework Lectures &amp; Video Links ({(fw.lessons || []).length})</span>
+                          </h4>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const newLessonId = `fw_${fw.id || fwIdx}_l${(fw.lessons || []).length + 1}_${Math.random().toString(36).substring(2, 6)}`;
+                              const newLesson = {
+                                id: newLessonId,
+                                title: `Lecture ${(fw.lessons || []).length + 1}: Strategic Scaling Step`,
+                                duration: '20 mins',
+                                videoUrl: ''
+                              };
+                              setCmsData(prev => ({
+                                ...prev,
+                                lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                  (f.id === fw.id || i === fwIdx) ? {
+                                    ...f,
+                                    lessons: [...(f.lessons || []), newLesson]
+                                  } : f
+                                )
+                              }));
+                            }}
+                            className="inline-flex items-center gap-1 px-3 py-1.5 rounded-lg bg-[#00A0DF]/20 hover:bg-[#00A0DF]/30 text-[#00A0DF] border border-[#00A0DF]/40 text-xs font-black transition-colors cursor-pointer"
+                          >
+                            <Plus size={13} />
+                            <span>Add Lecture</span>
+                          </button>
+                        </div>
+
+                        {/* Lessons List */}
+                        <div className="space-y-2.5">
+                          {(fw.lessons || []).length === 0 ? (
+                            <p className="text-xs text-slate-400 italic p-3 bg-slate-900/50 rounded-xl text-center">
+                              Abhi koi lecture add nahi hua. Click &quot;Add Lecture&quot; to add video lectures.
+                            </p>
+                          ) : (
+                            (fw.lessons || []).map((lesson, lIdx) => {
+                              const hasVid = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
+
+                              return (
+                                <div 
+                                  key={lesson.id || lIdx}
+                                  className="p-3 rounded-xl bg-[#030712] border border-white/10 flex flex-col md:flex-row items-start md:items-center gap-2.5 text-xs"
+                                >
+                                  <div className="flex items-center gap-2 w-full md:w-auto">
+                                    <span className="w-6 h-6 rounded-lg bg-slate-800 text-slate-300 font-mono text-[11px] font-bold flex items-center justify-center shrink-0">
+                                      {lIdx + 1}
+                                    </span>
+                                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-bold shrink-0 ${
+                                      hasVid ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-400'
+                                    }`}>
+                                      {hasVid ? 'Active' : 'No Video'}
+                                    </span>
+                                  </div>
+
+                                  {/* Title input */}
+                                  <div className="flex-1 min-w-[200px] w-full">
+                                    <input
+                                      type="text"
+                                      value={lesson.title || ''}
+                                      placeholder="Lecture Title"
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setCmsData(prev => ({
+                                          ...prev,
+                                          lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                            (f.id === fw.id || i === fwIdx) ? {
+                                              ...f,
+                                              lessons: (f.lessons || []).map((l, j) =>
+                                                (l.id === lesson.id || j === lIdx) ? { ...l, title: val } : l
+                                              )
+                                            } : f
+                                          )
+                                        }));
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-white/10 text-white font-semibold focus:outline-none focus:border-[#00A0DF]"
+                                    />
+                                  </div>
+
+                                  {/* Duration input */}
+                                  <div className="w-full md:w-28 shrink-0">
+                                    <input
+                                      type="text"
+                                      value={lesson.duration || ''}
+                                      placeholder="Duration (e.g. 18m)"
+                                      onChange={(e) => {
+                                        const val = e.target.value;
+                                        setCmsData(prev => ({
+                                          ...prev,
+                                          lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                            (f.id === fw.id || i === fwIdx) ? {
+                                              ...f,
+                                              lessons: (f.lessons || []).map((l, j) =>
+                                                (l.id === lesson.id || j === lIdx) ? { ...l, duration: val } : l
+                                              )
+                                            } : f
+                                          )
+                                        }));
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-white/10 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-[#00A0DF]"
+                                    />
+                                  </div>
+
+                                  {/* Video URL input */}
+                                  <div className="flex-1 min-w-[220px] w-full">
+                                    <input
+                                      type="text"
+                                      value={lesson.videoUrl || ''}
+                                      placeholder="Video URL / Bunny Stream / YouTube / MP4 Link"
+                                      onChange={(e) => {
+                                        let val = e.target.value;
+                                        const parsed = parseEmbedInput(val);
+                                        if (parsed) val = parsed;
+                                        if (val.includes('youtube.com/watch?v=')) {
+                                          const vId = val.split('v=')[1]?.split('&')[0];
+                                          if (vId) val = `https://www.youtube.com/embed/${vId}`;
+                                        } else if (val.includes('youtu.be/')) {
+                                          const vId = val.split('youtu.be/')[1]?.split('?')[0];
+                                          if (vId) val = `https://www.youtube.com/embed/${vId}`;
+                                        }
+                                        setCmsData(prev => ({
+                                          ...prev,
+                                          lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                            (f.id === fw.id || i === fwIdx) ? {
+                                              ...f,
+                                              lessons: (f.lessons || []).map((l, j) =>
+                                                (l.id === lesson.id || j === lIdx) ? { ...l, videoUrl: val } : l
+                                              )
+                                            } : f
+                                          )
+                                        }));
+                                      }}
+                                      className="w-full px-2.5 py-1.5 rounded-lg bg-slate-900 border border-white/10 text-slate-300 font-mono text-[11px] focus:outline-none focus:border-[#00A0DF]"
+                                    />
+                                  </div>
+
+                                  {/* Delete lesson */}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setCmsData(prev => ({
+                                        ...prev,
+                                        lms_frameworks: (prev.lms_frameworks || defaultCmsContent.lms_frameworks || []).map((f, i) =>
+                                          (f.id === fw.id || i === fwIdx) ? {
+                                            ...f,
+                                            lessons: (f.lessons || []).filter((_, j) => j !== lIdx)
+                                          } : f
+                                        )
+                                      }));
+                                    }}
+                                    className="p-1.5 rounded-lg text-slate-400 hover:text-red-400 hover:bg-red-500/10 transition-colors cursor-pointer shrink-0 self-end md:self-center"
+                                    title="Delete lecture"
+                                  >
+                                    <Trash2 size={15} />
+                                  </button>
+                                </div>
+                              );
+                            })
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
