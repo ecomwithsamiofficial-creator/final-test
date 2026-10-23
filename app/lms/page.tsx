@@ -288,6 +288,44 @@ export default function LmsClassroomPage() {
         setDetectedDurations(JSON.parse(saved));
       }
     } catch (e) {}
+
+    // Instant 0ms Cache Hydration: Render classroom immediately without waiting for server network delay
+    try {
+      const cachedMods = localStorage.getItem('sami_lms_modules_cache');
+      if (cachedMods) {
+        const parsedMods = JSON.parse(cachedMods);
+        if (Array.isArray(parsedMods) && parsedMods.length > 0) {
+          setModules(parsedMods);
+          if (parsedMods[0]?.lessons?.[0]) {
+            setActiveLesson(parsedMods[0].lessons[0]);
+            setOpenModuleId(parsedMods[0].id);
+          }
+        }
+      }
+      const cachedFw = localStorage.getItem('sami_lms_frameworks_cache');
+      if (cachedFw) {
+        const parsedFw = JSON.parse(cachedFw);
+        if (Array.isArray(parsedFw)) setLmsFrameworks(parsedFw);
+      }
+      const cachedSuppliers = localStorage.getItem('sami_lms_suppliers_cache');
+      if (cachedSuppliers) {
+        const parsedSupp = JSON.parse(cachedSuppliers);
+        if (Array.isArray(parsedSupp)) setSuppliers(parsedSupp);
+      }
+      const cachedRes = localStorage.getItem('sami_lms_resources_cache');
+      if (cachedRes) {
+        const parsedR = JSON.parse(cachedRes);
+        if (Array.isArray(parsedR)) setResources(parsedR);
+      }
+      const cachedAuth = localStorage.getItem('sami_student_auth');
+      if (cachedAuth) {
+        const parsedUser = JSON.parse(cachedAuth);
+        if (parsedUser) {
+          setUser(parsedUser);
+          setAuthChecking(false);
+        }
+      }
+    } catch (e) {}
   }, []);
 
   const saveDetectedDuration = (lessonId: string, label: string) => {
@@ -1113,7 +1151,7 @@ export default function LmsClassroomPage() {
           }
         })
         .catch(() => {});
-    }, 2500);
+    }, 20000);
 
     // Fetch modules directly from DB
     fetch(`/api/lms/modules?t=${timestamp}`, {
@@ -1127,9 +1165,12 @@ export default function LmsClassroomPage() {
       .then(res => {
         if (res.success && res.modules) {
           setModules(res.modules);
+          try {
+            localStorage.setItem('sami_lms_modules_cache', JSON.stringify(res.modules));
+          } catch (e) {}
           if (res.modules[0]?.lessons[0]) {
-            setActiveLesson(res.modules[0].lessons[0]);
-            setOpenModuleId(res.modules[0].id);
+            setActiveLesson((prev: any) => prev || res.modules[0].lessons[0]);
+            setOpenModuleId((prev: any) => prev || res.modules[0].id);
           }
         }
       });
@@ -1144,7 +1185,12 @@ export default function LmsClassroomPage() {
     })
       .then(r => r.json())
       .then(res => {
-        if (res.success && res.suppliers) setSuppliers(res.suppliers);
+        if (res.success && res.suppliers) {
+          setSuppliers(res.suppliers);
+          try {
+            localStorage.setItem('sami_lms_suppliers_cache', JSON.stringify(res.suppliers));
+          } catch (e) {}
+        }
       });
 
     // Fetch resources directly from DB
@@ -1157,7 +1203,12 @@ export default function LmsClassroomPage() {
     })
       .then(r => r.json())
       .then(res => {
-        if (res.success && res.resources) setResources(res.resources);
+        if (res.success && res.resources) {
+          setResources(res.resources);
+          try {
+            localStorage.setItem('sami_lms_resources_cache', JSON.stringify(res.resources));
+          } catch (e) {}
+        }
       });
 
     // Fetch CMS settings (including special LMS frameworks) directly from DB
@@ -1172,6 +1223,9 @@ export default function LmsClassroomPage() {
       .then(res => {
         if (res.success && Array.isArray(res.content?.lms_frameworks)) {
           setLmsFrameworks(res.content.lms_frameworks);
+          try {
+            localStorage.setItem('sami_lms_frameworks_cache', JSON.stringify(res.content.lms_frameworks));
+          } catch (e) {}
         } else if (res.success && !res.content?.lms_frameworks) {
           setLmsFrameworks(defaultCmsContent.lms_frameworks || []);
         }
@@ -1233,23 +1287,17 @@ export default function LmsClassroomPage() {
       }
     } catch (e) {}
 
-    // Dynamic Fast Polling (2.5s if viewing community, 3.5s if elsewhere on LMS)
-    const pollTime = activeTab === 'community' ? 2500 : 3500;
-    const interval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) return;
-      fetchLmsChat(true);
-    }, pollTime);
-
-    // Background poll for tab in background (8s)
-    const bgInterval = setInterval(() => {
-      if (typeof document !== 'undefined' && document.hidden) {
+    // Dynamic Fast Polling (Only poll when student is actively on Community view)
+    let interval: any = null;
+    if (activeTab === 'community') {
+      interval = setInterval(() => {
+        if (typeof document !== 'undefined' && document.hidden) return;
         fetchLmsChat(true);
-      }
-    }, 8000);
+      }, 3500);
+    }
 
     return () => {
-      clearInterval(interval);
-      clearInterval(bgInterval);
+      if (interval) clearInterval(interval);
       if (communityBcRef.current) {
         communityBcRef.current.close();
         communityBcRef.current = null;
