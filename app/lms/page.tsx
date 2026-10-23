@@ -2059,11 +2059,11 @@ export default function LmsClassroomPage() {
             </div>
 
             {/* Currently On Tracker Sub-header */}
-            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs">
-              <div className="flex items-center gap-1.5 min-w-0">
+            <div className="bg-slate-50 border border-slate-200/80 rounded-xl p-2.5 flex items-center justify-between text-xs gap-2">
+              <div className="flex items-center gap-1.5 min-w-0 flex-1">
                 <span className="w-2 h-2 rounded-full bg-blue-600 animate-pulse shrink-0" />
-                <span className="text-slate-600 font-semibold text-[11px] truncate">
-                  Currently on: <strong className="text-slate-900">{activeLesson?.title?.slice(0, 16) || 'Module 1.1'}...</strong>
+                <span className="text-slate-600 font-semibold text-[11px] truncate" title={activeLesson?.title}>
+                  Currently on: <strong className="text-slate-900">{activeLesson?.title || 'Module 1.1'}</strong>
                 </span>
               </div>
               <span className="text-[11px] font-bold text-blue-700 bg-blue-100/80 px-2 py-0.5 rounded-md shrink-0">
@@ -2100,20 +2100,20 @@ export default function LmsClassroomPage() {
                   {/* Module Header Button */}
                   <button
                     onClick={() => setOpenModuleId(isOpen ? 0 : m.id)}
-                    className="w-full p-3 text-left flex items-center justify-between gap-2.5 hover:bg-slate-50/80 rounded-2xl transition-colors cursor-pointer"
+                    className="w-full p-3 text-left flex items-start justify-between gap-2 hover:bg-slate-50/80 rounded-2xl transition-colors cursor-pointer"
                   >
-                    <div className="flex items-center gap-2.5 text-xs font-bold text-slate-800 min-w-0">
+                    <div className="flex items-start gap-2.5 text-xs font-bold text-slate-800 min-w-0 flex-1">
                       {isAllCompleted ? (
                         <div 
-                          style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
-                          className="w-6 h-6 min-w-[24px] min-h-[24px] rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 aspect-square"
+                          style={{ width: '22px', height: '22px', minWidth: '22px', minHeight: '22px' }}
+                          className="w-5.5 h-5.5 min-w-[22px] min-h-[22px] rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 aspect-square mt-0.5"
                         >
-                          <CheckCircle2 size={15} />
+                          <CheckCircle2 size={14} />
                         </div>
                       ) : (
                         <div 
-                          style={{ width: '24px', height: '24px', minWidth: '24px', minHeight: '24px' }}
-                          className={`w-6 h-6 min-w-[24px] min-h-[24px] rounded-full flex items-center justify-center text-xs font-bold shrink-0 aspect-square ${
+                          style={{ width: '22px', height: '22px', minWidth: '22px', minHeight: '22px' }}
+                          className={`w-5.5 h-5.5 min-w-[22px] min-h-[22px] rounded-full flex items-center justify-center text-[11px] font-bold shrink-0 aspect-square mt-0.5 ${
                             isActiveModule 
                               ? 'bg-blue-600 text-white shadow-xs' 
                               : 'bg-slate-100 text-slate-600 border border-slate-200'
@@ -2122,11 +2122,13 @@ export default function LmsClassroomPage() {
                           {m.id}
                         </div>
                       )}
-                      <span className="truncate text-slate-900 font-bold">{m.title}</span>
+                      <span className="text-slate-900 font-bold text-xs leading-snug break-words">
+                        {m.title}
+                      </span>
                     </div>
 
-                    <div className="flex items-center gap-2 text-[10px] text-slate-500 flex-shrink-0">
-                      <span className={`px-2 py-0.5 rounded-full font-bold ${
+                    <div className="flex items-center gap-1.5 text-[10px] text-slate-500 shrink-0 pt-0.5">
+                      <span className={`px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${
                         activeLessonsCount > 0
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
                           : 'bg-slate-100 text-slate-500 border border-slate-200/60'
@@ -2134,9 +2136,9 @@ export default function LmsClassroomPage() {
                         {activeLessonsCount}/{totalLessonsCount} Active
                       </span>
                       {isOpen ? (
-                        <ChevronDown size={14} className="text-slate-400" />
+                        <ChevronDown size={14} className="text-slate-400 shrink-0" />
                       ) : (
-                        <ChevronRight size={14} className="text-slate-400" />
+                        <ChevronRight size={14} className="text-slate-400 shrink-0" />
                       )}
                     </div>
                   </button>
@@ -2160,7 +2162,7 @@ export default function LmsClassroomPage() {
                                   setActiveTab('video');
                                   setSidebarOpen(false);
                                 }}
-                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 text-xs transition-all ${
+                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-start justify-between gap-2 text-xs transition-all ${
                                   isCurrent
                                     ? 'bg-blue-50/90 text-blue-950 font-bold border-2 border-blue-400 shadow-xs'
                                     : 'bg-white hover:bg-slate-50 text-slate-700 border border-slate-200/70 hover:border-slate-300'
@@ -2168,91 +2170,95 @@ export default function LmsClassroomPage() {
                               >
                                 {/* Tree Branch Connector Line Node */}
                                 <div 
-                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 pointer-events-none ${
+                                  className={`absolute -left-[21px] top-4 w-4 h-0.5 pointer-events-none ${
                                     isCurrent ? 'bg-blue-500' : 'bg-blue-200'
                                   }`} 
                                 />
 
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  {/* Play Icon or 100% Round SVG Circle (Zero Stretching into Ovals on iPhone / Android) */}
-                                  {isCurrent ? (
-                                    <div 
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-blue-500/40"
-                                    >
-                                      <Play size={10} className="fill-white ml-0.5" />
-                                    </div>
-                                  ) : isDone ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleLessonComplete(lesson.id);
-                                      }}
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-600 hover:text-emerald-700 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
-                                      title="Completed (Click to Toggle)"
-                                    >
-                                      <CheckCircle2 size={18} className="shrink-0 aspect-square" />
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (isAdmin || isDone) {
+                                <div className="flex items-start gap-2 min-w-0 flex-1">
+                                  {/* Play Icon or 100% Round SVG Circle */}
+                                  <div className="shrink-0 mt-0.5">
+                                    {isCurrent ? (
+                                      <div 
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-blue-600 text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-blue-500/40"
+                                      >
+                                        <Play size={10} className="fill-white ml-0.5" />
+                                      </div>
+                                    ) : isDone ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           toggleLessonComplete(lesson.id);
-                                        } else {
-                                          setSyncFeedback('Watch 90% to complete');
-                                          setTimeout(() => setSyncFeedback(''), 3000);
-                                        }
-                                      }}
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-300 hover:text-blue-500 cursor-pointer p-0 m-0 border-0 bg-transparent"
-                                      title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
-                                    >
-                                      <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
-                                    </button>
-                                  )}
+                                        }}
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-600 hover:text-emerald-700 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                        title="Completed (Click to Toggle)"
+                                      >
+                                        <CheckCircle2 size={18} className="shrink-0 aspect-square" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isAdmin || isDone) {
+                                            toggleLessonComplete(lesson.id);
+                                          } else {
+                                            setSyncFeedback('Watch 90% to complete');
+                                            setTimeout(() => setSyncFeedback(''), 3000);
+                                          }
+                                        }}
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-300 hover:text-blue-500 cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                        title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
+                                      >
+                                        <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
+                                      </button>
+                                    )}
+                                  </div>
 
-                                  <div className="truncate">
-                                    <span className={`block truncate text-xs ${isCurrent ? 'font-black text-blue-950' : 'font-semibold text-slate-800'}`}>
+                                  <div className="min-w-0 flex-1">
+                                    <span className={`block text-xs leading-snug break-words ${isCurrent ? 'font-black text-blue-950' : 'font-semibold text-slate-800'}`}>
                                       {lesson.title}
                                     </span>
                                   </div>
                                 </div>
 
-                                {(() => {
-                                  const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
-                                  const detectedDur = detectedDurations[lesson.id];
-                                  const validDbDuration = lesson.duration && !isFakeTimer(lesson.duration) ? lesson.duration : '';
-                                  const currentActiveDur = isCurrent && duration > 0 ? formatDurationLabel(duration) : '';
-                                  const displayDuration = currentActiveDur || detectedDur || validDbDuration;
+                                <div className="shrink-0 self-start mt-0.5">
+                                  {(() => {
+                                    const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
+                                    const detectedDur = detectedDurations[lesson.id];
+                                    const validDbDuration = lesson.duration && !isFakeTimer(lesson.duration) ? lesson.duration : '';
+                                    const currentActiveDur = isCurrent && duration > 0 ? formatDurationLabel(duration) : '';
+                                    const displayDuration = currentActiveDur || detectedDur || validDbDuration;
 
-                                  if (!hasVideo) {
+                                    if (!hasVideo) {
+                                      return (
+                                        <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-100 border border-slate-200/50 whitespace-nowrap">
+                                          Upcoming
+                                        </span>
+                                      );
+                                    }
+
                                     return (
-                                      <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-100 border border-slate-200/50">
-                                        Upcoming
+                                      <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap ${
+                                        isCurrent 
+                                          ? 'bg-blue-600 text-white shadow-xs' 
+                                          : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                      }`}>
+                                        <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-emerald-500 animate-pulse'}`} />
+                                        <span>Active</span>
+                                        {displayDuration && (
+                                          <span className={`font-medium ${isCurrent ? 'text-blue-100' : 'text-emerald-800'}`}>
+                                            • {displayDuration}
+                                          </span>
+                                        )}
                                       </span>
                                     );
-                                  }
-
-                                  return (
-                                    <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
-                                      isCurrent 
-                                        ? 'bg-blue-600 text-white shadow-xs' 
-                                        : 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                                    }`}>
-                                      <span className={`w-1.5 h-1.5 rounded-full ${isCurrent ? 'bg-white' : 'bg-emerald-500 animate-pulse'}`} />
-                                      <span>Active</span>
-                                      {displayDuration && (
-                                        <span className={`font-medium ${isCurrent ? 'text-blue-100' : 'text-emerald-800'}`}>
-                                          • {displayDuration}
-                                        </span>
-                                      )}
-                                    </span>
-                                  );
-                                })()}
+                                  })()}
+                                </div>
                               </div>
                             );
                           })}
@@ -2357,7 +2363,7 @@ export default function LmsClassroomPage() {
                                   setActiveTab('video');
                                   setSidebarOpen(false);
                                 }}
-                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-center justify-between gap-2.5 text-xs transition-all ${
+                                className={`relative p-2.5 rounded-xl cursor-pointer flex items-start justify-between gap-2 text-xs transition-all ${
                                   isCurrent
                                     ? 'bg-[#00A0DF]/25 text-white font-bold border-2 border-[#00A0DF] shadow-md shadow-[#00A0DF]/20'
                                     : 'bg-[#111827]/90 hover:bg-[#1a2336] text-slate-200 border border-white/10 hover:border-[#00A0DF]/40'
@@ -2365,62 +2371,64 @@ export default function LmsClassroomPage() {
                               >
                                 {/* Tree Branch Connector Line */}
                                 <div 
-                                  className={`absolute -left-[21px] top-1/2 -translate-y-1/2 w-4 h-0.5 pointer-events-none ${
+                                  className={`absolute -left-[21px] top-4 w-4 h-0.5 pointer-events-none ${
                                     isCurrent ? 'bg-[#00A0DF]' : 'bg-[#00A0DF]/40'
-                                  }`}
+                                  }`} 
                                 />
 
-                                <div className="flex items-center gap-2.5 min-w-0">
-                                  {isCurrent ? (
-                                    <div 
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-[#00A0DF] text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-[#00A0DF]/40"
-                                    >
-                                      <Play size={10} className="fill-white ml-0.5" />
-                                    </div>
-                                  ) : isDone ? (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        toggleLessonComplete(lesson.id);
-                                      }}
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
-                                      title="Completed (Click to Toggle)"
-                                    >
-                                      <CheckCircle2 size={18} className="shrink-0 aspect-square" />
-                                    </button>
-                                  ) : (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        if (isAdmin || isDone) {
+                                <div className="flex items-start gap-2 min-w-0 flex-1">
+                                  <div className="shrink-0 mt-0.5">
+                                    {isCurrent ? (
+                                      <div 
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] rounded-full bg-[#00A0DF] text-white flex items-center justify-center shrink-0 aspect-square shadow-xs shadow-[#00A0DF]/40"
+                                      >
+                                        <Play size={10} className="fill-white ml-0.5" />
+                                      </div>
+                                    ) : isDone ? (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
                                           toggleLessonComplete(lesson.id);
-                                        } else {
-                                          setSyncFeedback('Watch 90% to complete');
-                                          setTimeout(() => setSyncFeedback(''), 3000);
-                                        }
-                                      }}
-                                      style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
-                                      className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-500 hover:text-[#00A0DF] cursor-pointer p-0 m-0 border-0 bg-transparent"
-                                      title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
-                                    >
-                                      <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
-                                    </button>
-                                  )}
+                                        }}
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square text-emerald-400 hover:text-emerald-300 flex items-center justify-center cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                        title="Completed (Click to Toggle)"
+                                      >
+                                        <CheckCircle2 size={18} className="shrink-0 aspect-square" />
+                                      </button>
+                                    ) : (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          if (isAdmin || isDone) {
+                                            toggleLessonComplete(lesson.id);
+                                          } else {
+                                            setSyncFeedback('Watch 90% to complete');
+                                            setTimeout(() => setSyncFeedback(''), 3000);
+                                          }
+                                        }}
+                                        style={{ width: '20px', height: '20px', minWidth: '20px', minHeight: '20px' }}
+                                        className="w-5 h-5 min-w-[20px] min-h-[20px] shrink-0 aspect-square flex items-center justify-center text-slate-500 hover:text-[#00A0DF] cursor-pointer p-0 m-0 border-0 bg-transparent"
+                                        title={isAdmin ? 'Admin toggle' : 'Watch video to complete'}
+                                      >
+                                        <Circle size={18} strokeWidth={2.2} className="shrink-0 aspect-square" />
+                                      </button>
+                                    )}
+                                  </div>
 
-                                  <div className="truncate">
-                                    <span className={`block truncate text-xs ${isCurrent ? 'font-black text-white' : isDone ? 'text-slate-400 line-through' : 'text-slate-200 font-semibold'}`}>
+                                  <div className="min-w-0 flex-1">
+                                    <span className={`block text-xs leading-snug break-words ${isCurrent ? 'font-black text-white' : isDone ? 'text-slate-400 line-through' : 'text-slate-200 font-semibold'}`}>
                                       {lesson.title}
                                     </span>
                                   </div>
                                 </div>
 
-                                <div className="flex items-center gap-1.5 flex-shrink-0">
+                                <div className="shrink-0 self-start mt-0.5">
                                   {hasVideo ? (
-                                    <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 ${
+                                    <span className={`text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md flex items-center gap-1 whitespace-nowrap ${
                                       isCurrent 
                                         ? 'bg-[#00A0DF] text-white shadow-xs' 
                                         : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
@@ -2434,7 +2442,7 @@ export default function LmsClassroomPage() {
                                       )}
                                     </span>
                                   ) : (
-                                    <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-800 border border-white/10">
+                                    <span className="text-[10px] flex-shrink-0 font-bold px-2 py-0.5 rounded-md text-slate-400 bg-slate-800 border border-white/10 whitespace-nowrap">
                                       Upcoming
                                     </span>
                                   )}
