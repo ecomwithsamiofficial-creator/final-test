@@ -194,7 +194,10 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
           ...defaultCmsContent.refund_policy,
           ...parsed.refund_policy
         }
-      : defaultCmsContent.refund_policy
+      : defaultCmsContent.refund_policy,
+    lms_frameworks: Array.isArray(parsed.lms_frameworks)
+      ? parsed.lms_frameworks
+      : (defaultCmsContent.lms_frameworks || [])
   };
 }
 
@@ -273,6 +276,8 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
       updated.about_page = patch.about_page;
     } else if (activeTab === 'refund_policy' && patch.refund_policy !== undefined) {
       updated.refund_policy = patch.refund_policy;
+    } else if (activeTab === 'lms') {
+      if (patch.lms_frameworks !== undefined) updated.lms_frameworks = patch.lms_frameworks;
     }
 
     try {
@@ -381,6 +386,7 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   if (patch.signature_framework !== undefined) updated.signature_framework = patch.signature_framework;
   if (patch.about_page !== undefined) updated.about_page = patch.about_page;
   if (patch.refund_policy !== undefined) updated.refund_policy = patch.refund_policy;
+  if (patch.lms_frameworks !== undefined) updated.lms_frameworks = patch.lms_frameworks;
   if (patch.theme !== undefined) {
     updated.theme = {
       ...(existing.theme || defaultCmsContent.theme),

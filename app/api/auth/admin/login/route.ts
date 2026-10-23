@@ -48,6 +48,14 @@ export async function POST(request: NextRequest) {
         maxAge: 60 * 60 * 24 * 7
       });
 
+      response.cookies.set('sami_admin_active', '1', {
+        httpOnly: false,
+        secure: process.env.NODE_ENV === 'production',
+        sameSite: 'lax',
+        path: '/',
+        maxAge: 60 * 60 * 24 * 7
+      });
+
       return response;
     }
 

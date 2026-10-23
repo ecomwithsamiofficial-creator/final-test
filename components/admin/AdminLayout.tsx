@@ -124,7 +124,10 @@ export function AdminLayout({ children }: { children: React.ReactNode }) {
     }
   }, [pathname]);
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await fetch('/api/auth/admin/logout', { method: 'POST', cache: 'no-store' });
+    } catch (e) {}
     localStorage.removeItem('sami_admin_token');
     localStorage.removeItem('sami_admin_user');
     if (typeof window !== 'undefined') {
