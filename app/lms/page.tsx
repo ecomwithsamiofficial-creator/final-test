@@ -52,7 +52,7 @@ import {
 } from 'lucide-react';
 import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
-import { LmsFrameworkItem, defaultCmsContent } from '@/utils/cmsStore';
+import { LmsFrameworkItem, LmsOverviewContent, defaultCmsContent } from '@/utils/cmsStore';
 
 function ChatVoiceNotePlayer({ 
   audioUrl, 
@@ -278,16 +278,46 @@ export default function LmsClassroomPage() {
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [resources, setResources] = useState<ResourceItem[]>([]);
   const [lmsFrameworks, setLmsFrameworks] = useState<LmsFrameworkItem[]>([]);
+  const [lmsOverview, setLmsOverview] = useState<LmsOverviewContent | null>(() => {
+    return defaultCmsContent.lms_overview || null;
+  });
   const [openFrameworkId, setOpenFrameworkId] = useState<string | null>(null);
   const [user, setUser] = useState<any>(null);
   const [authChecking, setAuthChecking] = useState(true);
   const [accountRevoked, setAccountRevoked] = useState<string | null>(null);
-  const [activeLesson, setActiveLesson] = useState<any>(null);
+  const [activeLesson, setActiveLesson] = useState<any>(() => {
+    if (defaultCmsContent.lms_overview && defaultCmsContent.lms_overview.is_active !== false) {
+      return {
+        id: 'lms_overview_lesson',
+        title: defaultCmsContent.lms_overview.title || 'Mentorship Overview & Strategy Roadmap (Watch First)',
+        duration: defaultCmsContent.lms_overview.duration || '15:20 mins',
+        videoUrl: defaultCmsContent.lms_overview.video_url || '',
+        description: defaultCmsContent.lms_overview.description || '',
+        badge: defaultCmsContent.lms_overview.badge || 'START HERE • ROADMAP',
+        isOverview: true
+      };
+    }
+    return null;
+  });
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [isMuted, setIsMuted] = useState<boolean>(false);
   const [currentTime, setCurrentTime] = useState<number>(0);
   const [duration, setDuration] = useState<number>(0);
   const [detectedDurations, setDetectedDurations] = useState<{ [lessonId: string]: string }>({});
+
+  const getOverviewLesson = (overview?: LmsOverviewContent | null) => {
+    const o = overview || lmsOverview || defaultCmsContent.lms_overview;
+    if (!o || o.is_active === false) return null;
+    return {
+      id: 'lms_overview_lesson',
+      title: o.title || 'Mentorship Overview & Strategy Roadmap (Watch First)',
+      duration: o.duration || '15:20 mins',
+      videoUrl: o.video_url || '',
+      description: o.description || '',
+      badge: o.badge || 'START HERE • ROADMAP',
+      isOverview: true
+    };
+  };
 
   useEffect(() => {
     try {
@@ -299,13 +329,30 @@ export default function LmsClassroomPage() {
 
     // Instant 0ms Cache Hydration: Render classroom immediately without waiting for server network delay
     try {
+      let currentOverview = defaultCmsContent.lms_overview || null;
+      const cachedOverview = localStorage.getItem('sami_lms_overview_cache');
+      if (cachedOverview) {
+        try {
+          const parsedOv = JSON.parse(cachedOverview);
+          if (parsedOv) {
+            setLmsOverview(parsedOv);
+            currentOverview = parsedOv;
+          }
+        } catch (e) {}
+      }
+
+      const ovLesson = getOverviewLesson(currentOverview);
+      if (ovLesson) {
+        setActiveLesson((prev: any) => (prev?.isOverview ? prev : ovLesson));
+      }
+
       const cachedMods = localStorage.getItem('sami_lms_modules_cache');
       if (cachedMods) {
         const parsedMods = JSON.parse(cachedMods);
         if (Array.isArray(parsedMods) && parsedMods.length > 0) {
           setModules(parsedMods);
-          if (parsedMods[0]?.lessons?.[0]) {
-            setActiveLesson(parsedMods[0].lessons[0]);
+          if (!ovLesson && parsedMods[0]?.lessons?.[0]) {
+            setActiveLesson((prev: any) => prev || parsedMods[0].lessons[0]);
             setOpenModuleId(parsedMods[0].id);
           }
         }
@@ -1232,6 +1279,28 @@ export default function LmsClassroomPage() {
     })
       .then(r => r.json())
       .then(res => {
+        if (res.success && res.content?.lms_overview) {
+          const ov = res.content.lms_overview;
+          setLmsOverview(ov);
+          try {
+            localStorage.setItem('sami_lms_overview_cache', JSON.stringify(ov));
+          } catch (e) {}
+
+          // Update activeLesson if it's currently on overview so live video URL / titles update immediately
+          setActiveLesson((prev: any) => {
+            if (prev?.isOverview) {
+              return {
+                ...prev,
+                title: ov.title || prev.title,
+                duration: ov.duration || prev.duration,
+                videoUrl: ov.video_url !== undefined ? ov.video_url : prev.videoUrl,
+                description: ov.description || prev.description,
+                badge: ov.badge || prev.badge
+              };
+            }
+            return prev;
+          });
+        }
         if (res.success && Array.isArray(res.content?.lms_frameworks)) {
           setLmsFrameworks(res.content.lms_frameworks);
           try {
@@ -1481,9 +1550,26 @@ export default function LmsClassroomPage() {
   };
 
   // 100% Dynamic Lesson & Module Calculations (Zero Hardcoding)
+  const overviewLesson = useMemo(() => {
+    if (!lmsOverview || lmsOverview.is_active === false) return null;
+    return {
+      id: 'lms_overview_lesson',
+      title: lmsOverview.title || 'Mentorship Overview & Strategy Roadmap (Watch First)',
+      duration: lmsOverview.duration || '15:20 mins',
+      videoUrl: lmsOverview.video_url || '',
+      description: lmsOverview.description || '',
+      badge: lmsOverview.badge || 'START HERE • ROADMAP',
+      isOverview: true
+    };
+  }, [lmsOverview]);
+
   const activeFrameworks = (lmsFrameworks || []).filter(f => f.is_active !== false);
   const frameworkLessons = activeFrameworks.flatMap(f => (f.lessons || []).map(l => ({ ...l, moduleId: f.id, isFramework: true })));
-  const allLessons = [...modules.flatMap(m => m.lessons || []), ...frameworkLessons];
+  const allLessons = [
+    ...(overviewLesson ? [overviewLesson] : []),
+    ...modules.flatMap(m => m.lessons || []),
+    ...frameworkLessons
+  ];
   const currentLessonIndex = allLessons.findIndex(l => l.id === activeLesson?.id);
   const prevLesson = currentLessonIndex > 0 ? allLessons[currentLessonIndex - 1] : null;
   const nextLesson = currentLessonIndex < allLessons.length - 1 ? allLessons[currentLessonIndex + 1] : null;
@@ -1768,17 +1854,27 @@ export default function LmsClassroomPage() {
     return () => window.removeEventListener('message', handleWindowMessage);
   }, [activeLesson, completedLessons]);
 
+  const isOverviewActive = Boolean(activeLesson?.isOverview);
   const activeFrameworkObj = activeFrameworks.find(f => f.lessons?.some((l: any) => l.id === activeLesson?.id));
-  const activeModule = modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || (activeFrameworkObj ? {
+  const activeModule = isOverviewActive ? {
+    id: 0,
+    title: lmsOverview?.title || 'Mentorship Overview & Strategy Roadmap (Watch First)',
+    duration: lmsOverview?.duration || '',
+    description: lmsOverview?.description || '',
+    lessons: overviewLesson ? [overviewLesson] : []
+  } : (modules.find(m => m.lessons?.some(l => l.id === activeLesson?.id)) || (activeFrameworkObj ? {
     id: 999,
     title: activeFrameworkObj.title,
     duration: '',
     description: activeFrameworkObj.description || '',
     lessons: (activeFrameworkObj.lessons || []) as any
-  } : modules[0]);
+  } : modules[0]));
   const activeModuleCompletedCount = activeModule ? (activeModule.lessons || []).filter((l: any) => completedLessons.includes(l.id)).length : 0;
   const activeModuleTotalCount = activeModule?.lessons?.length || 1;
-  const activeModulePercent = Math.round((activeModuleCompletedCount / activeModuleTotalCount) * 100);
+  const isOverviewDone = overviewLesson ? completedLessons.includes(overviewLesson.id) : false;
+  const activeModulePercent = isOverviewActive 
+    ? (isOverviewDone ? 100 : (currentLessonWatchPct || 0))
+    : Math.round((activeModuleCompletedCount / activeModuleTotalCount) * 100);
 
   const filteredSuppliers = suppliers.filter(s => {
     const matchesCountry = supplierCountryFilter === 'ALL' || s.country === supplierCountryFilter;
@@ -2085,6 +2181,88 @@ export default function LmsClassroomPage() {
               overscrollBehaviorY: 'contain'
             }}
           >
+            {/* Dedicated Course Overview & Mentorship Roadmap (Direct Top Section, No Nested Lectures) */}
+            {overviewLesson && (!searchQuery || overviewLesson.title.toLowerCase().includes(searchQuery.toLowerCase())) && (
+              <div 
+                className={`border rounded-2xl bg-white transition-all shadow-xs ${
+                  activeLesson?.isOverview 
+                    ? 'border-blue-500 ring-2 ring-blue-100 shadow-md bg-gradient-to-r from-blue-50/70 via-white to-blue-50/30' 
+                    : 'border-slate-200 hover:border-blue-300 hover:shadow-xs'
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setActiveLesson(overviewLesson)}
+                  className="w-full p-3 text-left flex items-start justify-between gap-2.5 rounded-2xl transition-colors cursor-pointer group"
+                >
+                  <div className="flex items-start gap-2.5 text-xs font-bold text-slate-800 min-w-0 flex-1">
+                    {completedLessons.includes(overviewLesson.id) ? (
+                      <div 
+                        style={{ width: '22px', height: '22px', minWidth: '22px', minHeight: '22px' }}
+                        className="w-5.5 h-5.5 min-w-[22px] min-h-[22px] rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 aspect-square mt-0.5"
+                      >
+                        <CheckCircle2 size={14} />
+                      </div>
+                    ) : (
+                      <div 
+                        style={{ width: '22px', height: '22px', minWidth: '22px', minHeight: '22px' }}
+                        className={`w-5.5 h-5.5 min-w-[22px] min-h-[22px] rounded-full flex items-center justify-center text-[10px] font-bold shrink-0 aspect-square mt-0.5 ${
+                          activeLesson?.isOverview 
+                            ? 'bg-blue-600 text-white shadow-xs' 
+                            : 'bg-blue-100 text-blue-700 border border-blue-200 group-hover:bg-blue-600 group-hover:text-white transition-colors'
+                        }`}
+                      >
+                        <Play size={10} className="fill-current ml-0.5" />
+                      </div>
+                    )}
+
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                        <span className="inline-flex items-center gap-1 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 border border-blue-200/80">
+                          <Sparkles size={9} className="text-blue-600" />
+                          <span>{overviewLesson.badge || 'START HERE • ROADMAP'}</span>
+                        </span>
+                        {activeLesson?.isOverview && (
+                          <span className="inline-flex items-center gap-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-emerald-100 text-emerald-700">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                            <span>Active</span>
+                          </span>
+                        )}
+                      </div>
+                      <span className="text-slate-900 font-bold text-xs leading-snug break-words block">
+                        {overviewLesson.title}
+                      </span>
+                      {(() => {
+                        const detectedDur = detectedDurations[overviewLesson.id];
+                        const validDbDur = overviewLesson.duration && !isFakeTimer(overviewLesson.duration) ? overviewLesson.duration : '';
+                        const liveDur = activeLesson?.isOverview && duration > 0 ? formatDurationLabel(duration) : '';
+                        const displayDur = liveDur || detectedDur || validDbDur;
+                        if (!displayDur) return null;
+                        return (
+                          <span className="text-[10px] text-slate-500 font-semibold flex items-center gap-1 mt-1">
+                            <Clock size={10} className="text-slate-400" />
+                            <span>{displayDur}</span>
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-1 text-[10px] shrink-0 pt-0.5">
+                    <span className={`px-2 py-0.5 rounded-full font-bold whitespace-nowrap ${
+                      activeLesson?.isOverview
+                        ? 'bg-blue-600 text-white'
+                        : Boolean(overviewLesson.videoUrl && overviewLesson.videoUrl.trim())
+                          ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                          : 'bg-slate-100 text-slate-500 border border-slate-200/60'
+                    }`}>
+                      {activeLesson?.isOverview ? 'Watching' : 'Overview'}
+                    </span>
+                  </div>
+                </button>
+              </div>
+            )}
+
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
               const moduleCompletedCount = m.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
@@ -2873,7 +3051,7 @@ export default function LmsClassroomPage() {
                   {/* Badges Strip */}
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-3 py-1 rounded-full">
-                      CURRENT LECTURE • MODULE {activeModule?.id || 1}
+                      {activeLesson?.isOverview ? (activeLesson?.badge || 'START HERE • ROADMAP') : `CURRENT LECTURE • MODULE ${activeModule?.id || 1}`}
                     </span>
                     {hasLessonVideo ? (
                       <>
@@ -2911,6 +3089,19 @@ export default function LmsClassroomPage() {
                   <h1 className="text-lg sm:text-2xl font-black text-slate-900 tracking-tight leading-snug">
                     {activeLesson?.title || '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences'}
                   </h1>
+
+                  {/* Overview Roadmap Description (if viewing Overview) */}
+                  {activeLesson?.isOverview && activeLesson?.description && (
+                    <div className="bg-blue-50/70 border border-blue-200/90 rounded-xl sm:rounded-2xl p-4 sm:p-5 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium space-y-1">
+                      <div className="flex items-center gap-1.5 text-blue-900 font-bold text-xs uppercase tracking-wider mb-1">
+                        <Sparkles size={13} className="text-blue-600" />
+                        <span>Roadmap Guidelines &amp; Instructions</span>
+                      </div>
+                      <p className="whitespace-pre-line text-slate-700">
+                        {activeLesson.description}
+                      </p>
+                    </div>
+                  )}
 
                   {/* Student Support & DRM Protection Notice */}
                   <div className="bg-slate-50 border border-slate-200/90 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xs">

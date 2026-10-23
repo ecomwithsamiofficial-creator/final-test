@@ -306,7 +306,17 @@ export interface CmsContentSchema {
     order_booster_title?: string;
     order_booster_desc?: string;
   };
+  lms_overview?: LmsOverviewContent;
   lms_frameworks?: LmsFrameworkItem[];
+}
+
+export interface LmsOverviewContent {
+  is_active: boolean;
+  badge?: string;
+  title?: string;
+  duration?: string;
+  video_url?: string;
+  description?: string;
 }
 
 export interface LmsFrameworkLesson {
@@ -658,6 +668,14 @@ export const defaultCmsContent: CmsContentSchema = {
     description: 'My proprietary 24-hour marketing & campaign shift strategy designed to maximize ad efficiency, boost confirmed daily orders, and scale profitability systematically.',
     highlight_tag: 'PROPRIETARY 24-HOUR MARKETING STRATEGY',
     cta_text: 'ENROLL NOW & GET THE 3S SYSTEM →'
+  },
+  lms_overview: {
+    is_active: true,
+    badge: 'START HERE • ROADMAP',
+    title: 'Mentorship Overview & Strategy Roadmap (Watch First)',
+    duration: '15:20 mins',
+    video_url: '',
+    description: 'Welcome to Ecom With Sami Mentorship! Watch this comprehensive roadmap to understand how to complete your training, which modules to study first, and how to get maximum sales.'
   },
   lms_frameworks: [
     {

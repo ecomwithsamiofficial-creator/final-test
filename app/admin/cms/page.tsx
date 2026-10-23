@@ -2579,6 +2579,13 @@ export default function AdminCmsPage() {
               </span>
               <div className="flex flex-wrap items-center gap-2">
                 <a
+                  href="#lms-overview-section"
+                  className="px-3 py-1.5 rounded-xl bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40 font-bold transition-colors flex items-center gap-1"
+                >
+                  <Sparkles size={13} className="text-emerald-400" />
+                  <span>🚀 Course Overview &amp; Roadmap</span>
+                </a>
+                <a
                   href="#lms-modules-section"
                   className="px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold transition-colors"
                 >
@@ -2603,6 +2610,166 @@ export default function AdminCmsPage() {
                   <Star size={13} className="fill-amber-400 text-amber-400" />
                   <span>⭐ Special Frameworks ({(cmsData.lms_frameworks || defaultCmsContent.lms_frameworks || []).length})</span>
                 </a>
+              </div>
+            </div>
+
+            {/* ========================================================================= */}
+            {/* SECTION: LMS COURSE OVERVIEW & ROADMAP VIDEO (WATCH FIRST) */}
+            {/* ========================================================================= */}
+            <div id="lms-overview-section" className="bg-[#111827] border-2 border-emerald-500/50 rounded-2xl sm:rounded-3xl p-4 sm:p-7 space-y-5 shadow-2xl relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
+
+              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-4 border-b border-white/10 relative z-10">
+                <div className="space-y-1">
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-400/10 border border-emerald-400/30 text-emerald-400 text-[11px] font-black uppercase tracking-wider">
+                    <Sparkles size={12} className="text-emerald-400" />
+                    <span>DEFAULT FIRST SCREEN • TOP ROADMAP</span>
+                  </div>
+                  <h3 className="text-base sm:text-xl font-black text-white flex items-center gap-2">
+                    <span>Course Overview &amp; Mentorship Roadmap Video</span>
+                  </h3>
+                  <p className="text-xs text-slate-300 max-w-2xl leading-relaxed">
+                    Jab bhi student login karega, sabse pehle yeh video samne khulay gi taake student ko pata chalay ke course kaise dekhna hai. Sidebar mein Module 1 ke theek upar yeh &quot;Overview&quot; item nazar aayega.
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 cursor-pointer bg-slate-800/80 px-3.5 py-2 rounded-xl border border-white/10">
+                    <span className="text-xs font-bold text-slate-300">Active in LMS:</span>
+                    <input
+                      type="checkbox"
+                      checked={cmsData.lms_overview?.is_active ?? true}
+                      onChange={(e) => {
+                        const val = e.target.checked;
+                        setCmsData(prev => ({
+                          ...prev,
+                          lms_overview: {
+                            ...(prev.lms_overview || defaultCmsContent.lms_overview || {
+                              is_active: true,
+                              badge: 'START HERE • ROADMAP',
+                              title: 'Mentorship Overview & Strategy Roadmap (Watch First)',
+                              duration: '15:20 mins',
+                              video_url: '',
+                              description: 'Welcome to Ecom With Sami Mentorship!'
+                            }),
+                            is_active: val
+                          }
+                        }));
+                      }}
+                      className="w-4 h-4 accent-emerald-500 rounded cursor-pointer"
+                    />
+                  </label>
+                </div>
+              </div>
+
+              {/* Form Grid */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+                {/* Title */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Overview Title</label>
+                  <input
+                    type="text"
+                    value={cmsData.lms_overview?.title ?? (defaultCmsContent.lms_overview?.title || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_overview: {
+                          ...(prev.lms_overview || defaultCmsContent.lms_overview || { is_active: true, video_url: '' }),
+                          title: val
+                        }
+                      }));
+                    }}
+                    placeholder="Mentorship Overview & Strategy Roadmap (Watch First)"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Badge Tag */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Badge Text (Top Tag)</label>
+                  <input
+                    type="text"
+                    value={cmsData.lms_overview?.badge ?? (defaultCmsContent.lms_overview?.badge || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_overview: {
+                          ...(prev.lms_overview || defaultCmsContent.lms_overview || { is_active: true, title: 'Overview', video_url: '' }),
+                          badge: val
+                        }
+                      }));
+                    }}
+                    placeholder="START HERE • ROADMAP"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Video URL */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">
+                    Overview Video URL (YouTube, Vimeo, or MP4)
+                  </label>
+                  <input
+                    type="text"
+                    value={cmsData.lms_overview?.video_url ?? (defaultCmsContent.lms_overview?.video_url || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_overview: {
+                          ...(prev.lms_overview || defaultCmsContent.lms_overview || { is_active: true, title: 'Overview', video_url: '' }),
+                          video_url: val
+                        }
+                      }));
+                    }}
+                    placeholder="https://youtu.be/..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Duration */}
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Duration</label>
+                  <input
+                    type="text"
+                    value={cmsData.lms_overview?.duration ?? (defaultCmsContent.lms_overview?.duration || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_overview: {
+                          ...(prev.lms_overview || defaultCmsContent.lms_overview || { is_active: true, title: 'Overview', video_url: '' }),
+                          duration: val
+                        }
+                      }));
+                    }}
+                    placeholder="15:20 mins"
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                {/* Description */}
+                <div className="md:col-span-2">
+                  <label className="block text-xs font-bold text-slate-300 mb-1.5">Overview Description / Guidelines</label>
+                  <textarea
+                    rows={2}
+                    value={cmsData.lms_overview?.description ?? (defaultCmsContent.lms_overview?.description || '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setCmsData(prev => ({
+                        ...prev,
+                        lms_overview: {
+                          ...(prev.lms_overview || defaultCmsContent.lms_overview || { is_active: true, title: 'Overview', video_url: '' }),
+                          description: val
+                        }
+                      }));
+                    }}
+                    placeholder="Complete walkthrough of the Mentorship LMS roadmap..."
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs leading-relaxed focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
               </div>
             </div>
 
