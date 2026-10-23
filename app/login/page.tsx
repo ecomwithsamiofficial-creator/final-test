@@ -55,6 +55,7 @@ export default function LoginPage() {
             sessionStorage.setItem('sami_lms_session_active', Date.now().toString());
             sessionStorage.setItem('sami_student_auth', JSON.stringify(data.user));
             sessionStorage.removeItem('sami_lms_hidden_at');
+            sessionStorage.removeItem('sami_lms_drm_modal_seen');
             localStorage.removeItem('sami_student_auth');
           } catch (e) {}
         }

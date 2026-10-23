@@ -333,6 +333,9 @@ export default function LmsClassroomPage() {
           setAuthChecking(false);
         }
       }
+      if (sessionStorage.getItem('sami_lms_drm_modal_seen') !== 'true') {
+        setShowDrmModal(true);
+      }
     } catch (e) {}
   }, []);
 
@@ -3871,18 +3874,10 @@ function DrmAnnouncementModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div className="w-full max-w-lg bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 relative">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 p-1.5 rounded-xl bg-slate-100 text-slate-500 hover:text-slate-800 hover:bg-slate-200 transition-colors cursor-pointer"
-          title="Dismiss Notice"
-        >
-          <X size={18} />
-        </button>
-
+    <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
+      <div className="w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-5 sm:p-7 shadow-2xl space-y-4 relative">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-sm flex-shrink-0">
+          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
             <ShieldCheck size={22} />
           </div>
           <div>
@@ -3896,8 +3891,19 @@ function DrmAnnouncementModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
         </div>
 
         <p className="text-xs text-slate-600 leading-relaxed">
-          Welcome to Sardar Samiullah's Mentorship LMS. All course modules, wholesale supplier directories, and Shopify assets are copyright-protected.
+          Welcome to the Ecom with Sami Mentorship. All course modules, wholesale supplier directories, and Shopify assets are copyright protected.
         </p>
+
+        {/* High Priority Red Security Alert */}
+        <div className="p-3.5 sm:p-4 rounded-2xl bg-red-50 border-2 border-red-500/40 text-red-950 space-y-1.5 shadow-xs">
+          <div className="flex items-center gap-2 font-black text-red-700 text-xs sm:text-sm">
+            <AlertCircle size={17} className="text-red-600 shrink-0" />
+            <span>STRICT DRM SECURITY WARNING: AUTO-BAN &amp; FINE</span>
+          </div>
+          <p className="text-[11.5px] sm:text-xs text-red-800 leading-relaxed font-medium">
+            Agar aap screen record ya screenshot lene ki koshish karein ge, toh hamari AI &amp; DRM protected security layer <strong>2 screenshots ya screen recordings count hotay hi aapka account foran automatically block kar degi</strong>. Suspended account ko unblock karwane ke liye <strong>Rs. 2,000 ka Fine</strong> ada karna parega.
+          </p>
+        </div>
 
         <div className="space-y-2.5 text-xs">
           <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
@@ -3907,7 +3913,7 @@ function DrmAnnouncementModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
             <div>
               <strong className="text-slate-900 block font-bold text-xs mb-0.5">Dynamic Forensic Watermarking</strong>
               <span className="text-slate-500 text-[11px] leading-tight">
-                Your Student Name, ID, and IP address are dynamically embedded across all video frames to prevent unauthorized recording and trace content leaks.
+                Your Student Name, ID, phone number, and IP address are dynamically embedded across all video frames to prevent unauthorized recording and trace content leaks.
               </span>
             </div>
           </div>
