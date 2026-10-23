@@ -281,6 +281,10 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
           PRIMARY KEY (\`id\`)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
+
+      try {
+        await p.query(`UPDATE \`lms_suppliers\` SET \`whatsapp_link\` = 'https://wa.me/923330093269' WHERE \`whatsapp_link\` LIKE '%971501234567%' OR \`phone\` LIKE '%0333-0093269%' OR \`whatsapp_link\` IS NULL OR \`whatsapp_link\` = ''`);
+      } catch (e) {}
     } catch (err) {
       console.error('ensureAnalyticsTables lms_suppliers error:', err);
     }

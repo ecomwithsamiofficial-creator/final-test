@@ -3136,15 +3136,22 @@ export default function LmsClassroomPage() {
                         </div>
                       </div>
 
-                      <a
-                        href={s.whatsappLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer"
-                      >
-                        <MessageSquare size={14} />
-                        <span>Chat on WhatsApp with Warehouse</span>
-                      </a>
+                      {(() => {
+                        const targetUrl = s.whatsappLink && !s.whatsappLink.includes('971501234567') && s.whatsappLink.includes('wa.me')
+                          ? s.whatsappLink
+                          : `https://wa.me/923330093269?text=${encodeURIComponent(`Assalam-o-Alaikum Mentor Sardar Samiullah! I am your student on LMS and need onboarding for supplier: ${s.name}`)}`;
+                        return (
+                          <a
+                            href={targetUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full py-2.5 px-4 rounded-xl text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-500 flex items-center justify-center gap-2 transition-all shadow-sm active:scale-95 cursor-pointer"
+                          >
+                            <MessageSquare size={14} />
+                            <span>Chat on WhatsApp</span>
+                          </a>
+                        );
+                      })()}
                     </div>
                   ))}
                 </div>
