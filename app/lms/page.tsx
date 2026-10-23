@@ -3875,84 +3875,88 @@ function DrmAnnouncementModal({ isOpen, onClose }: { isOpen: boolean; onClose: (
 
   return (
     <div className="fixed inset-0 z-50 bg-slate-900/75 backdrop-blur-sm flex items-center justify-center p-3 sm:p-5 animate-in fade-in duration-200">
-      <div 
-        className="w-full max-w-lg max-h-[92vh] overflow-y-auto bg-white border border-slate-200 rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl space-y-3 relative [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-        style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
-      >
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
-            <ShieldCheck size={22} />
+      {/* Outer Card with strict overflow-hidden so scrollbar stays strictly inside the rounded boundaries */}
+      <div className="w-full max-w-lg max-h-[88vh] bg-white border border-slate-200 rounded-2xl sm:rounded-3xl shadow-2xl flex flex-col relative overflow-hidden">
+        
+        {/* Inner Scrollable Container with sleek branded scrollbar inside */}
+        <div 
+          className="flex-1 overflow-y-auto p-4 sm:p-6 pr-3 sm:pr-4 space-y-3.5 [scrollbar-width:thin] [scrollbar-color:#00A0DF_#f1f5f9] [&::-webkit-scrollbar]:w-2 [&::-webkit-scrollbar-track]:bg-slate-100 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:my-4 [&::-webkit-scrollbar-thumb]:bg-[#00A0DF]/60 hover:[&::-webkit-scrollbar-thumb]:bg-[#00A0DF] [&::-webkit-scrollbar-thumb]:rounded-full"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center shadow-xs flex-shrink-0">
+              <ShieldCheck size={22} />
+            </div>
+            <div>
+              <span className="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md mb-0.5">
+                SECURITY ADVISORY
+              </span>
+              <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
+                LMS Content Protection &amp; DRM Policy
+              </h2>
+            </div>
           </div>
-          <div>
-            <span className="inline-block bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-md mb-0.5">
-              SECURITY ADVISORY
-            </span>
-            <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight leading-snug">
-              LMS Content Protection &amp; DRM Policy
-            </h2>
-          </div>
-        </div>
 
-        <p className="text-xs text-slate-600 leading-relaxed">
-          Welcome to the Ecom with Sami Mentorship. All course modules, wholesale supplier directories, and Shopify assets are copyright protected.
-        </p>
-
-        {/* High Priority Red Security Alert */}
-        <div className="p-3 sm:p-3.5 rounded-2xl bg-red-50 border-2 border-red-500/40 text-red-950 space-y-1 shadow-xs">
-          <div className="flex items-center gap-2 font-black text-red-700 text-xs sm:text-sm">
-            <AlertCircle size={16} className="text-red-600 shrink-0" />
-            <span>STRICT DRM SECURITY WARNING: AUTO-BAN &amp; FINE</span>
-          </div>
-          <p className="text-[11px] sm:text-xs text-red-800 leading-relaxed font-medium">
-            Agar aap screen record ya screenshot lene ki koshish karein ge, toh hamari AI &amp; DRM protected security layer <strong>2 screenshots ya screen recordings count hotay hi aapka account foran automatically block kar degi</strong>. Suspended account ko unblock karwane ke liye <strong>Rs. 2,000 ka Fine</strong> ada karna parega.
+          <p className="text-xs text-slate-600 leading-relaxed">
+            Welcome to the Ecom with Sami Mentorship. All course modules, wholesale supplier directories, and Shopify assets are copyright protected.
           </p>
-        </div>
 
-        <div className="space-y-2 text-xs">
-          <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-blue-100 text-blue-600 mt-0.5 flex-shrink-0">
-              <Shield size={14} />
-            </span>
-            <div>
-              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Dynamic Forensic Watermarking</strong>
-              <span className="text-slate-500 text-[11px] leading-tight">
-                Your Student Name, ID, phone number, and IP address are dynamically embedded across all video frames to prevent unauthorized recording and trace content leaks.
+          {/* High Priority Red Security Alert */}
+          <div className="p-3 sm:p-3.5 rounded-2xl bg-red-50 border-2 border-red-500/40 text-red-950 space-y-1 shadow-xs">
+            <div className="flex items-center gap-2 font-black text-red-700 text-xs sm:text-sm">
+              <AlertCircle size={16} className="text-red-600 shrink-0" />
+              <span>STRICT DRM SECURITY WARNING: AUTO-BAN &amp; FINE</span>
+            </div>
+            <p className="text-[11px] sm:text-xs text-red-800 leading-relaxed font-medium">
+              Agar aap screen record ya screenshot lene ki koshish karein ge, toh hamari AI &amp; DRM protected security layer <strong>2 screenshots ya screen recordings count hotay hi aapka account foran automatically block kar degi</strong>. Suspended account ko unblock karwane ke liye <strong>Rs. 2,000 ka Fine</strong> ada karna parega.
+            </p>
+          </div>
+
+          <div className="space-y-2 text-xs">
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+              <span className="p-1.5 rounded-xl bg-blue-100 text-blue-600 mt-0.5 flex-shrink-0">
+                <Shield size={14} />
               </span>
+              <div>
+                <strong className="text-slate-900 block font-bold text-xs mb-0.5">Dynamic Forensic Watermarking</strong>
+                <span className="text-slate-500 text-[11px] leading-tight">
+                  Your Student Name, ID, phone number, and IP address are dynamically embedded across all video frames to prevent unauthorized recording and trace content leaks.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+              <span className="p-1.5 rounded-xl bg-amber-100 text-amber-600 mt-0.5 flex-shrink-0">
+                <Lock size={14} />
+              </span>
+              <div>
+                <strong className="text-slate-900 block font-bold text-xs mb-0.5">Authorized Student License</strong>
+                <span className="text-slate-500 text-[11px] leading-tight">
+                  This portal is licensed exclusively for your individual learning. Sharing account credentials, downloading files, or screen capturing is strictly prohibited.
+                </span>
+              </div>
+            </div>
+
+            <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
+              <span className="p-1.5 rounded-xl bg-emerald-100 text-emerald-600 mt-0.5 flex-shrink-0">
+                <ShieldCheck size={14} />
+              </span>
+              <div>
+                <strong className="text-slate-900 block font-bold text-xs mb-0.5">Intellectual Property Protection</strong>
+                <span className="text-slate-500 text-[11px] leading-tight">
+                  Any leaked recordings will be forensically traced back to the offending student account, resulting in immediate termination and legal action.
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-amber-100 text-amber-600 mt-0.5 flex-shrink-0">
-              <Lock size={14} />
-            </span>
-            <div>
-              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Authorized Student License</strong>
-              <span className="text-slate-500 text-[11px] leading-tight">
-                This portal is licensed exclusively for your individual learning. Sharing account credentials, downloading files, or screen capturing is strictly prohibited.
-              </span>
-            </div>
+          <div className="pt-2 pb-1">
+            <button
+              onClick={onClose}
+              className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-600/30 transition-all active:scale-[0.98] cursor-pointer"
+            >
+              I Understand &amp; Agree
+            </button>
           </div>
-
-          <div className="p-2.5 sm:p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-start gap-2.5">
-            <span className="p-1.5 rounded-xl bg-emerald-100 text-emerald-600 mt-0.5 flex-shrink-0">
-              <ShieldCheck size={14} />
-            </span>
-            <div>
-              <strong className="text-slate-900 block font-bold text-xs mb-0.5">Intellectual Property Protection</strong>
-              <span className="text-slate-500 text-[11px] leading-tight">
-                Any leaked recordings will be forensically traced back to the offending student account, resulting in immediate termination and legal action.
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-1">
-          <button
-            onClick={onClose}
-            className="w-full py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black text-xs uppercase tracking-wider shadow-md shadow-blue-600/30 transition-all active:scale-[0.98] cursor-pointer"
-          >
-            I Understand &amp; Agree
-          </button>
         </div>
       </div>
     </div>
