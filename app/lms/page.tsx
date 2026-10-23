@@ -3060,9 +3060,6 @@ export default function LmsClassroomPage() {
                     <h2 className="text-base sm:text-xl font-black text-slate-900">
                       Verified Wholesale Supplier Details
                     </h2>
-                    <p className="text-xs text-slate-500 mt-0.5">
-                      Direct warehouse contacts across Dubai, Sharjah, Riyadh &amp; Jeddah
-                    </p>
                   </div>
 
                   <div className="flex items-center gap-2 w-full sm:w-auto">
