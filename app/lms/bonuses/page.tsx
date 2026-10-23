@@ -348,7 +348,7 @@ export default function LmsBonusesPage() {
               className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl text-slate-600 hover:text-slate-900 hover:bg-white/60 transition-all"
             >
               <ShoppingBag size={13} />
-              <span>GCC &amp; PK Suppliers</span>
+              <span>Supplier Details</span>
             </Link>
 
             <div className="flex items-center gap-1.5 px-3.5 py-1.5 rounded-xl bg-blue-600 text-white font-bold shadow-sm shadow-blue-600/30">

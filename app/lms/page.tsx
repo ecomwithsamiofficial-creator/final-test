@@ -1895,7 +1895,7 @@ export default function LmsClassroomPage() {
             }`}
           >
             <ShoppingBag size={13} />
-            <span>GCC Suppliers</span>
+            <span>Supplier Details</span>
           </button>
 
           <button
@@ -3058,7 +3058,7 @@ export default function LmsClassroomPage() {
                 <div className="bg-white border border-slate-200/90 rounded-2xl sm:rounded-3xl p-5 sm:p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
                   <div>
                     <h2 className="text-base sm:text-xl font-black text-slate-900">
-                      Verified GCC Wholesale Suppliers
+                      Verified Wholesale Supplier Details
                     </h2>
                     <p className="text-xs text-slate-500 mt-0.5">
                       Direct warehouse contacts across Dubai, Sharjah, Riyadh &amp; Jeddah
