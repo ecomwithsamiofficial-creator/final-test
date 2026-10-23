@@ -2911,147 +2911,38 @@ export default function LmsClassroomPage() {
                     {activeLesson?.title || '1.1 E-Commerce Overview: Dropshipping, White Label & Private Label Differences'}
                   </h1>
 
-                  {/* Comprehensive Overview Text */}
-                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed">
-                    Master the fundamental architectural models in contemporary e-commerce. Discover the trade-offs between zero-inventory dropshipping and localized GCC &amp; Domestic private label warehousing, ad spend thresholds, and healthy cashflow runways.
-                  </p>
-
-                  {/* Sub-Tabs: Notes vs Q&A */}
-                  <div className="pt-2 border-t border-slate-100 flex items-center gap-4 text-xs font-bold">
-                    <button
-                      onClick={() => setSubTab('notes')}
-                      className={`pb-2 transition-colors relative cursor-pointer ${
-                        subTab === 'notes' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      Lecture Notes &amp; Overview (2 Files)
-                    </button>
-                    <button
-                      onClick={() => setSubTab('discussion')}
-                      className={`pb-2 transition-colors relative cursor-pointer ${
-                        subTab === 'discussion' ? 'text-blue-600 border-b-2 border-blue-600' : 'text-slate-500 hover:text-slate-800'
-                      }`}
-                    >
-                      Q&amp;A Discussion (38)
-                    </button>
-                  </div>
-
-                  {/* Tab 1 Content: Downloadable Resource Cards */}
-                  {subTab === 'notes' && (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                      {/* PDF Resource Card */}
-                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-300 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-red-50 text-red-600 border border-red-200 flex items-center justify-center flex-shrink-0">
-                            <FileText size={20} />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-900 truncate max-w-[200px]">
-                              Dropshipping_vs_PrivateLabel_Cheatsheet.pdf
-                            </h4>
-                            <span className="text-[10px] text-slate-500 block">
-                              PDF Document • 2.4 MB • Updated this week
-                            </span>
-                          </div>
+                  {/* Student Support & DRM Protection Notice */}
+                  <div className="bg-slate-50 border border-slate-200/90 rounded-xl sm:rounded-2xl p-4 sm:p-5 shadow-xs">
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2.5 sm:gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <MessageCircle size={16} />
                         </div>
-
-                        <a
-                          href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20send%20the%20cheatsheet%20PDF%20file."
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors cursor-pointer"
-                          title="Get Resource File"
-                        >
-                          <Download size={16} />
-                        </a>
-                      </div>
-
-                      {/* Excel Resource Card */}
-                      <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between hover:border-blue-300 transition-all">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 border border-emerald-200 flex items-center justify-center flex-shrink-0">
-                            <FileSpreadsheet size={20} />
-                          </div>
-                          <div>
-                            <h4 className="text-xs font-bold text-slate-900 truncate max-w-[200px]">
-                              Unit_Economics_Calculator_PK_UAE.xlsx
-                            </h4>
-                            <span className="text-[10px] text-slate-500 block">
-                              Spreadsheet • 860 KB • Formulation template
-                            </span>
-                          </div>
-                        </div>
-
-                        <a
-                          href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20Please%20send%20the%20Unit%20Economics%20calculator%20sheet."
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="p-2 rounded-xl bg-white hover:bg-blue-50 text-slate-600 hover:text-blue-600 border border-slate-200 shadow-xs transition-colors cursor-pointer"
-                          title="Get Resource File"
-                        >
-                          <Download size={16} />
-                        </a>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Tab 2 Content: Q&A Preview */}
-                  {subTab === 'discussion' && (
-                    <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
-                      <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-full bg-blue-100 text-blue-700 font-bold text-xs flex items-center justify-center flex-shrink-0">
-                          AK
-                        </div>
-                        <div className="space-y-1">
-                          <div className="text-xs font-bold text-slate-800">
-                            Ali Khan <span className="text-[10px] font-normal text-slate-400">• 2 days ago</span>
-                          </div>
-                          <p className="text-xs text-slate-600 leading-relaxed">
-                            Mentor Sami, should I test 3 creative variations on TikTok ads before scaling the daily ad budget to 50 AED?
-                          </p>
-                          <div className="pl-3 border-l-2 border-blue-400 mt-2 space-y-0.5">
-                            <div className="text-[11px] font-bold text-blue-700">
-                              Mentor Sardar Samiullah (Instructor)
-                            </div>
-                            <p className="text-[11px] text-slate-600">
-                              Yes Ali! Always validate minimum 3 UGC hooks before raising the budget. Watch Module 5 for the exact breakdown.
-                            </p>
-                          </div>
+                        <div className="flex-1 text-xs sm:text-sm text-slate-700 leading-relaxed font-medium">
+                          Kisi bhi kisam ki madad ya rahnumai ke liye hamari support team se WhatsApp par rabta karein (
+                          <a 
+                            href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Support%20Team!%20Mujhe%20LMS%20ke%20hawale%20se%20madad%20chahiye." 
+                            target="_blank" 
+                            rel="noopener noreferrer" 
+                            className="font-bold text-emerald-600 hover:text-emerald-700 underline underline-offset-2 transition-colors inline-block"
+                          >
+                            0333-0093269
+                          </a>
+                          ).
                         </div>
                       </div>
-                    </div>
-                  )}
 
-                </div>
-
-                {/* Pinned Mentor Announcement Card */}
-                <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-blue-50/80 border border-blue-200/80 rounded-2xl sm:rounded-3xl p-5 sm:p-6 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <div className="flex items-start gap-3.5">
-                    <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 text-white font-black text-lg flex items-center justify-center shadow-md shadow-blue-500/20 flex-shrink-0">
-                      S
-                    </div>
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className="text-xs font-extrabold text-blue-950">Mentor Sami</span>
-                        <span className="text-[10px] bg-blue-100 text-blue-700 font-bold px-2 py-0.5 rounded-full">
-                          Pinned Mentor Announcement
-                        </span>
-                        <span className="text-[10px] text-slate-400">• Updated today</span>
+                      <div className="flex items-start gap-2.5 sm:gap-3 pt-3 border-t border-slate-200/60">
+                        <div className="w-8 h-8 rounded-lg bg-rose-500/10 text-rose-600 border border-rose-500/20 flex items-center justify-center shrink-0 mt-0.5">
+                          <Shield size={16} />
+                        </div>
+                        <p className="flex-1 text-xs sm:text-sm text-slate-700 leading-relaxed">
+                          <span className="font-bold text-rose-600">Yaad rahe hamara platform DRM protected hai;</span> screenshots ya screen recordings lene par account foran ban kar diya jayega, aur unban karne ke liye 2000 ka Fine dena pary ga.
+                        </p>
                       </div>
-                      <p className="text-xs text-slate-700 leading-relaxed max-w-2xl">
-                        "Live Weekly Q&amp;A Session this Friday at 8:00 PM PKT. We will review winning product spreadsheets and troubleshoot TikTok Ad account setups. Be on time with your questions!"
-                      </p>
                     </div>
                   </div>
 
-                  <a
-                    href="https://wa.me/923330093269?text=Assalam-o-Alaikum%20Mentor%20Sami!%20I%20have%20a%20question%20for%20the%20live%20session."
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs shadow-md shadow-blue-600/20 active:scale-95 transition-all whitespace-nowrap self-start sm:self-auto cursor-pointer"
-                  >
-                    Join Discussion
-                  </a>
                 </div>
 
               </div>
