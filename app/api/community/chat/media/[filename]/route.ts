@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import fs from 'fs';
 import path from 'path';
 import { Readable } from 'stream';
+import { mysqlGetMediaUpload } from '@/lib/mysql';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -35,7 +36,25 @@ export async function GET(
       path.join(process.cwd(), 'public', 'uploads', sanitizedFilename)
     ];
 
-    const filePath = candidatePaths.find(p => fs.existsSync(p));
+    let filePath = candidatePaths.find(p => fs.existsSync(p));
+
+    if (!filePath) {
+      // Fallback: Check Hostinger MySQL media_uploads table (immune to Git resets)
+      try {
+        const mediaRecord = await mysqlGetMediaUpload(sanitizedFilename);
+        if (mediaRecord && mediaRecord.buffer) {
+          const restoreDir = path.join(process.cwd(), 'public', 'uploads', 'community');
+          if (!fs.existsSync(restoreDir)) {
+            fs.mkdirSync(restoreDir, { recursive: true });
+          }
+          const restoredPath = path.join(restoreDir, sanitizedFilename);
+          fs.writeFileSync(restoredPath, mediaRecord.buffer);
+          filePath = restoredPath;
+        }
+      } catch (dbErr) {
+        console.warn('Fallback to MySQL media_uploads failed:', dbErr);
+      }
+    }
 
     if (!filePath) {
       return NextResponse.json({ error: 'Audio file not found' }, { status: 404 });

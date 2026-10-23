@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { writeFile, mkdir } from 'fs/promises';
 import path from 'path';
+import { mysqlSaveMediaUpload } from '@/lib/mysql';
 
 export const dynamic = 'force-dynamic';
 
@@ -71,8 +72,20 @@ export async function POST(req: Request) {
     const prefix = isImage ? 'comm_img_' : 'comm_audio_';
     const cleanFilename = `${prefix}${Date.now()}_${Math.random().toString(36).substring(2, 8)}${ext}`;
     const filePath = path.join(uploadDir, cleanFilename);
-
     await writeFile(filePath, buffer);
+
+    // Persist to Hostinger MySQL media_uploads table (Permanent & immune to Git deployments / disk resets)
+    try {
+      await mysqlSaveMediaUpload(
+        cleanFilename,
+        'community',
+        cleanFilename,
+        mime || (isImage ? 'image/jpeg' : 'audio/mpeg'),
+        buffer
+      );
+    } catch (dbErr) {
+      console.warn('Failed to mirror community media upload to MySQL:', dbErr);
+    }
 
     const publicUrl = `/api/community/chat/media/${cleanFilename}`;
 

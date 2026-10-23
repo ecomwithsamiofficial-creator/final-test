@@ -113,6 +113,7 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true, savedDuration = 0 }: {
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState<number>(() => (savedDuration && savedDuration > 0 ? savedDuration : 0));
   const [isLoading, setIsLoading] = useState(false);
+  const [audioFailed, setAudioFailed] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
 
@@ -164,10 +165,12 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true, savedDuration = 0 }: {
                   console.error('Audio play failed:', e2);
                   setIsLoading(false);
                   setIsPlaying(false);
+                  setAudioFailed(true);
                 });
             } else {
               setIsLoading(false);
               setIsPlaying(false);
+              setAudioFailed(true);
             }
           });
       }
@@ -230,6 +233,7 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true, savedDuration = 0 }: {
         onError={() => {
           setIsLoading(false);
           setIsPlaying(false);
+          setAudioFailed(true);
         }}
       />
 
@@ -255,9 +259,13 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true, savedDuration = 0 }: {
             <Mic size={12} />
             <span>{isMentor ? 'Mentor Voice Note' : 'Voice Note'}</span>
           </span>
-          <span className="text-[10px] text-slate-400 font-mono">
-            {formatTime(currentTime)} / {formatTime(duration || 0)}
-          </span>
+          {audioFailed ? (
+            <span className="text-[10px] text-red-400 font-semibold">⚠️ Audio unavailable</span>
+          ) : (
+            <span className="text-[10px] text-slate-400 font-mono">
+              {formatTime(currentTime)} / {formatTime(duration || 0)}
+            </span>
+          )}
         </div>
 
         <div
