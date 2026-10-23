@@ -413,6 +413,17 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
       `);
 
+      // Ensure audio_url, audio_duration, and image_url columns exist even on older existing tables
+      try {
+        await p.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`image_url\` VARCHAR(500) NULL`);
+      } catch (e) {}
+      try {
+        await p.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`audio_url\` VARCHAR(500) NULL`);
+      } catch (e) {}
+      try {
+        await p.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`audio_duration\` VARCHAR(50) NULL`);
+      } catch (e) {}
+
       const [chatCountRows]: any = await p.query(`SELECT COUNT(*) as count FROM community_chat_messages`);
       if (Number(chatCountRows?.[0]?.count || 0) === 0) {
         const seedMessages = [
@@ -2295,8 +2306,36 @@ export async function mysqlCreateCommunityChatMessage(data: {
           newItem.createdAt
         ]
       );
-    } catch (err) {
-      console.error('mysqlCreateCommunityChatMessage error:', err);
+    } catch (err: any) {
+      console.error('mysqlCreateCommunityChatMessage initial insert error, attempting auto-repair:', err?.message || err);
+      try {
+        await pool.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`image_url\` VARCHAR(500) NULL`);
+      } catch (e) {}
+      try {
+        await pool.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`audio_url\` VARCHAR(500) NULL`);
+      } catch (e) {}
+      try {
+        await pool.query(`ALTER TABLE \`community_chat_messages\` ADD COLUMN \`audio_duration\` VARCHAR(50) NULL`);
+      } catch (e) {}
+      try {
+        await pool.query(
+          `INSERT INTO community_chat_messages (id, student_id, student_name, is_mentor, message, image_url, audio_url, audio_duration, created_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          [
+            newItem.id,
+            newItem.studentId,
+            newItem.studentName,
+            newItem.isMentor ? 1 : 0,
+            newItem.message,
+            newItem.imageUrl,
+            newItem.audioUrl,
+            newItem.audioDuration,
+            newItem.createdAt
+          ]
+        );
+      } catch (retryErr) {
+        console.error('mysqlCreateCommunityChatMessage retry error:', retryErr);
+      }
     }
   }
 

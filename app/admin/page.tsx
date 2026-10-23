@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -99,10 +99,19 @@ function generateFallbackPassword(seed: string): string {
   return num.toString();
 }
 
-function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; isMentor?: boolean }) {
+function ChatVoiceNotePlayer({ audioUrl, isMentor = true, savedDuration = 0 }: { audioUrl: string; isMentor?: boolean; savedDuration?: number }) {
+  const normalizedAudioUrl = useMemo(() => {
+    if (!audioUrl) return '';
+    if (audioUrl.startsWith('/uploads/community/')) {
+      const filename = audioUrl.replace('/uploads/community/', '');
+      return `/api/community/chat/media/${filename}`;
+    }
+    return audioUrl;
+  }, [audioUrl]);
+
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
+  const [duration, setDuration] = useState<number>(() => (savedDuration && savedDuration > 0 ? savedDuration : 0));
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
@@ -191,16 +200,16 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
     >
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={normalizedAudioUrl}
         preload="metadata"
         playsInline
         onLoadedMetadata={() => {
-          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
             setDuration(audioRef.current.duration);
           }
         }}
         onDurationChange={() => {
-          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration)) {
+          if (audioRef.current && isFinite(audioRef.current.duration) && !isNaN(audioRef.current.duration) && audioRef.current.duration > 0) {
             setDuration(audioRef.current.duration);
           }
         }}
@@ -324,6 +333,7 @@ export default function AdminDashboardPage() {
   const [chatLoading, setChatLoading] = useState(false);
   const [mentorChatMsg, setMentorChatMsg] = useState('');
   const [mentorAudioUrl, setMentorAudioUrl] = useState<string | null>(null);
+  const [mentorAudioDuration, setMentorAudioDuration] = useState<number | null>(null);
   const [mentorAudioUploading, setMentorAudioUploading] = useState(false);
   const [chatNoticeDraft, setChatNoticeDraft] = useState('');
   const [savingNotice, setSavingNotice] = useState(false);
@@ -636,6 +646,16 @@ export default function AdminDashboardPage() {
   const handleMentorAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
+    try {
+      const audioEl = new Audio(URL.createObjectURL(file));
+      audioEl.onloadedmetadata = () => {
+        if (audioEl.duration && isFinite(audioEl.duration) && !isNaN(audioEl.duration)) {
+          setMentorAudioDuration(Math.round(audioEl.duration));
+        }
+      };
+    } catch (durErr) {}
+
     setMentorAudioUploading(true);
     try {
       const formData = new FormData();
@@ -673,13 +693,15 @@ export default function AdminDashboardPage() {
           studentName: 'Mentor Sardar Samiullah',
           isMentor: true,
           message: mentorChatMsg.trim(),
-          audioUrl: mentorAudioUrl
+          audioUrl: mentorAudioUrl,
+          audioDuration: mentorAudioDuration || null
         })
       });
       const data = await res.json();
       if (data.success) {
         setMentorChatMsg('');
         setMentorAudioUrl(null);
+        setMentorAudioDuration(null);
         setToastMessage('✅ Mentor message posted to community chat!');
         setTimeout(() => setToastMessage(null), 4000);
         fetchCommunityChat(false);
@@ -2634,10 +2656,13 @@ export default function AdminDashboardPage() {
 
                           {mentorAudioUrl && (
                             <div className="flex items-center gap-2">
-                              <span className="text-xs text-emerald-400 font-medium">🎧 Voice Note Ready</span>
+                              <span className="text-xs text-emerald-400 font-medium">🎧 Voice Note Ready {mentorAudioDuration ? `(${mentorAudioDuration}s)` : ''}</span>
                               <button
                                 type="button"
-                                onClick={() => setMentorAudioUrl(null)}
+                                onClick={() => {
+                                  setMentorAudioUrl(null);
+                                  setMentorAudioDuration(null);
+                                }}
                                 className="text-xs text-red-400 hover:underline"
                               >
                                 Remove
@@ -2735,7 +2760,7 @@ export default function AdminDashboardPage() {
 
                               {/* Attached Audio Player */}
                               {msg.audioUrl && (
-                                <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={msg.isMentor} />
+                                <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={msg.isMentor} savedDuration={msg.audioDuration} />
                               )}
                             </div>
 

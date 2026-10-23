@@ -36,11 +36,17 @@ export async function POST(req: Request) {
 
     // Determine if image or audio
     const isImage = mime.startsWith('image/');
-    const isAudio = mime.startsWith('audio/') || name.endsWith('.mp3') || name.endsWith('.wav') || name.endsWith('.m4a');
+    const isAudio = mime.startsWith('audio/') || 
+      name.endsWith('.mp3') || 
+      name.endsWith('.wav') || 
+      name.endsWith('.m4a') || 
+      name.endsWith('.aac') || 
+      name.endsWith('.ogg') || 
+      name.endsWith('.webm');
 
     if (!isImage && !isAudio) {
       return NextResponse.json(
-        { success: false, message: 'Invalid file format. Only pictures (JPEG, PNG, WebP) and voice notes (MP3, WAV) are supported.' },
+        { success: false, message: 'Invalid file format. Only pictures (JPEG, PNG, WebP) and voice notes (MP3, WAV, M4A, OGG, WEBM) are supported.' },
         { status: 400 }
       );
     }
@@ -68,7 +74,7 @@ export async function POST(req: Request) {
 
     await writeFile(filePath, buffer);
 
-    const publicUrl = `/uploads/community/${cleanFilename}`;
+    const publicUrl = `/api/community/chat/media/${cleanFilename}`;
 
     return NextResponse.json({
       success: true,

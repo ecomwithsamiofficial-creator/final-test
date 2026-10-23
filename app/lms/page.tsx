@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { 
@@ -54,13 +54,40 @@ import { Module, Supplier, ResourceItem } from '@/utils/db';
 import { supabase } from '@/lib/supabase';
 import { LmsFrameworkItem, defaultCmsContent } from '@/utils/cmsStore';
 
-function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; isMentor?: boolean }) {
+function ChatVoiceNotePlayer({ 
+  audioUrl, 
+  isMentor = true, 
+  savedDuration = null 
+}: { 
+  audioUrl: string; 
+  isMentor?: boolean; 
+  savedDuration?: string | null; 
+}) {
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
   const instanceIdRef = useRef<string>(Math.random().toString(36).substring(2, 9));
+
+  // Normalize audio URL so both /uploads/community/ and /api/community/chat/media/ stream with HTTP Range
+  const normalizedAudioUrl = useMemo(() => {
+    if (!audioUrl) return '';
+    if (audioUrl.startsWith('/uploads/community/')) {
+      return audioUrl.replace('/uploads/community/', '/api/community/chat/media/');
+    }
+    return audioUrl;
+  }, [audioUrl]);
+
+  // Preload saved duration if provided from database
+  useEffect(() => {
+    if (savedDuration && duration === 0) {
+      const parsed = parseFloat(savedDuration);
+      if (!isNaN(parsed) && parsed > 0) {
+        setDuration(parsed);
+      }
+    }
+  }, [savedDuration]);
 
   // Single audio coordinator: Pause when another audio starts playing
   useEffect(() => {
@@ -150,7 +177,7 @@ function ChatVoiceNotePlayer({ audioUrl, isMentor = true }: { audioUrl: string; 
     >
       <audio
         ref={audioRef}
-        src={audioUrl}
+        src={normalizedAudioUrl}
         preload="metadata"
         playsInline
         onLoadedMetadata={() => {
@@ -3359,7 +3386,7 @@ export default function LmsClassroomPage() {
 
                                     {/* Mentor Voice Note Player */}
                                     {msg.audioUrl && (
-                                      <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={true} />
+                                      <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={true} savedDuration={msg.audioDuration} />
                                     )}
 
                                     {/* Attached Image if any */}
@@ -3441,7 +3468,7 @@ export default function LmsClassroomPage() {
 
                                   {/* Attached Voice Note if any */}
                                   {msg.audioUrl && (
-                                    <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={false} />
+                                    <ChatVoiceNotePlayer audioUrl={msg.audioUrl} isMentor={false} savedDuration={msg.audioDuration} />
                                   )}
 
                                   {/* Bottom Ticks for outgoing */}
