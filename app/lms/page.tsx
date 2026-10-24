@@ -1579,7 +1579,11 @@ export default function LmsClassroomPage() {
   const currentLessonWatchPct = activeLesson 
     ? (isCurrentDone ? 100 : (watchProgress[activeLesson.id] || 0)) 
     : 0;
-  const hasLessonVideo = Boolean(activeLesson?.videoUrl && activeLesson.videoUrl.trim());
+  const hasLessonVideo = Boolean(
+    activeLesson?.videoUrl && 
+    activeLesson.videoUrl.trim() && 
+    !activeLesson.videoUrl.includes('dQw4w9WgXcQ')
+  );
   const isDirectLessonVideo = Boolean(
     activeLesson?.videoUrl && (
       activeLesson.videoUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
@@ -2264,7 +2268,7 @@ export default function LmsClassroomPage() {
             {modules.map((m) => {
               const isOpen = openModuleId === m.id;
               const moduleCompletedCount = m.lessons?.filter(l => completedLessons.includes(l.id)).length || 0;
-              const activeLessonsCount = m.lessons?.filter(l => Boolean(l.videoUrl && l.videoUrl.trim())).length || 0;
+              const activeLessonsCount = m.lessons?.filter(l => Boolean(l.videoUrl && l.videoUrl.trim() && !l.videoUrl.includes('dQw4w9WgXcQ'))).length || 0;
               const totalLessonsCount = m.lessons?.length || 0;
               const isAllCompleted = moduleCompletedCount === totalLessonsCount && totalLessonsCount > 0;
               const isActiveModule = m.lessons?.some(l => l.id === activeLesson?.id);
@@ -2405,7 +2409,7 @@ export default function LmsClassroomPage() {
                                   {/* Sub-row: Status & Duration Badge (cleanly placed underneath title) */}
                                   <div className="flex items-center gap-1.5 flex-wrap pt-0.5">
                                     {(() => {
-                                      const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim());
+                                      const hasVideo = Boolean(lesson.videoUrl && lesson.videoUrl.trim() && !lesson.videoUrl.includes('dQw4w9WgXcQ'));
                                       const detectedDur = detectedDurations[lesson.id];
                                       const validDbDuration = lesson.duration && !isFakeTimer(lesson.duration) ? lesson.duration : '';
                                       const currentActiveDur = isCurrent && duration > 0 ? formatDurationLabel(duration) : '';
@@ -2792,11 +2796,11 @@ export default function LmsClassroomPage() {
                   >
                     {!hasLessonVideo ? (
                       <div className="relative w-full h-full flex flex-col items-center justify-center p-6 text-center bg-gradient-to-b from-slate-900 via-slate-950 to-black select-none">
-                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-[#00A0DF]/10 border border-[#00A0DF]/30 flex items-center justify-center mb-4 shadow-lg shadow-[#00A0DF]/10 animate-pulse">
-                          <Play className="w-8 h-8 sm:w-10 sm:h-10 text-[#00A0DF] ml-1 opacity-80" />
+                        <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center mb-4 shadow-lg shadow-amber-500/10 animate-pulse">
+                          <Clock className="w-8 h-8 sm:w-10 sm:h-10 text-amber-400" />
                         </div>
-                        <span className="px-3 py-1 rounded-full bg-[#00A0DF]/15 border border-[#00A0DF]/30 text-[#00A0DF] text-xs font-bold uppercase tracking-wider mb-2">
-                          Lecture Video
+                        <span className="px-3.5 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-400 text-xs font-black uppercase tracking-wider mb-2">
+                          ⏳ COMING SOON
                         </span>
                         <h3 className="text-base sm:text-xl font-bold text-white max-w-md line-clamp-2 mb-2">
                           {activeLesson?.title || 'Video Lecture'}

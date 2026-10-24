@@ -822,20 +822,22 @@ export default function AdminCmsPage() {
   };
 
   const openEditLesson = (moduleId: number, lesson: any) => {
+    const rawUrl = (lesson.videoUrl || '').trim();
+    const cleanUrl = rawUrl.includes('dQw4w9WgXcQ') ? '' : rawUrl;
     const isEmbed = Boolean(
-      lesson.videoUrl?.includes('mediadelivery.net') || 
-      lesson.videoUrl?.includes('bunny') || 
-      lesson.videoUrl?.includes('embed') || 
-      lesson.videoUrl?.includes('<iframe')
+      cleanUrl.includes('mediadelivery.net') || 
+      cleanUrl.includes('bunny') || 
+      cleanUrl.includes('embed') || 
+      cleanUrl.includes('<iframe')
     );
     setEditingLesson({
       moduleId,
       lessonId: lesson.id,
       title: lesson.title,
       duration: (lesson.duration && lesson.duration !== '15:00' && lesson.duration !== '12m') ? lesson.duration : '',
-      videoUrl: lesson.videoUrl || '',
+      videoUrl: cleanUrl,
       mode: isEmbed ? 'embed' : 'url',
-      embedCode: isEmbed ? lesson.videoUrl : ''
+      embedCode: isEmbed ? cleanUrl : ''
     });
     setEditLessonError('');
   };
@@ -848,12 +850,14 @@ export default function AdminCmsPage() {
     }
 
     let finalVideoUrl = editingLesson.videoUrl.trim();
-    if (editingLesson.mode === 'embed' && editingLesson.embedCode.trim()) {
+    if (editingLesson.mode === 'embed') {
       const parsed = parseEmbedInput(editingLesson.embedCode);
-      if (parsed) finalVideoUrl = parsed;
+      finalVideoUrl = parsed || '';
     }
 
-    if (finalVideoUrl.includes('youtube.com/watch?v=')) {
+    if (finalVideoUrl.includes('dQw4w9WgXcQ')) {
+      finalVideoUrl = '';
+    } else if (finalVideoUrl.includes('youtube.com/watch?v=')) {
       const vId = finalVideoUrl.split('v=')[1]?.split('&')[0];
       if (vId) finalVideoUrl = `https://www.youtube.com/embed/${vId}`;
     } else if (finalVideoUrl.includes('youtu.be/')) {
@@ -1191,12 +1195,14 @@ export default function AdminCmsPage() {
     }
 
     let finalVideoUrl = newLessonUrl.trim();
-    if (lessonVideoMode === 'embed' && newLessonEmbedCode.trim()) {
+    if (lessonVideoMode === 'embed') {
       const parsed = parseEmbedInput(newLessonEmbedCode);
-      if (parsed) finalVideoUrl = parsed;
+      finalVideoUrl = parsed || '';
     }
 
-    if (finalVideoUrl.includes('youtube.com/watch?v=')) {
+    if (finalVideoUrl.includes('dQw4w9WgXcQ')) {
+      finalVideoUrl = '';
+    } else if (finalVideoUrl.includes('youtube.com/watch?v=')) {
       const vId = finalVideoUrl.split('v=')[1]?.split('&')[0];
       if (vId) finalVideoUrl = `https://www.youtube.com/embed/${vId}`;
     } else if (finalVideoUrl.includes('youtu.be/')) {
@@ -3613,13 +3619,17 @@ export default function AdminCmsPage() {
                         {/* List of Lectures */}
                         <div className="space-y-2">
                           {m.lessons.map((l) => {
-                            const isBunny = Boolean(l.videoUrl?.includes('mediadelivery.net') || l.videoUrl?.includes('bunny'));
-                            const isYouTube = Boolean(l.videoUrl?.includes('youtube') || l.videoUrl?.includes('youtu.be'));
+                            const rawUrl = (l.videoUrl || '').trim();
+                            const hasValidVideo = Boolean(rawUrl && !rawUrl.includes('dQw4w9WgXcQ'));
+                            const isBunny = Boolean(hasValidVideo && (rawUrl.includes('mediadelivery.net') || rawUrl.includes('bunny')));
+                            const isYouTube = Boolean(hasValidVideo && (rawUrl.includes('youtube') || rawUrl.includes('youtu.be')));
                             const isDirect = Boolean(
-                              l.videoUrl?.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
-                              l.videoUrl?.includes('supabase.co/storage') ||
-                              l.videoUrl?.startsWith('/uploads/') ||
-                              l.videoUrl?.startsWith('/api/videos/')
+                              hasValidVideo && (
+                                rawUrl.match(/\.(mp4|webm|mov|m4v|ogg)(\?.*)?$/i) ||
+                                rawUrl.includes('supabase.co/storage') ||
+                                rawUrl.startsWith('/uploads/') ||
+                                rawUrl.startsWith('/api/videos/')
+                              )
                             );
 
                             return (
@@ -3653,14 +3663,14 @@ export default function AdminCmsPage() {
                                       )}
                                     </div>
                                     <div className="flex items-center gap-2 mt-1 flex-wrap">
-                                      {l.videoUrl && l.videoUrl.trim() ? (
+                                      {hasValidVideo ? (
                                         <span className="text-[10px] font-bold text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
                                           <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
                                           Active
                                         </span>
                                       ) : (
-                                        <span className="text-[10px] font-bold text-slate-400 bg-slate-800 border border-white/5 px-2 py-0.5 rounded-md flex items-center gap-1">
-                                          <span className="w-1.5 h-1.5 rounded-full bg-slate-500"></span>
+                                        <span className="text-[10px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-2 py-0.5 rounded-md flex items-center gap-1">
+                                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                                           Upcoming (No Video)
                                         </span>
                                       )}
@@ -3791,12 +3801,12 @@ export default function AdminCmsPage() {
                               setEditingLesson({
                                 ...editingLesson,
                                 embedCode: val,
-                                videoUrl: parsed || editingLesson.videoUrl
+                                videoUrl: parsed || ''
                               });
                             }}
                             className="w-full px-3 py-2 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white font-mono placeholder-slate-600 focus:outline-none focus:border-[#00A0DF]"
                           />
-                          {editingLesson.videoUrl && (
+                          {editingLesson.videoUrl && !editingLesson.videoUrl.includes('dQw4w9WgXcQ') && (
                             <div className="text-[11px] text-slate-400 font-mono truncate bg-[#0B0F19] p-2 rounded-lg border border-white/5 flex items-center gap-1.5">
                               <CheckCircle2 size={13} className="text-emerald-400 flex-shrink-0" />
                               <span className="truncate">{editingLesson.videoUrl}</span>

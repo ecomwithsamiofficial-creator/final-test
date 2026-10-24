@@ -146,11 +146,13 @@ export async function POST(request: NextRequest) {
       }
 
       const lessonId = lesson.id || `m${moduleId}_l${Date.now()}`;
+      const rawUrl = typeof lesson.videoUrl === 'string' ? lesson.videoUrl.trim() : '';
+      const cleanVideoUrl = rawUrl.includes('dQw4w9WgXcQ') ? '' : rawUrl;
       const createdLesson = await dbAddLesson(Number(moduleId), {
         id: lessonId,
         title: lesson.title || 'New Lecture Video',
-        duration: lesson.duration || '15:00',
-        videoUrl: lesson.videoUrl || 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+        duration: lesson.duration || '',
+        videoUrl: cleanVideoUrl,
         notes: lesson.notes || ''
       });
 
