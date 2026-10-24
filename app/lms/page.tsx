@@ -353,7 +353,6 @@ export default function LmsClassroomPage() {
           setModules(parsedMods);
           if (!ovLesson && parsedMods[0]?.lessons?.[0]) {
             setActiveLesson((prev: any) => prev || parsedMods[0].lessons[0]);
-            setOpenModuleId(parsedMods[0].id);
           }
         }
       }
@@ -400,7 +399,7 @@ export default function LmsClassroomPage() {
   const [isControlsHovered, setIsControlsHovered] = useState<boolean>(false);
   const [videoLoadError, setVideoLoadError] = useState(false);
   const [completedLessons, setCompletedLessons] = useState<string[]>([]);
-  const [openModuleId, setOpenModuleId] = useState<number>(1);
+  const [openModuleId, setOpenModuleId] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<'video' | 'suppliers' | 'resources' | 'community'>('video');
   const [subTab, setSubTab] = useState<'notes' | 'discussion'>('notes');
   const [autoProceed, setAutoProceed] = useState<boolean>(true);
@@ -1228,7 +1227,6 @@ export default function LmsClassroomPage() {
           } catch (e) {}
           if (res.modules[0]?.lessons[0]) {
             setActiveLesson((prev: any) => prev || res.modules[0].lessons[0]);
-            setOpenModuleId((prev: any) => prev || res.modules[0].id);
           }
         }
       });
