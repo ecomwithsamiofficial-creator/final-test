@@ -276,7 +276,8 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
       updated.about_page = patch.about_page;
     } else if (activeTab === 'refund_policy' && patch.refund_policy !== undefined) {
       updated.refund_policy = patch.refund_policy;
-    } else if (activeTab === 'lms') {
+    } else if (activeTab === 'lms' || activeTab === 'lms_overview') {
+      if (patch.lms_overview !== undefined) updated.lms_overview = patch.lms_overview;
       if (patch.lms_frameworks !== undefined) updated.lms_frameworks = patch.lms_frameworks;
     }
 
@@ -386,6 +387,7 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   if (patch.signature_framework !== undefined) updated.signature_framework = patch.signature_framework;
   if (patch.about_page !== undefined) updated.about_page = patch.about_page;
   if (patch.refund_policy !== undefined) updated.refund_policy = patch.refund_policy;
+  if (patch.lms_overview !== undefined) updated.lms_overview = patch.lms_overview;
   if (patch.lms_frameworks !== undefined) updated.lms_frameworks = patch.lms_frameworks;
   if (patch.theme !== undefined) {
     updated.theme = {

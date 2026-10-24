@@ -590,6 +590,9 @@ export default function AdminCmsPage() {
         if (dataToSave.checkout_page) {
           localStorage.setItem('sami_cms_checkout_page', JSON.stringify(dataToSave.checkout_page));
         }
+        if (dataToSave.lms_overview) {
+          localStorage.setItem('sami_lms_overview_cache', JSON.stringify(dataToSave.lms_overview));
+        }
         updateCmsContent(dataToSave);
       } catch (e) {}
       setSavedSuccess(true);
@@ -2721,7 +2724,11 @@ export default function AdminCmsPage() {
                     type="text"
                     value={cmsData.lms_overview?.video_url ?? (defaultCmsContent.lms_overview?.video_url || '')}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      let val = e.target.value.trim();
+                      if (val.includes('<iframe')) {
+                        const m = val.match(/src=["']([^"']+)["']/i);
+                        if (m && m[1]) val = m[1];
+                      }
                       setCmsData(prev => ({
                         ...prev,
                         lms_overview: {
@@ -2733,6 +2740,16 @@ export default function AdminCmsPage() {
                     placeholder="https://youtu.be/..."
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs font-bold focus:outline-none focus:border-emerald-500"
                   />
+                  {cmsData.lms_overview?.video_url ? (
+                    <p className="mt-1.5 text-[11px] text-emerald-400 font-mono truncate flex items-center gap-1.5">
+                      <CheckCircle2 size={12} className="shrink-0" />
+                      <span className="truncate">{cmsData.lms_overview.video_url}</span>
+                    </p>
+                  ) : (
+                    <p className="mt-1.5 text-[11px] text-slate-500">
+                      ℹ️ Video URL blank hai (LMS pe &quot;Coming Soon&quot; screen aayegi).
+                    </p>
+                  )}
                 </div>
 
                 {/* Duration */}
@@ -2776,6 +2793,22 @@ export default function AdminCmsPage() {
                     className="w-full px-3.5 py-2.5 rounded-xl bg-slate-900 border border-white/10 text-white text-xs leading-relaxed focus:outline-none focus:border-emerald-500"
                   />
                 </div>
+              </div>
+
+              {/* Bottom Action Bar with Direct Save Button */}
+              <div className="pt-4 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-3 relative z-10">
+                <p className="text-xs text-slate-400">
+                  Video link ya details add karne ke baad yahan &quot;Save Roadmap Video&quot; par click karein.
+                </p>
+                <button
+                  type="button"
+                  onClick={handleSaveAll}
+                  disabled={loading}
+                  className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-500 hover:from-emerald-500 hover:to-teal-400 text-white text-xs sm:text-sm font-black shadow-lg shadow-emerald-600/30 active:scale-95 transition-all disabled:opacity-50 cursor-pointer"
+                >
+                  <Save size={15} />
+                  <span>{loading ? 'Saving Roadmap...' : 'Save Roadmap Video'}</span>
+                </button>
               </div>
             </div>
 
