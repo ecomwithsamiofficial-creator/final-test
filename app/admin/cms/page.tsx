@@ -10051,9 +10051,9 @@ export default function AdminCmsPage() {
 
                     {/* Metric 3 */}
                     <div className="p-4 rounded-2xl bg-[#0B0F19] border border-white/5 space-y-2.5">
-                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 3: Revenue Proof</span>
+                      <span className="text-[11px] font-bold text-slate-400 block uppercase">Card 3: Curriculum Scope</span>
                       <div>
-                        <label className="text-[10px] text-slate-500 block mb-0.5">Total Volume Amount</label>
+                        <label className="text-[10px] text-slate-500 block mb-0.5">Modules Scope</label>
                         <input
                           type="text"
                           value={showcaseCms.metrics.revenueVolume}
@@ -10328,15 +10328,16 @@ export default function AdminCmsPage() {
                       onClick={() => {
                         const newReview: ShowcaseReview = {
                           id: `REV-PK-${Date.now().toString().slice(-4)}`,
-                          studentName: 'Kamran Akram',
+                          studentName: 'Zainab Ahmed',
                           city: 'Lahore',
                           rating: 5,
-                          relativeTime: '2 hours ago',
-                          course: 'VIP Mentorship + GCC Scaling',
-                          storeRevenue: 'PKR 350,000 / month',
-                          headline: 'Sami bhai ki guidance ne pehle month profitable kardiya!',
-                          reviewText: 'MashaAllah Sardar Samiullah bhai ne jo ad scaling formula sikhaya hai, us se mere daily 35+ orders successfully deliver ho rahe hain.',
-                          tag: 'Verified Scaling Student'
+                          relativeTime: 'Just now',
+                          course: 'VIP Mentorship + Ecominion LMS',
+                          headline: 'Sami bhai ki guidance se proper roadmap samajh aa gaya',
+                          reviewText: 'Pehle main confusing videos dekh kar pareshan tha, lekin Ecominion mentorship ke modules ne product hunting aur ads setup bilkul clear kar diya.',
+                          tag: 'Meta & TikTok Ads',
+                          studentType: 'University Student',
+                          isVerifiedStudent: true
                         };
                         setShowcaseCms({
                           ...showcaseCms,
@@ -10444,32 +10445,32 @@ export default function AdminCmsPage() {
                         </div>
 
                         <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">Store Monthly Revenue Badge</label>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Student Profile / Type</label>
                           <input
                             type="text"
-                            placeholder="e.g. PKR 520,000 / month"
-                            value={rev.storeRevenue || ''}
+                            placeholder="e.g. University Student, Housewife, Working Professional"
+                            value={rev.studentType || ''}
                             onChange={(e) => {
                               const updated = [...showcaseCms.reviews];
-                              updated[idx] = { ...updated[idx], storeRevenue: e.target.value };
+                              updated[idx] = { ...updated[idx], studentType: e.target.value };
                               setShowcaseCms({ ...showcaseCms, reviews: updated });
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-bold text-emerald-400 focus:border-[#00A0DF]"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs font-bold text-white focus:border-[#00A0DF]"
                           />
                         </div>
 
                         <div>
-                          <label className="text-[10px] text-slate-400 block mb-0.5">Badge Tag</label>
+                          <label className="text-[10px] text-slate-400 block mb-0.5">Mentorship Topic Tag</label>
                           <input
                             type="text"
-                            placeholder="e.g. Verified Scaling Student"
+                            placeholder="e.g. Meta & TikTok Ads, Winning Product Research"
                             value={rev.tag}
                             onChange={(e) => {
                               const updated = [...showcaseCms.reviews];
                               updated[idx] = { ...updated[idx], tag: e.target.value };
                               setShowcaseCms({ ...showcaseCms, reviews: updated });
                             }}
-                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-[#00A0DF] focus:border-[#00A0DF]"
+                            className="w-full px-2.5 py-1.5 rounded-lg bg-[#0B0F19] border border-white/10 text-xs text-[#00A0DF] font-bold focus:border-[#00A0DF]"
                           />
                         </div>
 

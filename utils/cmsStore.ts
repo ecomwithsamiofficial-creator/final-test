@@ -931,27 +931,27 @@ export const defaultCmsContent: CmsContentSchema = {
     {
       name: 'Hamza Tariq',
       city: 'Lahore',
-      sales: 'AED 8,920 in 14 Days',
-      orders: '42 Delivered Orders',
-      quote: 'Sami bhai ke verified supplier directory ne meri life badal di. Pehle scam supplier se loss hoa tha, ab daily orders ship ho rahe hain!',
+      sales: '',
+      orders: '',
+      quote: 'Sami bhai ke verified supplier directory ne sourcing bohot asaan kardi. Sourcing aur courier SOPs se daily operations smooth chal rahe hain!',
       market: 'UAE Market',
       initials: 'HT'
     },
     {
       name: 'Bilal Ahmad',
       city: 'Karachi',
-      sales: 'SAR 12,450 in 3 Weeks',
-      orders: '68 Orders',
-      quote: 'TikTok ads strategy jo module 4 mein sikhayi hai wo 100% working hai. 5.8 ROAS mila mujhe pehle hi campaign mein.',
+      sales: '',
+      orders: '',
+      quote: 'TikTok ads strategy jo module 4 mein sikhayi hai wo bohot practical aur clear hai. Hook testing se low CPR milna start ho gaya.',
       market: 'Saudi Arabia',
       initials: 'BA'
     },
     {
       name: 'Usman Ghani',
       city: 'Islamabad',
-      sales: 'AED 4,850 First Week',
-      orders: '24 Orders',
-      quote: 'Rs 3,799 mein itna practical aur updated content koi nahi deta Pakistan mein. Highly recommended!',
+      sales: '',
+      orders: '',
+      quote: 'Itna practical aur updated Pakistani e-commerce content kisi aur course mein nahi dekha. Highly recommended!',
       market: 'UAE Market',
       initials: 'UG'
     }

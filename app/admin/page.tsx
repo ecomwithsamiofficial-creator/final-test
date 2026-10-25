@@ -353,6 +353,7 @@ export default function AdminDashboardPage() {
   const [showcaseSubTab, setShowcaseSubTab] = useState<'enrollments' | 'reviews'>('enrollments');
   const [showcaseSearch, setShowcaseSearch] = useState('');
   const [showcaseCityFilter, setShowcaseCityFilter] = useState('ALL');
+  const [showcaseCategoryFilter, setShowcaseCategoryFilter] = useState('ALL');
   const [copiedReviewId, setCopiedReviewId] = useState<string | null>(null);
 
   useEffect(() => {
@@ -3093,13 +3094,13 @@ export default function AdminDashboardPage() {
 
                 <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 shadow-xl">
                   <div className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1">
-                    Mentorship Proof Volume
+                    Curriculum Frameworks
                   </div>
                   <div className="text-xl sm:text-2xl font-black text-[#00A0DF]">
-                    {showcaseCms.metrics?.revenueVolume || 'PKR 3,840,000+'}
+                    {showcaseCms.metrics?.revenueVolume || '11 Practical Modules'}
                   </div>
                   <div className="text-[11px] text-slate-400 mt-1">
-                    {showcaseCms.metrics?.revenueSubtext || 'Total Mentorship Volume'}
+                    {showcaseCms.metrics?.revenueSubtext || 'Step-by-Step E-Com Curriculum'}
                   </div>
                 </div>
 
@@ -3245,127 +3246,204 @@ export default function AdminDashboardPage() {
               )}
 
               {/* ===================================================================== */}
-              {/* SUB-VIEW B: 50+ PAKISTANI 5-STAR REVIEWS & SCALING TESTIMONIALS */}
+              {/* SUB-VIEW B: AUTHENTIC PAKISTANI STUDENT REVIEWS & EXPERIENCES */}
               {/* ===================================================================== */}
-              {showcaseSubTab === 'reviews' && (
-                <div className="space-y-4">
-                  {/* Search and Filters */}
-                  <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
-                    <div>
-                      <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                        <Star size={16} className="text-amber-400 fill-amber-400" />
-                        <span>Verified Student Reviews ({(showcaseCms.reviews || []).length})</span>
-                      </h3>
-                      <p className="text-[11px] text-slate-400">Authentic feedback on Sardar Samiullah's Mentorship, Ad strategies &amp; GCC Scaling</p>
+              {showcaseSubTab === 'reviews' && (() => {
+                const categories = [
+                  { id: 'ALL', label: 'All Topics' },
+                  { id: 'Meta & TikTok Ads', label: 'Meta & TikTok Ads' },
+                  { id: 'Winning Product Research', label: 'Product Research' },
+                  { id: 'Shopify Store & CRO', label: 'Shopify & CRO' },
+                  { id: 'Supplier Sourcing', label: 'Supplier Sourcing' },
+                  { id: 'COD & Return Management', label: 'COD & Returns' },
+                  { id: 'Local Dropshipping', label: 'Local Dropshipping' },
+                  { id: 'UAE & GCC Operations', label: 'UAE & GCC Market' },
+                  { id: 'WhatsApp & Community Support', label: 'Community & Support' },
+                  { id: 'White Label & Private Label', label: 'Private Label' },
+                ];
+
+                const filteredReviews = (showcaseCms.reviews || []).filter((rev) => {
+                  const q = showcaseSearch.toLowerCase().trim();
+                  const matchSearch =
+                    !q ||
+                    (rev.studentName || '').toLowerCase().includes(q) ||
+                    (rev.city || '').toLowerCase().includes(q) ||
+                    (rev.headline || '').toLowerCase().includes(q) ||
+                    (rev.reviewText || '').toLowerCase().includes(q) ||
+                    (rev.tag || '').toLowerCase().includes(q) ||
+                    (rev.studentType || '').toLowerCase().includes(q);
+
+                  const matchCategory =
+                    showcaseCategoryFilter === 'ALL' ||
+                    rev.tag === showcaseCategoryFilter ||
+                    rev.category === showcaseCategoryFilter;
+
+                  return matchSearch && matchCategory;
+                });
+
+                return (
+                  <div className="space-y-4 sm:space-y-5">
+                    {/* Top Search, Count & Information Strip */}
+                    <div className="bg-[#111827] border border-white/10 rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xl">
+                      <div>
+                        <h3 className="text-sm sm:text-base font-bold text-white flex items-center gap-2">
+                          <Star size={16} className="text-amber-400 fill-amber-400" />
+                          <span>Student Reviews &amp; Testimonials ({filteredReviews.length} of {(showcaseCms.reviews || []).length})</span>
+                        </h3>
+                        <p className="text-[11px] text-slate-400">Authentic student experiences with Sardar Samiullah's Ecominion Mentorship &amp; practical roadmaps</p>
+                      </div>
+
+                      <div className="relative w-full sm:w-80">
+                        <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
+                        <input
+                          type="text"
+                          placeholder="Search student, city, topic, or feedback..."
+                          value={showcaseSearch}
+                          onChange={(e) => setShowcaseSearch(e.target.value)}
+                          className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
+                        />
+                        {showcaseSearch && (
+                          <button
+                            onClick={() => setShowcaseSearch('')}
+                            className="absolute right-2.5 top-2 text-slate-400 hover:text-white text-xs"
+                          >
+                            &times;
+                          </button>
+                        )}
+                      </div>
                     </div>
 
-                    <div className="relative w-full sm:w-72">
-                      <Search size={14} className="absolute left-3 top-2.5 text-slate-400" />
-                      <input
-                        type="text"
-                        placeholder="Search scaling formula, names, revenue..."
-                        value={showcaseSearch}
-                        onChange={(e) => setShowcaseSearch(e.target.value)}
-                        className="w-full pl-8 pr-3 py-1.5 rounded-xl bg-[#0B0F19] border border-white/10 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-[#00A0DF]"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Reviews Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    {(showcaseCms.reviews || [])
-                      .filter((rev) => {
-                        const q = showcaseSearch.toLowerCase();
+                    {/* Interactive Category Topic Pills */}
+                    <div className="flex items-center gap-1.5 overflow-x-auto pb-2 scrollbar-thin">
+                      {categories.map((cat) => {
+                        const isActive = showcaseCategoryFilter === cat.id;
                         return (
-                          (rev.studentName || '').toLowerCase().includes(q) ||
-                          (rev.city || '').toLowerCase().includes(q) ||
-                          (rev.headline || '').toLowerCase().includes(q) ||
-                          (rev.reviewText || '').toLowerCase().includes(q) ||
-                          (rev.storeRevenue && rev.storeRevenue.toLowerCase().includes(q))
+                          <button
+                            key={cat.id}
+                            onClick={() => setShowcaseCategoryFilter(cat.id)}
+                            className={`px-3 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all border ${
+                              isActive
+                                ? 'bg-[#00A0DF] text-white border-[#00A0DF] shadow-md shadow-[#00A0DF]/25'
+                                : 'bg-[#111827] text-slate-400 border-white/10 hover:text-white hover:border-white/20'
+                            }`}
+                          >
+                            {cat.label}
+                          </button>
                         );
-                      })
-                      .map((rev) => (
-                        <div
-                          key={rev.id}
-                          className="bg-[#111827] border border-white/10 hover:border-amber-500/30 rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5 transition-all flex flex-col justify-between"
-                        >
-                          <div className="space-y-2.5">
-                            {/* Card Top Strip */}
-                            <div className="flex items-center justify-between gap-2">
-                              <div className="flex items-center gap-2.5">
-                                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-bold text-white text-xs">
-                                  {rev.studentName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
-                                </div>
-                                <div>
-                                  <div className="font-bold text-white text-xs flex items-center gap-1.5">
-                                    <span>{rev.studentName}</span>
-                                    <CheckCircle2 size={12} className="text-emerald-400" />
-                                  </div>
-                                  <span className="text-[11px] text-slate-400">
-                                    {rev.city}, Pakistan &bull; {rev.course}
-                                  </span>
-                                </div>
-                              </div>
+                      })}
+                    </div>
 
-                              <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                                <Clock size={11} /> {rev.relativeTime}
-                              </span>
-                            </div>
-
-                            {/* Rating Stars & Revenue Badge */}
-                            <div className="flex flex-wrap items-center justify-between gap-2 pt-1">
-                              <div className="flex items-center gap-1">
-                                <div className="flex text-amber-400 text-sm">
-                                  {'★'.repeat(rev.rating)}
-                                </div>
-                                <span className="text-xs font-black text-amber-400 ml-1">5.0</span>
-                              </div>
-
-                              {rev.storeRevenue && (
-                                <span className="bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 text-[10px] font-black uppercase tracking-wider px-2.5 py-0.5 rounded-full">
-                                  {rev.storeRevenue}
-                                </span>
-                              )}
-                            </div>
-
-                            {/* Headline */}
-                            <h4 className="text-sm font-black text-white leading-snug">
-                              &ldquo;{rev.headline}&rdquo;
-                            </h4>
-
-                            {/* Detailed Review Text */}
-                            <p className="text-xs text-slate-300 leading-relaxed">
-                              {rev.reviewText}
-                            </p>
-                          </div>
-
-                          {/* Footer with Tag and Copy Quote */}
-                          <div className="pt-3 border-t border-white/5 flex items-center justify-between">
-                            <span className="text-[10px] font-bold bg-[#00A0DF]/10 text-[#00A0DF] border border-[#00A0DF]/20 px-2 py-0.5 rounded-md">
-                              {rev.tag}
-                            </span>
-
-                            <button
-                              onClick={() => {
-                                try {
-                                  navigator.clipboard.writeText(`"${rev.headline}" - ${rev.studentName} (${rev.city}): ${rev.reviewText}`);
-                                  setCopiedReviewId(rev.id);
-                                  setToastMessage(`📋 Review from ${rev.studentName} copied!`);
-                                  setTimeout(() => setCopiedReviewId(null), 2500);
-                                  setTimeout(() => setToastMessage(null), 4000);
-                                } catch (e) {}
-                              }}
-                              className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors"
-                            >
-                              <Copy size={11} className={copiedReviewId === rev.id ? 'text-emerald-400' : 'text-slate-400'} />
-                              <span>{copiedReviewId === rev.id ? 'Copied!' : 'Copy Quote'}</span>
-                            </button>
-                          </div>
+                    {/* Reviews Grid */}
+                    {filteredReviews.length === 0 ? (
+                      <div className="bg-[#111827] border border-white/10 rounded-2xl p-8 sm:p-12 text-center space-y-3">
+                        <div className="w-12 h-12 rounded-full bg-white/5 border border-white/10 flex items-center justify-center mx-auto text-slate-400">
+                          <Search size={20} />
                         </div>
-                      ))}
+                        <h4 className="text-sm font-bold text-white">No Student Reviews Found</h4>
+                        <p className="text-xs text-slate-400 max-w-sm mx-auto">
+                          No reviews match your current search or category filter. Try clearing filters to see all student experiences.
+                        </p>
+                        <button
+                          onClick={() => {
+                            setShowcaseSearch('');
+                            setShowcaseCategoryFilter('ALL');
+                          }}
+                          className="px-4 py-1.5 rounded-xl bg-[#00A0DF] text-white font-bold text-xs shadow-md shadow-[#00A0DF]/20 active:scale-95 transition-all"
+                        >
+                          Reset All Filters
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-5">
+                        {filteredReviews.map((rev) => (
+                          <div
+                            key={rev.id}
+                            className="bg-[#111827] border border-white/10 hover:border-[#00A0DF]/40 rounded-2xl p-5 sm:p-6 shadow-xl space-y-3.5 transition-all flex flex-col justify-between"
+                          >
+                            <div className="space-y-3">
+                              {/* Top Bar: Avatar, Name, Verified Badge, Location & Time */}
+                              <div className="flex items-start justify-between gap-2">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#00608c] flex items-center justify-center font-black text-white text-xs shadow-sm flex-shrink-0">
+                                    {rev.studentName.split(' ').map((n) => n[0]).slice(0, 2).join('')}
+                                  </div>
+                                  <div>
+                                    <div className="font-bold text-white text-sm flex items-center gap-1.5 flex-wrap">
+                                      <span>{rev.studentName}</span>
+                                      <span className="inline-flex items-center gap-1 bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[9px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full">
+                                        <CheckCircle2 size={10} className="text-emerald-400" />
+                                        <span>Verified Student</span>
+                                      </span>
+                                    </div>
+                                    <div className="text-[11px] text-slate-400 mt-0.5">
+                                      <span>{rev.city}, Pakistan</span>
+                                      {rev.studentType && (
+                                        <span className="text-slate-300 font-medium"> &bull; {rev.studentType}</span>
+                                      )}
+                                    </div>
+                                  </div>
+                                </div>
+
+                                <span className="text-[10px] text-slate-400 flex items-center gap-1 flex-shrink-0 bg-white/[0.03] px-2 py-1 rounded-md border border-white/5">
+                                  <Clock size={11} className="text-slate-400" />
+                                  <span>{rev.relativeTime}</span>
+                                </span>
+                              </div>
+
+                              {/* Stars & Mentorship Topic Badge */}
+                              <div className="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-white/5">
+                                <div className="flex items-center gap-1">
+                                  <div className="flex text-amber-400 text-sm">
+                                    {'★'.repeat(rev.rating)}
+                                  </div>
+                                  <span className="text-xs font-black text-amber-400 ml-1">5.0</span>
+                                </div>
+
+                                <span className="bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] font-bold px-2.5 py-0.5 rounded-full">
+                                  {rev.tag}
+                                </span>
+                              </div>
+
+                              {/* Headline */}
+                              <h4 className="text-sm sm:text-[15px] font-black text-white leading-snug">
+                                &ldquo;{rev.headline}&rdquo;
+                              </h4>
+
+                              {/* Genuine Student Review Text */}
+                              <p className="text-xs sm:text-[13px] text-slate-300 leading-relaxed font-normal">
+                                {rev.reviewText}
+                              </p>
+                            </div>
+
+                            {/* Footer: Course info & Copy Quote */}
+                            <div className="pt-3 border-t border-white/5 flex items-center justify-between gap-2">
+                              <span className="text-[10px] text-slate-400 font-medium truncate max-w-[200px] sm:max-w-none">
+                                {rev.course}
+                              </span>
+
+                              <button
+                                onClick={() => {
+                                  try {
+                                    navigator.clipboard.writeText(`"${rev.headline}" - ${rev.studentName} (${rev.city}): ${rev.reviewText}`);
+                                    setCopiedReviewId(rev.id);
+                                    setToastMessage(`📋 Review from ${rev.studentName} copied!`);
+                                    setTimeout(() => setCopiedReviewId(null), 2500);
+                                    setTimeout(() => setToastMessage(null), 4000);
+                                  } catch (e) {}
+                                }}
+                                className="text-[11px] font-bold text-slate-400 hover:text-white flex items-center gap-1 transition-colors px-2 py-1 rounded-lg hover:bg-white/5 flex-shrink-0"
+                              >
+                                <Copy size={11} className={copiedReviewId === rev.id ? 'text-emerald-400' : 'text-slate-400'} />
+                                <span>{copiedReviewId === rev.id ? 'Copied!' : 'Copy Review'}</span>
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
-              )}
+                );
+              })()}
             </div>
           )}
 

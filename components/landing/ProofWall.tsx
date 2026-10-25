@@ -8,72 +8,64 @@ export function ProofWall({ customTestimonials }: { customTestimonials?: any[] }
     {
       name: 'Raza Ali',
       city: 'Lahore',
-      sales: 'AED 4,850 in 6 Days',
-      orders: '24 Orders',
-      quote: 'Launched my first TikTok test ad campaign following Sami’s hook formula. First sale within 18 hours!',
-      market: 'UAE Market',
+      topic: 'TikTok Ads Strategy',
+      quote: 'Launched my first TikTok test ad campaign following Sami’s hook formula. Clear step-by-step guidance!',
+      market: 'Meta & TikTok Ads',
       initials: 'RA'
     },
     {
       name: 'Hamza Tariq',
       city: 'Islamabad',
-      sales: 'AED 5,000 / Week',
-      orders: '56 Orders',
-      quote: 'The direct supplier contacts in Dubai changed everything. Fast 2-day delivery and COD payout on time.',
+      topic: 'GCC Direct Sourcing',
+      quote: 'The direct supplier contacts in Dubai changed everything. Fast 2-day delivery and smooth COD operations.',
       market: 'UAE Market',
       initials: 'HT'
     },
     {
       name: 'Bilal Farooq',
       city: 'Karachi',
-      sales: 'SAR 3,485 in 3 Days',
-      orders: '19 Orders',
+      topic: 'Shopify Store Setup',
       quote: 'Started as a total beginner with zero Shopify knowledge. The 11 modules are so easy and step-by-step.',
-      market: 'Saudi Arabia',
+      market: 'Beginner Roadmap',
       initials: 'BF'
     },
     {
       name: 'Zainab Bibi',
       city: 'Faisalabad',
-      sales: 'PKR 480,000 / Mo',
-      orders: '110+ Orders',
-      quote: 'The WhatsApp mentorship answered every question I had during my ad setup. Never felt alone.',
-      market: 'UAE & KSA',
+      topic: 'WhatsApp Mentorship',
+      quote: 'The WhatsApp mentorship answered every question I had during my ad setup. Never felt stuck.',
+      market: 'Community & Support',
       initials: 'ZB'
     },
     {
       name: 'Usman Ghani',
       city: 'Rawalpindi',
-      sales: 'SAR 8,200',
-      orders: '78 Orders',
-      quote: 'Scaled my product using Advantage+ CBO scaling taught in Module 8. Best investment of my life.',
+      topic: 'CBO Scaling Matrix',
+      quote: 'Tested my product using Advantage+ CBO scaling taught in Module 8. Best learning experience.',
       market: 'Saudi Market',
       initials: 'UG'
     },
     {
       name: 'Saad Ahmed',
       city: 'Multan',
-      sales: 'PKR 320,000 Profit',
-      orders: '42 Orders',
-      quote: 'Verified suppliers with Arabic packaging makes local buyers trust the store. Return rate dropped to 11%.',
+      topic: 'Supplier Sourcing',
+      quote: 'Verified suppliers with Arabic packaging makes local buyers trust the store. Return rate dropped significantly.',
       market: 'UAE Market',
       initials: 'SA'
     },
     {
       name: 'Muhammad Asif',
       city: 'Gujranwala',
-      sales: 'AED 6,200 / 10 Days',
-      orders: '38 Orders',
-      quote: 'The Shopify theme and ChatGPT ad scripts saved me days of work. Real results from week 1!',
-      market: 'UAE Market',
+      topic: 'Shopify CRO Theme',
+      quote: 'The Shopify theme and ChatGPT ad scripts saved me days of work. Clear results from week 1!',
+      market: 'Shopify & CRO',
       initials: 'MA'
     },
     {
       name: 'Farhan Sheikh',
       city: 'Peshawar',
-      sales: 'SAR 5,150',
-      orders: '31 Orders',
-      quote: 'From zero experience to profitable dropshipping store in KSA. Sami’s guidance is unmatched.',
+      topic: 'KSA Dropshipping',
+      quote: 'From zero experience to running ads in KSA. Sami’s mentorship roadmap is unmatched.',
       market: 'KSA Market',
       initials: 'FS'
     }
@@ -175,9 +167,9 @@ export function ProofWall({ customTestimonials }: { customTestimonials?: any[] }
                     </div>
                   </div>
 
-                  {t.sales && (
-                    <span className="inline-block text-[9px] sm:text-[11px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md shadow-xs">
-                      {t.sales}
+                  {t.topic && (
+                    <span className="inline-block text-[9px] sm:text-[10px] font-bold text-[#00A0DF] bg-[#00A0DF]/10 border border-[#00A0DF]/20 px-2 py-0.5 rounded-full">
+                      {t.topic}
                     </span>
                   )}
                 </div>
@@ -223,9 +215,9 @@ export function ProofWall({ customTestimonials }: { customTestimonials?: any[] }
                     </div>
                   </div>
 
-                  {t.sales && (
-                    <span className="inline-block text-[9px] sm:text-[11px] font-extrabold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-md shadow-xs">
-                      {t.sales}
+                  {t.topic && (
+                    <span className="inline-block text-[9px] sm:text-[10px] font-bold text-emerald-400 bg-emerald-950/60 border border-emerald-500/40 px-2 py-0.5 rounded-full">
+                      {t.topic}
                     </span>
                   )}
                 </div>
@@ -273,9 +265,9 @@ export function ProofWall({ customTestimonials }: { customTestimonials?: any[] }
                   </div>
                 </div>
 
-                {t.sales && (
-                  <span className="inline-block text-[11px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-md">
-                    {t.sales}
+                {t.topic && (
+                  <span className="inline-block text-[10px] font-bold text-[#00A0DF] bg-[#00A0DF]/10 border border-[#00A0DF]/20 px-2 py-0.5 rounded-full">
+                    {t.topic}
                   </span>
                 )}
               </div>

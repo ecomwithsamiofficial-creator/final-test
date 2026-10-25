@@ -2095,9 +2095,23 @@ export async function mysqlGetShowcaseCms(): Promise<ShowcaseCmsData> {
             ...parsed,
             navLabels: { ...defaultShowcaseCmsData.navLabels, ...(parsed.navLabels || {}) },
             hero: { ...defaultShowcaseCmsData.hero, ...(parsed.hero || {}) },
-            metrics: { ...defaultShowcaseCmsData.metrics, ...(parsed.metrics || {}) },
+            metrics: {
+              ...defaultShowcaseCmsData.metrics,
+              ...(parsed.metrics || {}),
+              revenueVolume: (parsed.metrics?.revenueVolume && !parsed.metrics.revenueVolume.includes('PKR') && !parsed.metrics.revenueVolume.includes('6,842'))
+                ? parsed.metrics.revenueVolume
+                : defaultShowcaseCmsData.metrics.revenueVolume,
+              revenueSubtext: (parsed.metrics?.revenueSubtext && !parsed.metrics.revenueSubtext.toLowerCase().includes('inflow') && !parsed.metrics.revenueSubtext.toLowerCase().includes('volume'))
+                ? parsed.metrics.revenueSubtext
+                : defaultShowcaseCmsData.metrics.revenueSubtext
+            },
             enrollments: Array.isArray(parsed.enrollments) ? parsed.enrollments : defaultShowcaseCmsData.enrollments,
-            reviews: Array.isArray(parsed.reviews) ? parsed.reviews : defaultShowcaseCmsData.reviews
+            reviews: Array.isArray(parsed.reviews) && parsed.reviews.length > 0
+              ? parsed.reviews.map((r: any) => ({
+                  ...r,
+                  storeRevenue: undefined
+                }))
+              : defaultShowcaseCmsData.reviews
           };
         }
       }
