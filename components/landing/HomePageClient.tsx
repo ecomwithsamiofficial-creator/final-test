@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { 
@@ -237,10 +237,52 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [heroCurrentTime, setHeroCurrentTime] = useState(0);
   const [heroDuration, setHeroDuration] = useState(128);
   const [isHeroControlsHovered, setIsHeroControlsHovered] = useState(false);
+  const [showHeroControls, setShowHeroControls] = useState(true);
+  const heroControlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const isHoveringControlsRef = useRef<boolean>(false);
   const heroVideoRef = useRef<HTMLVideoElement>(null);
   const heroIframeRef = useRef<HTMLIFrameElement>(null);
   const heroTimelineTrackRef = useRef<HTMLDivElement>(null);
   const lastTouchTimeRef = useRef<number>(0);
+
+  const triggerHeroControls = useCallback((durationMs = 1300) => {
+    setShowHeroControls(true);
+    if (heroControlsTimeoutRef.current) {
+      clearTimeout(heroControlsTimeoutRef.current);
+      heroControlsTimeoutRef.current = null;
+    }
+    if (isHeroPlaying && !isHoveringControlsRef.current) {
+      heroControlsTimeoutRef.current = setTimeout(() => {
+        setShowHeroControls(false);
+      }, durationMs);
+    }
+  }, [isHeroPlaying]);
+
+  useEffect(() => {
+    if (!isHeroPlaying) {
+      if (heroControlsTimeoutRef.current) {
+        clearTimeout(heroControlsTimeoutRef.current);
+        heroControlsTimeoutRef.current = null;
+      }
+      setShowHeroControls(true);
+    } else {
+      setShowHeroControls(true);
+      if (heroControlsTimeoutRef.current) {
+        clearTimeout(heroControlsTimeoutRef.current);
+        heroControlsTimeoutRef.current = null;
+      }
+      if (!isHoveringControlsRef.current) {
+        heroControlsTimeoutRef.current = setTimeout(() => {
+          setShowHeroControls(false);
+        }, 1300);
+      }
+    }
+    return () => {
+      if (heroControlsTimeoutRef.current) {
+        clearTimeout(heroControlsTimeoutRef.current);
+      }
+    };
+  }, [isHeroPlaying]);
 
   useEffect(() => {
     setIsClientMounted(true);
@@ -368,6 +410,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     setHasUserStartedHero(true);
     setIsHeroPlaying(true);
     setIsHeroMuted(false);
+    triggerHeroControls(1300);
 
     if (isDirectVideo && heroVideoRef.current) {
       heroVideoRef.current.muted = false;
@@ -422,6 +465,15 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     }
     const nextPlaying = !isHeroPlaying;
     setIsHeroPlaying(nextPlaying);
+    if (nextPlaying) {
+      triggerHeroControls(1300);
+    } else {
+      if (heroControlsTimeoutRef.current) {
+        clearTimeout(heroControlsTimeoutRef.current);
+        heroControlsTimeoutRef.current = null;
+      }
+      setShowHeroControls(true);
+    }
 
     if (isDirectVideo && heroVideoRef.current) {
       if (nextPlaying) {
@@ -824,13 +876,34 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       if (!hasUserStartedHero) {
                         startHeroPlayback(e);
                       } else {
-                        toggleHeroPlay(e);
+                        if (isHeroPlaying && !showHeroControls) {
+                          triggerHeroControls();
+                        } else {
+                          toggleHeroPlay(e);
+                        }
                       }
                     }
                   }}
+                  onMouseMove={() => {
+                    if (isHeroPlaying) triggerHeroControls();
+                  }}
+                  onTouchStart={() => {
+                    if (isHeroPlaying) triggerHeroControls();
+                  }}
                   className="relative aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border-2 border-[#00A0DF]/30 shadow-lg group select-none cursor-pointer"
-                  onMouseEnter={() => setIsHeroControlsHovered(true)}
-                  onMouseLeave={() => setIsHeroControlsHovered(false)}
+                  onMouseEnter={() => {
+                    setIsHeroControlsHovered(true);
+                    if (isHeroPlaying) triggerHeroControls();
+                  }}
+                  onMouseLeave={() => {
+                    setIsHeroControlsHovered(false);
+                    if (isHeroPlaying && !isHoveringControlsRef.current) {
+                      if (heroControlsTimeoutRef.current) clearTimeout(heroControlsTimeoutRef.current);
+                      heroControlsTimeoutRef.current = setTimeout(() => {
+                        setShowHeroControls(false);
+                      }, 700);
+                    }
+                  }}
                 >
                   {/* Video Playback (Preloaded behind poster for instant 1-tap playback on iOS & all devices) */}
                   {isClientMounted && (
@@ -899,11 +972,15 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     <div
                       onClick={(e) => {
                         e.stopPropagation();
-                        toggleHeroPlay(e);
+                        if (isHeroPlaying && !showHeroControls) {
+                          triggerHeroControls();
+                        } else {
+                          toggleHeroPlay(e);
+                        }
                       }}
                       style={{ touchAction: 'manipulation' }}
                       className="absolute inset-0 z-10 cursor-pointer"
-                      title={isHeroPlaying ? 'Click to Pause' : 'Click to Play'}
+                      title={isHeroPlaying ? (showHeroControls ? 'Click to Pause' : 'Click to show controls') : 'Click to Play'}
                     />
                   )}
 
@@ -1008,12 +1085,38 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
                   {/* Bottom Sleek Control Bar (Active during and after playback) */}
                   {hasUserStartedHero && isHeroVideoReady && (
-                    <div className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-opacity duration-200 ${!isHeroPlaying && !isHeroControlsHovered ? 'opacity-90' : 'opacity-100'}`}>
+                    <div 
+                      onMouseEnter={() => {
+                        isHoveringControlsRef.current = true;
+                        if (heroControlsTimeoutRef.current) {
+                          clearTimeout(heroControlsTimeoutRef.current);
+                          heroControlsTimeoutRef.current = null;
+                        }
+                        setShowHeroControls(true);
+                      }}
+                      onMouseLeave={() => {
+                        isHoveringControlsRef.current = false;
+                        if (isHeroPlaying) {
+                          if (heroControlsTimeoutRef.current) clearTimeout(heroControlsTimeoutRef.current);
+                          heroControlsTimeoutRef.current = setTimeout(() => {
+                            setShowHeroControls(false);
+                          }, 1200);
+                        }
+                      }}
+                      className={`absolute bottom-0 inset-x-0 z-30 bg-gradient-to-t from-black/85 via-black/45 to-transparent px-3 py-2 flex items-center justify-between gap-2 transition-all duration-300 ease-in-out ${
+                        !showHeroControls && isHeroPlaying
+                          ? 'opacity-0 pointer-events-none translate-y-2'
+                          : 'opacity-100 pointer-events-auto translate-y-0'
+                      }`}
+                    >
                       <div className="flex items-center gap-1 sm:gap-1.5">
                         {/* Play / Pause Toggle Button */}
                         <button
                           type="button"
-                          onClick={toggleHeroPlay}
+                          onClick={(e) => {
+                            toggleHeroPlay(e);
+                            triggerHeroControls(1300);
+                          }}
                           style={{ touchAction: 'manipulation' }}
                           className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
                           title={isHeroPlaying ? 'Pause Video' : 'Play Video'}
@@ -1024,7 +1127,10 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         {/* Mute / Unmute Button */}
                         <button
                           type="button"
-                          onClick={toggleHeroMute}
+                          onClick={(e) => {
+                            toggleHeroMute(e);
+                            triggerHeroControls(1500);
+                          }}
                           style={{ touchAction: 'manipulation' }}
                           className="text-white hover:text-[#00A0DF] active:scale-90 transition-all min-w-[34px] min-h-[34px] sm:min-w-[38px] sm:min-h-[38px] flex items-center justify-center cursor-pointer select-none"
                           title={isHeroMuted ? 'Unmute Sound' : 'Mute Sound'}
@@ -1043,14 +1149,17 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                         onClick={(e) => {
                           e.stopPropagation();
                           handleTimelineInteraction(e.clientX);
+                          triggerHeroControls(1500);
                         }}
                         onTouchStart={(e) => {
                           e.stopPropagation();
                           if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                          triggerHeroControls(1500);
                         }}
                         onTouchMove={(e) => {
                           e.stopPropagation();
                           if (e.touches[0]) handleTimelineInteraction(e.touches[0].clientX);
+                          triggerHeroControls(1500);
                         }}
                         style={{ touchAction: 'none' }}
                         className="flex-1 ml-2.5 py-3 -my-3 flex items-center cursor-pointer select-none group/timeline relative"
