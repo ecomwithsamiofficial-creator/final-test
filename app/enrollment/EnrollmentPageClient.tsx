@@ -312,41 +312,44 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
       <TopMarquee />
       <Navbar />
 
-      {/* Top Header Banner */}
-      <section className="pt-8 pb-10 sm:pt-12 sm:pb-14 bg-gradient-to-b from-[#111827] to-[#0B0F19] text-white text-center border-b border-white/10">
+      {/* Top Urgency Header Banner (LearnWithAfaq Style) */}
+      <section className="pt-4 sm:pt-6 pb-3 sm:pb-4 bg-gradient-to-b from-[#111827] to-[#0B0F19] text-white border-b border-white/5">
         <div className="max-w-4xl mx-auto px-4 sm:px-6">
-          <span className="inline-block bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/40 text-xs font-black uppercase tracking-wider px-4 py-1 rounded-full mb-3 shadow-md shadow-[#00A0DF]/10">
-            {checkoutContent.badge || 'OFFICIAL ENROLLMENT • 88% DISCOUNT APPLIED'}
-          </span>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-black text-white tracking-tight leading-tight mb-2">
-            {checkoutContent.title || 'Official E-Commerce Mentorship Program'}
-          </h1>
-          <p className="text-xs sm:text-sm text-slate-300 max-w-xl mx-auto mb-6">
-            {checkoutContent.subtitle || 'Get lifetime access to 8 video modules, verified suppliers directory & WhatsApp mentorship.'}
-          </p>
+          {checkoutContent.badge && (
+            <div className="text-center mb-2">
+              <span className="inline-block bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-0.5 rounded-full shadow-xs">
+                {checkoutContent.badge}
+              </span>
+            </div>
+          )}
 
-          {/* Moved Urgency Countdown Timer Here */}
-          <div className="w-full max-w-xl mx-auto">
-            <CountdownTimer
-              timerAnchorTime={checkoutContent.timer_anchor_time}
-              serverRemainingSeconds={serverRemainingSeconds}
-              serverTime={serverTime}
-              timerHeading={checkoutContent.timer_heading}
-              initialHours={checkoutContent.timer_hours}
-              initialMinutes={checkoutContent.timer_minutes}
-              initialSeconds={checkoutContent.timer_seconds}
-              seatsLeftText={checkoutContent.seats_left_text}
-              seatsFilledPercent={checkoutContent.seats_filled_percent}
-              trustBadge1={checkoutContent.trust_badge1}
-              trustBadge2={checkoutContent.trust_badge2}
-              trustBadge3={checkoutContent.trust_badge3}
-            />
-          </div>
+          {checkoutContent.title && (
+            <h1 className="text-xs sm:text-sm font-bold text-slate-300 text-center mb-3 max-w-lg mx-auto">
+              {checkoutContent.title}
+            </h1>
+          )}
+
+          {/* Top Banner Timer (LearnWithAfaq Style) */}
+          <CountdownTimer
+            variant="banner"
+            timerAnchorTime={checkoutContent.timer_anchor_time}
+            serverRemainingSeconds={serverRemainingSeconds}
+            serverTime={serverTime}
+            timerHeading={checkoutContent.timer_heading || 'Offer ends in:'}
+            initialHours={checkoutContent.timer_hours}
+            initialMinutes={checkoutContent.timer_minutes}
+            initialSeconds={checkoutContent.timer_seconds}
+            seatsLeftText={checkoutContent.seats_left_text}
+            seatsFilledPercent={checkoutContent.seats_filled_percent}
+            trustBadge1={checkoutContent.trust_badge1}
+            trustBadge2={checkoutContent.trust_badge2}
+            trustBadge3={checkoutContent.trust_badge3}
+          />
         </div>
       </section>
 
       {/* Main Form & Steps Container */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-5 sm:py-7">
         
         {/* ========================================================================= */}
         {/* SUCCESS STATE ON PAGE */}
@@ -438,56 +441,56 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
             </div>
           </div>
         ) : (
-          <div className="space-y-8">
+          <div className="space-y-6 sm:space-y-8">
             
             {/* ========================================================================= */}
-            {/* 3 SIMPLE STEPS GUIDE */}
+            {/* 3 SIMPLE STEPS GUIDE (LEARNWITHAFAQ STYLE CARDS) */}
             {/* ========================================================================= */}
-            <div className="bg-[#111827] border border-white/10 rounded-3xl p-6 sm:p-8 shadow-xl">
-              <div className="text-center max-w-xl mx-auto mb-6">
-                <span className="text-xs font-black uppercase tracking-wider text-[#00A0DF] block mb-1">
-                  QUICK &amp; EASY ENROLLMENT
+            <div>
+              <div className="text-center max-w-xl mx-auto mb-4 sm:mb-6">
+                <span className="inline-block bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[10px] sm:text-xs font-black uppercase tracking-wider px-3.5 py-1 rounded-full mb-2">
+                  QUICK &amp; EASY
                 </span>
-                <h2 className="text-xl sm:text-2xl font-black text-white">
-                  Follow 3 Simple Steps to Get Instant Access
+                <h2 className="text-xl sm:text-2xl md:text-3xl font-black text-white tracking-tight">
+                  Follow These <span className="text-[#00A0DF]">3 Simple Steps</span> to Get Instant Access
                 </h2>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-[#00A0DF]/15 text-[#00A0DF] flex items-center justify-center font-black text-base flex-shrink-0 border border-[#00A0DF]/30">
-                    1
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 sm:gap-4">
+                {/* Step 1 Card */}
+                <div className="bg-[#111827] border border-white/10 hover:border-[#00A0DF]/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 relative overflow-hidden transition-all duration-300 shadow-xl flex flex-col items-center text-center group">
+                  <span className="absolute top-3 right-4 font-black text-3xl sm:text-4xl text-white/5 pointer-events-none font-mono">01</span>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-lg shadow-[#00A0DF]/25 mb-4 group-hover:scale-105 transition-transform duration-200">
+                    <CreditCard size={26} className="text-white" />
                   </div>
-                  <div>
-                    <strong className="text-xs sm:text-sm font-bold text-white block mb-1">Deposit the Fees</strong>
-                    <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
-                      Transfer <strong>PKR 3,799</strong> via Easypaisa, JazzCash, Meezan Bank or SadaPay.
-                    </p>
-                  </div>
+                  <strong className="text-sm sm:text-base font-black text-white block mb-1.5">Deposit the Fee</strong>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                    Deposit Rs 3,799 to any of the bank accounts listed below.
+                  </p>
                 </div>
 
-                <div className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-400 flex items-center justify-center font-black text-base flex-shrink-0 border border-amber-500/30">
-                    2
+                {/* Step 2 Card */}
+                <div className="bg-[#111827] border border-white/10 hover:border-[#00A0DF]/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 relative overflow-hidden transition-all duration-300 shadow-xl flex flex-col items-center text-center group">
+                  <span className="absolute top-3 right-4 font-black text-3xl sm:text-4xl text-white/5 pointer-events-none font-mono">02</span>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-lg shadow-[#00A0DF]/25 mb-4 group-hover:scale-105 transition-transform duration-200">
+                    <Camera size={26} className="text-white" />
                   </div>
-                  <div>
-                    <strong className="text-xs sm:text-sm font-bold text-white block mb-1">Take a Screenshot</strong>
-                    <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
-                      Save the payment receipt confirmation screenshot in your gallery.
-                    </p>
-                  </div>
+                  <strong className="text-sm sm:text-base font-black text-white block mb-1.5">Take a Screenshot</strong>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                    Capture a clear screenshot of the payment you just made.
+                  </p>
                 </div>
 
-                <div className="bg-[#0B0F19] border border-white/5 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5">
-                  <div className="w-10 h-10 rounded-xl bg-emerald-500/15 text-emerald-400 flex items-center justify-center font-black text-base flex-shrink-0 border border-emerald-500/30">
-                    3
+                {/* Step 3 Card */}
+                <div className="bg-[#111827] border border-white/10 hover:border-[#00A0DF]/40 rounded-2xl sm:rounded-3xl p-5 sm:p-6 relative overflow-hidden transition-all duration-300 shadow-xl flex flex-col items-center text-center group">
+                  <span className="absolute top-3 right-4 font-black text-3xl sm:text-4xl text-white/5 pointer-events-none font-mono">03</span>
+                  <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-2xl bg-gradient-to-tr from-[#008ac2] to-[#00A0DF] text-white flex items-center justify-center shadow-lg shadow-[#00A0DF]/25 mb-4 group-hover:scale-105 transition-transform duration-200">
+                    <FileCheck2 size={26} className="text-white" />
                   </div>
-                  <div>
-                    <strong className="text-xs sm:text-sm font-bold text-white block mb-1">Fill Form &amp; Submit</strong>
-                    <p className="text-[11px] sm:text-xs text-slate-400 leading-relaxed">
-                      Enter your details below &amp; upload proof for instant LMS credentials.
-                    </p>
-                  </div>
+                  <strong className="text-sm sm:text-base font-black text-white block mb-1.5">Fill the Form</strong>
+                  <p className="text-xs text-slate-400 leading-relaxed max-w-xs">
+                    Complete the form below and attach your payment screenshot.
+                  </p>
                 </div>
               </div>
             </div>
