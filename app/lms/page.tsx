@@ -3991,15 +3991,15 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   }, []);
 
   const sectorClasses = [
-    'top-2.5 left-2.5 text-left',
-    'top-2.5 left-1/2 -translate-x-1/2 text-center',
-    'top-2.5 right-2.5 text-right',
-    'top-1/2 -translate-y-1/2 left-2.5 text-left',
-    'top-1/2 -translate-y-1/2 left-1/2 -translate-x-1/2 text-center',
-    'top-1/2 -translate-y-1/2 right-2.5 text-right',
-    'bottom-12 sm:bottom-14 left-2.5 text-left',
-    'bottom-12 sm:bottom-14 left-1/2 -translate-x-1/2 text-center',
-    'bottom-12 sm:bottom-14 right-2.5 text-right',
+    'top-2.5 left-2.5',
+    'top-2.5 left-1/2 -translate-x-1/2',
+    'top-2.5 right-2.5',
+    'top-1/3 left-2.5',
+    'top-1/3 right-2.5',
+    'top-2/3 left-2.5',
+    'bottom-12 sm:bottom-14 left-2.5',
+    'bottom-12 sm:bottom-14 left-1/2 -translate-x-1/2',
+    'bottom-12 sm:bottom-14 right-2.5',
   ];
 
   const studentName = user?.name || 'Authorized Student';
@@ -4011,47 +4011,54 @@ function DynamicForensicWatermark({ user, isFullscreen = false }: { user: any; i
   const ipAddress = user?.ip || 'Verified Session';
 
   return (
-    <div className="absolute inset-0 pointer-events-none select-none z-20 overflow-hidden">
+    <div className="absolute inset-0 pointer-events-none select-none z-20 overflow-hidden text-left">
       <div
-        className={`absolute transition-all duration-1000 ease-in-out px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-black/75 backdrop-blur-xs border border-white/20 text-white shadow-2xl ${
-          isFullscreen ? 'max-w-[260px] sm:max-w-[320px]' : 'max-w-[210px] sm:max-w-[270px]'
+        className={`absolute transition-all duration-1000 ease-in-out px-2.5 py-1.5 sm:px-3 sm:py-2 rounded-xl bg-black/45 backdrop-blur-[2px] border border-cyan-400/30 text-white shadow-xl ${
+          isFullscreen ? 'max-w-[260px] sm:max-w-[300px]' : 'max-w-[210px] sm:max-w-[250px]'
         } ${sectorClasses[sector]}`}
       >
-        <div className="flex items-center justify-between gap-1 text-[8px] sm:text-[9.5px] font-black tracking-wider text-cyan-300 uppercase leading-none mb-1">
+        {/* Row 1: Header - DRM Code & Confidential badge */}
+        <div className="flex items-center justify-between gap-1 text-[7.5px] sm:text-[8.5px] font-black tracking-wider text-cyan-300 uppercase leading-none pb-1 border-b border-white/10 mb-1">
           <div className="flex items-center gap-1 min-w-0 truncate">
-            <Shield size={10} className="text-cyan-400 flex-shrink-0" />
-            <span className="font-mono truncate">SAMI DRM • {enrollmentCode}</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-ping flex-shrink-0" />
+            <Shield size={9} className="text-cyan-400 flex-shrink-0" />
+            <span className="font-mono truncate">DRM • {enrollmentCode}</span>
           </div>
-          <span className="text-[6.5px] sm:text-[7px] font-mono px-1 py-0.2 bg-red-500/30 text-red-200 border border-red-400/40 rounded flex-shrink-0">
+          <span className="text-[6px] sm:text-[6.5px] font-mono px-1 py-0.2 bg-red-500/25 text-red-200 border border-red-400/30 rounded flex-shrink-0">
             CONFIDENTIAL
           </span>
         </div>
 
-        <div className="text-[9px] sm:text-[10.5px] font-mono font-bold leading-tight truncate text-white">
-          {studentName} {studentCity ? <span className="text-slate-300 font-normal text-[7.5px] sm:text-[9px]">({studentCity})</span> : ''}
+        {/* Row 2: Identity & Phone */}
+        <div className="flex items-center justify-between gap-1 text-[8.5px] sm:text-[9.5px] font-mono leading-none truncate mb-1">
+          <span className="font-bold text-white truncate">
+            {studentName} {studentCity ? <span className="text-slate-300 font-normal text-[7.5px] sm:text-[8px]">({studentCity})</span> : ''}
+          </span>
+          {studentPhone && (
+            <span className="text-emerald-300 font-bold text-[7.5px] sm:text-[8.5px] flex-shrink-0">
+              📞 {studentPhone}
+            </span>
+          )}
         </div>
 
-        {studentPhone && (
-          <div className="text-[8px] sm:text-[9px] font-mono font-bold leading-none text-emerald-300 mt-1 truncate">
-            📞 {studentPhone}
-          </div>
-        )}
+        {/* Row 3: Email & Password */}
+        <div className="flex items-center justify-between gap-1 text-[7.5px] sm:text-[8.5px] font-mono text-slate-300 leading-none truncate mb-1">
+          {studentEmail ? (
+            <span className="truncate text-slate-300">
+              ✉️ {studentEmail}
+            </span>
+          ) : <span />}
+          {studentPassword && (
+            <span className="text-amber-300 font-bold bg-amber-500/20 px-1 py-0.5 rounded border border-amber-500/30 flex-shrink-0 text-[6.5px] sm:text-[7.5px] tracking-tight">
+              🔒 PASS: {studentPassword}
+            </span>
+          )}
+        </div>
 
-        {studentEmail && (
-          <div className="text-[7.5px] sm:text-[8.5px] font-mono leading-none text-slate-300 mt-0.5 truncate">
-            ✉️ {studentEmail}
-          </div>
-        )}
-
-        {studentPassword && (
-          <div className="text-[7.5px] sm:text-[8px] font-mono font-bold text-amber-300 mt-1 truncate bg-amber-500/15 px-1 py-0.5 rounded border border-amber-500/30 flex items-center justify-between">
-            <span>🔒 PASS: {studentPassword}</span>
-            <span className="text-[6px] text-amber-200/80 font-sans tracking-tight">LEAK TRACEABLE</span>
-          </div>
-        )}
-
-        <div className="text-[7px] sm:text-[8px] font-mono text-cyan-200/90 leading-none mt-1 truncate">
-          IP: {ipAddress} • {clock}
+        {/* Row 4: IP Address & Timestamp */}
+        <div className="text-[6.5px] sm:text-[7.5px] font-mono text-cyan-200/80 leading-none truncate flex items-center justify-between">
+          <span className="truncate">IP: {ipAddress}</span>
+          <span className="flex-shrink-0 text-slate-400 text-[6px] sm:text-[7px] ml-1">{clock}</span>
         </div>
       </div>
     </div>
