@@ -39,7 +39,7 @@ export async function POST(req: Request) {
       title: title.trim(),
       content: content.trim(),
       tag: tag || 'Announcement',
-      author: author || 'Mentor Sardar Samiullah',
+      author: (author || 'Official Mentor Ecom with Sami').replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami').replace(/Sardar Samiullah/gi, 'Ecom with Sami'),
       pinned: Boolean(pinned)
     });
 

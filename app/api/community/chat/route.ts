@@ -73,7 +73,7 @@ export async function POST(req: Request) {
 
     const created = await mysqlCreateCommunityChatMessage({
       studentId: studentId || null,
-      studentName: isMentor ? 'Mentor Sardar Samiullah' : studentName.trim(),
+      studentName: isMentor ? 'Official Mentor Ecom with Sami' : studentName.trim(),
       isMentor: Boolean(isMentor),
       message: message ? message.trim() : '',
       imageUrl: imageUrl || null,

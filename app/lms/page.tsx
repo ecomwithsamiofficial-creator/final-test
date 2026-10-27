@@ -427,7 +427,7 @@ export default function LmsClassroomPage() {
   const [communitySubView, setCommunitySubView] = useState<'chat' | 'broadcasts'>('chat');
   const [lmsChatConfig, setLmsChatConfig] = useState<{ isOpen: boolean; noticeText: string }>({
     isOpen: true,
-    noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT with Mentor Sardar Samiullah for reviews and live store audits!'
+    noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT with Mentor Ecom with Sami for reviews and live store audits!'
   });
   const [lmsChatMessages, setLmsChatMessages] = useState<any[]>([]);
   const [lmsChatLoading, setLmsChatLoading] = useState(false);
@@ -516,7 +516,7 @@ export default function LmsClassroomPage() {
               if (activeTab !== 'community') {
                 if (chatToastTimerRef.current) clearTimeout(chatToastTimerRef.current);
                 setNewChatToast({
-                  author: latest.isMentor ? 'Mentor Sardar Samiullah' : (latest.studentName || 'Student'),
+                  author: latest.isMentor ? 'Official Mentor Ecom with Sami' : (latest.studentName || 'Student'),
                   text: latest.message || (latest.imageUrl ? '📸 Shared a sales proof screenshot' : 'Sent a message'),
                   id: latest.id
                 });
@@ -1204,7 +1204,7 @@ export default function LmsClassroomPage() {
         .then(authRes => {
           if (checkIsAdmin() || authRes?.role === 'ADMIN') return;
           if (!authRes.authenticated || !authRes.user) {
-            handleImmediateForceLogout(authRes.message || 'Your enrollment access has been revoked or rejected by Administrator Sardar Samiullah.');
+            handleImmediateForceLogout(authRes.message || 'Your enrollment access has been revoked or rejected by Administrator Ecom with Sami.');
           }
         })
         .catch(() => {});
@@ -1904,7 +1904,7 @@ export default function LmsClassroomPage() {
             {accountRevoked}
           </p>
           <p className="text-[11px] text-slate-400">
-            If you already submitted your enrollment fee, please verify your payment proof slip with Mentor Sardar Samiullah on WhatsApp.
+            If you already submitted your enrollment fee, please verify your payment proof slip with Mentor Ecom with Sami on WhatsApp.
           </p>
 
           <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -2806,7 +2806,7 @@ export default function LmsClassroomPage() {
                           {activeLesson?.title || 'Video Lecture'}
                         </h3>
                         <p className="text-xs sm:text-sm text-slate-400 max-w-sm">
-                          Lecture video stream link will be uploaded soon by Mentor Sardar Samiullah.
+                          Lecture video stream link will be uploaded soon by Mentor Ecom with Sami.
                         </p>
                       </div>
                     ) : isDirectLessonVideo ? (
@@ -3232,7 +3232,7 @@ export default function LmsClassroomPage() {
                       {(() => {
                         const targetUrl = s.whatsappLink && !s.whatsappLink.includes('971501234567') && s.whatsappLink.includes('wa.me')
                           ? s.whatsappLink
-                          : `https://wa.me/923330093269?text=${encodeURIComponent(`Assalam-o-Alaikum Mentor Sardar Samiullah! I am your student on LMS and need onboarding for supplier: ${s.name}`)}`;
+                          : `https://wa.me/923330093269?text=${encodeURIComponent(`Assalam-o-Alaikum Mentor Ecom with Sami! I am your student on LMS and need onboarding for supplier: ${s.name}`)}`;
                         return (
                           <a
                             href={targetUrl}
@@ -3461,7 +3461,7 @@ export default function LmsClassroomPage() {
                         <strong>{lmsChatConfig.isOpen ? 'Sunday Live:' : 'Notice:'}</strong>{' '}
                         {lmsChatConfig.isOpen
                           ? 'Chat is OPEN! Share your Shopify sales proofs, order milestones, or ask questions.'
-                          : lmsChatConfig.noticeText}
+                          : (lmsChatConfig.noticeText || '').replace(/Mentor Sardar Samiullah/gi, 'Mentor Ecom with Sami').replace(/Sardar Samiullah/gi, 'Ecom with Sami')}
                       </span>
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
@@ -3518,7 +3518,7 @@ export default function LmsClassroomPage() {
                                         <div>
                                           <div className="flex items-center gap-1.5">
                                             <span className="font-extrabold text-xs text-[#008069]">
-                                              Mentor Sardar Samiullah
+                                              Official Mentor Ecom with Sami
                                             </span>
                                             <span className="bg-[#008069] text-white text-[9px] font-black px-1.5 py-0.2 rounded-full uppercase tracking-wider">
                                               MENTOR VIP
@@ -3588,7 +3588,7 @@ export default function LmsClassroomPage() {
                                         isMe ? 'text-emerald-800' : 'text-[#128c7e]'
                                       }`}
                                     >
-                                      {isMe ? 'You (Student)' : msg.studentName}
+                                      {isMe ? 'You (Student)' : (msg.studentName ? msg.studentName.replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami').replace(/Sardar Samiullah/gi, 'Ecom with Sami') : 'Student')}
                                     </span>
                                     <span className="text-[9px] text-slate-400 font-medium">
                                       {new Date(msg.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
@@ -3728,7 +3728,7 @@ export default function LmsClassroomPage() {
                           <div className="py-2.5 px-4 bg-white/90 border border-amber-200 rounded-2xl text-center flex items-center justify-center gap-2 text-xs text-slate-700">
                             <Lock size={14} className="text-amber-600 shrink-0" />
                             <span>
-                              <strong>Chat is in Read-Only Mode.</strong> Replies open this Sunday with Mentor Sardar Samiullah.
+                              <strong>Chat is in Read-Only Mode.</strong> Replies open this Sunday with Mentor Ecom with Sami.
                             </span>
                           </div>
                         )}
@@ -3780,7 +3780,7 @@ export default function LmsClassroomPage() {
 
                             <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
                               <span className="font-semibold text-slate-700">
-                                {update.author || 'Mentor Sardar Samiullah'}
+                                {(update.author || 'Official Mentor Ecom with Sami').replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami').replace(/Sardar Samiullah/gi, 'Ecom with Sami')}
                               </span>
                               <span className="text-emerald-600 font-bold flex items-center gap-1">
                                 <CheckCircle2 size={12} />

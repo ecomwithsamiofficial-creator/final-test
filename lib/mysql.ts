@@ -349,7 +349,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
           \`title\` VARCHAR(255) NOT NULL,
           \`content\` LONGTEXT NOT NULL,
           \`tag\` VARCHAR(50) DEFAULT 'Announcement',
-          \`author\` VARCHAR(100) DEFAULT 'Mentor Sardar Samiullah',
+          \`author\` VARCHAR(100) DEFAULT 'Official Mentor Ecom with Sami',
           \`pinned\` TINYINT(1) DEFAULT 0,
           \`created_at\` VARCHAR(100) NOT NULL,
           PRIMARY KEY (\`id\`)
@@ -364,7 +364,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
             title: '🎉 Welcome to Ecom With Sami Mentorship Hub!',
             content: 'Assalam-o-Alaikum Students! Tamam naye students ko VIP Mentorship mein khushamdeed. Course ke tamam 8 modules sequence wise dekhein aur notes banayein. Har Module ke baad resources aur action steps lazmi follow karein.',
             tag: 'Announcement',
-            author: 'Mentor Sardar Samiullah',
+            author: 'Official Mentor Ecom with Sami',
             pinned: 1,
             createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
           },
@@ -373,7 +373,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
             title: '🚀 Winning Product Formula & TikTok Ad Testing SOP Uploaded',
             content: 'Student feedback ke mutabiq Module 4 aur 5 ke sath TikTok Spark Ads ka testing formula update kardiya gaya hai. Low-budget testing ke liye yeh strategy lazmi implement karein.',
             tag: 'Strategy',
-            author: 'Mentor Sardar Samiullah',
+            author: 'Official Mentor Ecom with Sami',
             pinned: 0,
             createdAt: new Date(Date.now() - 3600000 * 18).toISOString()
           },
@@ -382,7 +382,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
             title: '📹 Live Q&A Session This Sunday 9:00 PM PKT',
             content: 'Tamam enrolled students ke liye weekly Zoom / Live Q&A session schedule kiya gaya hai. Apne store audits aur questions tayar rakhein.',
             tag: 'Live Session',
-            author: 'Mentor Sardar Samiullah',
+            author: 'Official Mentor Ecom with Sami',
             pinned: 0,
             createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
           }
@@ -434,7 +434,7 @@ export async function ensureAnalyticsTables(): Promise<boolean> {
           {
             id: 'cmsg-01',
             student_id: null,
-            student_name: 'Mentor Sardar Samiullah',
+            student_name: 'Official Mentor Ecom with Sami',
             is_mentor: 1,
             message: '🎉 Assalam-o-Alaikum Students! Ecom With Sami Community Support & Success Stories hub live hai. Yahan apni success stories, store scaling milestones aur doubts share karein. We grow together!',
             image_url: null,
@@ -1980,7 +1980,7 @@ let inMemoryCommunityUpdates: CommunityUpdateItem[] = [
     title: '🎉 Welcome to Ecom With Sami Mentorship Hub!',
     content: 'Assalam-o-Alaikum Students! Tamam naye students ko VIP Mentorship mein khushamdeed. Course ke tamam 8 modules sequence wise dekhein aur notes banayein. Har Module ke baad resources aur action steps lazmi follow karein.',
     tag: 'Announcement',
-    author: 'Mentor Sardar Samiullah',
+    author: 'Official Mentor Ecom with Sami',
     pinned: true,
     createdAt: new Date(Date.now() - 3600000 * 4).toISOString()
   },
@@ -1989,7 +1989,7 @@ let inMemoryCommunityUpdates: CommunityUpdateItem[] = [
     title: '🚀 Winning Product Formula & TikTok Ad Testing SOP Uploaded',
     content: 'Student feedback ke mutabiq Module 4 aur 5 ke sath TikTok Spark Ads ka testing formula update kardiya gaya hai. Low-budget testing ke liye yeh strategy lazmi implement karein.',
     tag: 'Strategy',
-    author: 'Mentor Sardar Samiullah',
+    author: 'Official Mentor Ecom with Sami',
     pinned: false,
     createdAt: new Date(Date.now() - 3600000 * 18).toISOString()
   },
@@ -1998,7 +1998,7 @@ let inMemoryCommunityUpdates: CommunityUpdateItem[] = [
     title: '📹 Live Q&A Session This Sunday 9:00 PM PKT',
     content: 'Tamam enrolled students ke liye weekly Zoom / Live Q&A session schedule kiya gaya hai. Apne store audits aur questions tayar rakhein.',
     tag: 'Live Session',
-    author: 'Mentor Sardar Samiullah',
+    author: 'Official Mentor Ecom with Sami',
     pinned: false,
     createdAt: new Date(Date.now() - 3600000 * 36).toISOString()
   }
@@ -2017,7 +2017,9 @@ export async function mysqlGetCommunityUpdates(): Promise<CommunityUpdateItem[]>
           title: String(r.title || ''),
           content: String(r.content || ''),
           tag: String(r.tag || 'Announcement'),
-          author: String(r.author || 'Mentor Sardar Samiullah'),
+          author: String(r.author || 'Official Mentor Ecom with Sami')
+            .replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami')
+            .replace(/Sardar Samiullah/gi, 'Ecom with Sami'),
           pinned: Boolean(r.pinned),
           createdAt: String(r.created_at || new Date().toISOString())
         }));
@@ -2042,7 +2044,7 @@ export async function mysqlCreateCommunityUpdate(data: {
     title: data.title,
     content: data.content,
     tag: data.tag || 'Announcement',
-    author: data.author || 'Mentor Sardar Samiullah',
+    author: (data.author || 'Official Mentor Ecom with Sami').replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami').replace(/Sardar Samiullah/gi, 'Ecom with Sami'),
     pinned: Boolean(data.pinned),
     createdAt: new Date().toISOString()
   };
@@ -2166,14 +2168,14 @@ export interface CommunityChatConfig {
 
 let inMemoryChatConfig: CommunityChatConfig = {
   isOpen: true,
-  noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT with Mentor Sardar Samiullah for reviews and live store audits!'
+  noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM PKT with Mentor Ecom with Sami for reviews and live store audits!'
 };
 
 let inMemoryChatMessages: CommunityChatMessageItem[] = [
   {
     id: 'cmsg-01',
     studentId: null,
-    studentName: 'Mentor Sardar Samiullah',
+    studentName: 'Official Mentor Ecom with Sami',
     isMentor: true,
     message: '🎉 Assalam-o-Alaikum Students! Ecom With Sami Community Support & Success Stories hub live hai. Yahan apni success stories, store scaling milestones aur doubts share karein. We grow together!',
     imageUrl: null,
@@ -2219,6 +2221,8 @@ export async function mysqlGetCommunityChatConfig(): Promise<CommunityChatConfig
           return {
             isOpen: Boolean(parsed.isOpen ?? true),
             noticeText: String(parsed.noticeText || inMemoryChatConfig.noticeText)
+              .replace(/Mentor Sardar Samiullah/gi, 'Mentor Ecom with Sami')
+              .replace(/Sardar Samiullah/gi, 'Ecom with Sami')
           };
         }
       }
@@ -2269,7 +2273,11 @@ export async function mysqlGetCommunityChatMessages(limit: number = 150): Promis
         return rows.map((r: any) => ({
           id: String(r.id),
           studentId: r.student_id ? String(r.student_id) : null,
-          studentName: String(r.student_name || 'Student'),
+          studentName: Boolean(r.is_mentor)
+            ? 'Official Mentor Ecom with Sami'
+            : String(r.student_name || 'Student')
+                .replace(/Mentor Sardar Samiullah/gi, 'Official Mentor Ecom with Sami')
+                .replace(/Sardar Samiullah/gi, 'Ecom with Sami'),
           isMentor: Boolean(r.is_mentor),
           message: String(r.message || ''),
           imageUrl: r.image_url ? String(r.image_url) : null,

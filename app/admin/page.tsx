@@ -329,7 +329,7 @@ export default function AdminDashboardPage() {
   const [communitySectionTab, setCommunitySectionTab] = useState<'chat' | 'broadcasts'>('chat');
   const [chatConfig, setChatConfig] = useState<{ isOpen: boolean; noticeText: string }>({
     isOpen: true,
-    noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM with Mentor Sardar Samiullah for reviews and live store audits!'
+    noticeText: 'Sunday Student-to-Student Support Chat is currently locked. Opens every Sunday at 8:00 PM with Mentor Ecom with Sami for reviews and live store audits!'
   });
   const [chatMessages, setChatMessages] = useState<any[]>([]);
   const [chatStats, setChatStats] = useState<{ totalMessages: number; totalImages: number; totalAudio: number; estimatedDiskMb: number }>({
@@ -699,7 +699,7 @@ export default function AdminDashboardPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentName: 'Mentor Sardar Samiullah',
+          studentName: 'Official Mentor Ecom with Sami',
           isMentor: true,
           message: mentorChatMsg.trim(),
           audioUrl: mentorAudioUrl,
@@ -815,7 +815,7 @@ export default function AdminDashboardPage() {
           content: broadcastContent.trim(),
           tag: broadcastTag,
           pinned: broadcastPinned,
-          author: 'Mentor Sardar Samiullah'
+          author: 'Official Mentor Ecom with Sami'
         })
       });
       const data = await res.json();
@@ -2633,7 +2633,7 @@ export default function AdminDashboardPage() {
                         <span>Post Mentor Announcement &amp; Voice Note</span>
                       </h3>
                       <span className="text-[11px] text-emerald-400 font-bold bg-emerald-500/10 px-2 py-0.5 rounded-full border border-emerald-500/20">
-                        Official Mentor Sardar Samiullah
+                        Official Mentor Ecom with Sami
                       </span>
                     </div>
 
@@ -2727,7 +2727,7 @@ export default function AdminDashboardPage() {
                               <div className="flex items-center gap-2 flex-wrap">
                                 {msg.isMentor ? (
                                   <span className="bg-emerald-500 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full flex items-center gap-1">
-                                    ★ Mentor Sardar Samiullah
+                                    ★ Official Mentor Ecom with Sami
                                   </span>
                                 ) : (
                                   <span className="text-white font-bold text-xs">
@@ -2808,7 +2808,7 @@ export default function AdminDashboardPage() {
                           <Megaphone size={17} className="text-[#00A0DF]" />
                           <span>Compose New Broadcast</span>
                         </h3>
-                        <span className="text-[11px] text-slate-400">Author: Mentor Sardar Samiullah</span>
+                        <span className="text-[11px] text-slate-400">Author: Official Mentor Ecom with Sami</span>
                       </div>
 
                       <form onSubmit={handleSendBroadcast} className="space-y-4">
@@ -2916,7 +2916,7 @@ export default function AdminDashboardPage() {
                           </p>
 
                           <div className="pt-2 border-t border-white/5 flex items-center justify-between text-[10px] text-slate-400">
-                            <span className="text-slate-300 font-semibold">• Mentor Sardar Samiullah</span>
+                            <span className="text-slate-300 font-semibold">• Official Mentor Ecom with Sami</span>
                             <span className="text-emerald-400 font-bold">Verified Broadcast</span>
                           </div>
                         </div>
