@@ -51,7 +51,9 @@ import {
   Upload,
   Power,
   MessageCircle,
-  Sliders
+  Sliders,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import { Enrollment, Student } from '@/utils/db';
 import { ShowcaseCmsData, defaultShowcaseCmsData } from '@/utils/showcaseData';
@@ -311,6 +313,7 @@ export default function AdminDashboardPage() {
   const [searchStudent, setSearchStudent] = useState('');
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
   const [resetLoadingId, setResetLoadingId] = useState<string | null>(null);
   const [copiedPassId, setCopiedPassId] = useState<string | null>(null);
@@ -1390,34 +1393,65 @@ export default function AdminDashboardPage() {
         />
       )}
 
+      {/* Floating Toggle Button (Visible when sidebar is collapsed on desktop) */}
+      {sidebarCollapsed && (
+        <button
+          onClick={() => setSidebarCollapsed(false)}
+          title="Expand Sidebar Menu"
+          aria-label="Expand Sidebar Menu"
+          className="hidden md:flex fixed top-6 left-0 z-40 items-center gap-2 pl-2.5 pr-3.5 py-2.5 rounded-r-2xl bg-[#111827]/95 hover:bg-slate-800 text-slate-200 hover:text-white border border-l-0 border-white/20 shadow-2xl backdrop-blur-md transition-all hover:scale-105 active:scale-95 group cursor-pointer"
+        >
+          <div className="w-6 h-6 rounded-lg bg-[#00A0DF]/20 border border-[#00A0DF]/30 flex items-center justify-center text-[#00A0DF]">
+            <ChevronRight size={16} className="group-hover:translate-x-0.5 transition-transform" />
+          </div>
+          <span className="text-xs font-black tracking-wide text-slate-300 group-hover:text-white">Menu</span>
+        </button>
+      )}
+
       {/* Sidebar */}
       <aside
-        className={`fixed md:static inset-y-0 left-0 z-50 w-72 md:w-64 bg-[#111827] border-r border-white/10 p-5 sm:p-6 flex flex-col justify-between transition-transform duration-300 transform ${
-          mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0'
+        className={`fixed md:static inset-y-0 left-0 z-50 bg-[#111827] border-r border-white/10 flex flex-col justify-between transition-all duration-300 ease-in-out shrink-0 select-none ${
+          sidebarCollapsed
+            ? 'w-0 md:w-0 p-0 md:p-0 border-r-0 overflow-hidden opacity-0 pointer-events-none -translate-x-full md:translate-x-0'
+            : 'w-72 md:w-64 p-5 sm:p-6 opacity-100 overflow-y-auto ' + (mobileMenuOpen ? 'translate-x-0 shadow-2xl' : '-translate-x-full md:translate-x-0')
         }`}
       >
-        <div>
-          <div className="flex items-center justify-between mb-6 sm:mb-8">
-            <div className="flex items-center gap-3">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-black text-white shadow-lg shadow-[#00A0DF]/30">
-                S
+        <div className="w-[13.5rem] flex flex-col justify-between h-full min-h-full">
+          <div>
+            <div className="flex items-center justify-between mb-6 sm:mb-8">
+              <div className="flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#00A0DF] to-[#0077aa] flex items-center justify-center font-black text-white shadow-lg shadow-[#00A0DF]/30">
+                  S
+                </div>
+                <div>
+                  <span className="font-extrabold text-sm block">Sami Admin</span>
+                  <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                    Live Control
+                  </span>
+                </div>
               </div>
-              <div>
-                <span className="font-extrabold text-sm block">Sami Admin</span>
-                <span className="text-[10px] text-emerald-400 font-bold uppercase tracking-wider flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-                  Live Control
-                </span>
+
+              <div className="flex items-center gap-1.5">
+                {/* Desktop Collapse Arrow Button */}
+                <button
+                  onClick={() => setSidebarCollapsed(true)}
+                  title="Collapse Sidebar (Clean Video Recording Mode)"
+                  aria-label="Collapse Sidebar"
+                  className="hidden md:flex items-center justify-center w-8 h-8 rounded-xl bg-slate-800/80 hover:bg-[#00A0DF]/20 hover:text-[#00A0DF] text-slate-400 border border-white/10 transition-all hover:scale-105 active:scale-95 group"
+                >
+                  <ChevronLeft size={18} className="group-hover:-translate-x-0.5 transition-transform" />
+                </button>
+
+                {/* Mobile Close Button */}
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="md:hidden text-slate-400 hover:text-white p-1"
+                >
+                  <X size={18} />
+                </button>
               </div>
             </div>
-
-            <button
-              onClick={() => setMobileMenuOpen(false)}
-              className="md:hidden text-slate-400 hover:text-white p-1"
-            >
-              <X size={18} />
-            </button>
-          </div>
 
           <nav className="space-y-1.5 text-xs font-bold text-slate-400">
             <button
@@ -1549,11 +1583,12 @@ export default function AdminDashboardPage() {
             <span>Sign Out Admin</span>
           </Link>
         </div>
+        </div>
       </aside>
 
       {/* Main Stage */}
-      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto max-h-screen">
-        <div className="max-w-6xl mx-auto space-y-6 sm:space-y-8 relative">
+      <main className="flex-1 p-4 sm:p-6 md:p-10 overflow-y-auto max-h-screen transition-all duration-300">
+        <div className={`${sidebarCollapsed ? 'max-w-7xl' : 'max-w-6xl'} mx-auto space-y-6 sm:space-y-8 relative transition-all duration-300`}>
           
           {/* Toast Notification */}
           {toastMessage && (
@@ -1568,9 +1603,25 @@ export default function AdminDashboardPage() {
 
           {/* Header */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-            <div>
-              <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white">Platform Control Panel</h1>
-              <p className="text-xs text-slate-400 mt-0.5">Ecom With Sami Mentorship &bull; Real-time Operations</p>
+            <div className="flex items-center gap-3">
+              {/* Desktop Sidebar Toggle Button */}
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                title={sidebarCollapsed ? "Expand Sidebar Menu (Open)" : "Collapse Sidebar (Hide Menu for Videos)"}
+                aria-label="Toggle Sidebar Menu"
+                className="hidden md:flex items-center justify-center w-9 h-9 rounded-xl bg-[#111827] border border-white/10 hover:bg-slate-800 text-slate-400 hover:text-white transition-all hover:scale-105 active:scale-95 flex-shrink-0 cursor-pointer"
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight size={17} className="text-[#00A0DF]" />
+                ) : (
+                  <ChevronLeft size={17} />
+                )}
+              </button>
+
+              <div>
+                <h1 className="text-xl sm:text-2xl md:text-3xl font-black text-white">Platform Control Panel</h1>
+                <p className="text-xs text-slate-400 mt-0.5">Ecom With Sami Mentorship &bull; Real-time Operations</p>
+              </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
               <button
@@ -3028,7 +3079,9 @@ export default function AdminDashboardPage() {
                       {showcaseCms.hero?.title || 'Verified Enrollments & 5-Star Testimonials'}
                     </h2>
                     <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
-                      {showcaseCms.hero?.description || "Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Sardar Samiullah's Scaling Formula. Ideal for screen recordings & testimonial videos."}
+                      {(showcaseCms.hero?.description || "Real Pakistani student traction records, approved mentorship admissions, and verified 5-star testimonials praising Ecom with Sami's Scaling Formula. Ideal for screen recordings & testimonial videos.")
+                        .replace(/Sardar Samiullah's/gi, "Ecom with Sami's")
+                        .replace(/Sardar Samiullah/gi, "Ecom with Sami")}
                     </p>
                   </div>
 
@@ -3290,7 +3343,7 @@ export default function AdminDashboardPage() {
                           <Star size={16} className="text-amber-400 fill-amber-400" />
                           <span>Student Reviews &amp; Testimonials ({filteredReviews.length} of {(showcaseCms.reviews || []).length})</span>
                         </h3>
-                        <p className="text-[11px] text-slate-400">Authentic student experiences with Sardar Samiullah's Ecominion Mentorship &amp; practical roadmaps</p>
+                        <p className="text-[11px] text-slate-400">Authentic student experiences with Ecom with Sami's Mentorship &amp; practical roadmaps</p>
                       </div>
 
                       <div className="relative w-full sm:w-80">

@@ -1121,7 +1121,7 @@ export const defaultShowcaseCmsData: ShowcaseCmsData = {
     badge: "Verified Student Reviews",
     subBadge: "Authentic Mentorship Experiences",
     title: "Student Reviews & Learning Experiences",
-    description: "Genuine feedback from Pakistani students, university learners, working professionals, and home entrepreneurs learning Shopify, Meta & TikTok Ads, Sourcing, and GCC operations with Sardar Samiullah.",
+    description: "Genuine feedback from Pakistani students, university learners, working professionals, and home entrepreneurs learning Shopify, Meta & TikTok Ads, Sourcing, and GCC operations with Ecom with Sami.",
     enrollmentsTabLabel: "Verified Admissions",
     reviewsTabLabel: "Student Reviews"
   },
