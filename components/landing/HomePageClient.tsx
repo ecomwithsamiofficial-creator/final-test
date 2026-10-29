@@ -1585,7 +1585,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
           >
             {(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews).map((rev, idx) => {
               const ytId = getYouTubeId(rev.videoUrl || hero.video_url);
-              const isPlaying = playingReviewIndex === idx;
               const rawTag = rev.tag?.trim();
               const cardTag = (!rawTag || rawTag.toUpperCase() === 'FACE REVIEW') ? 'Honest Review' : rawTag;
               const thumbSrc = rev.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : '');
@@ -1619,72 +1618,54 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                       </div>
                     </div>
 
-                    {/* Main Video Box: Shows Face Thumbnail or Plays In-Place */}
-                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/5] mb-3.5 border border-white/10 shadow-inner group/video">
-                      {isPlaying ? (
-                        <div className="relative w-full h-full bg-black">
-                          <iframe
-                            id={`review-iframe-${idx}`}
-                            src={getReviewEmbedUrl(rev.videoUrl || hero.video_url)}
-                            title={rev.headline}
-                            className="w-full h-full rounded-2xl border-0"
-                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                            allowFullScreen
-                          />
-                          {/* Close Video button */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setPlayingReviewIndex(null);
-                            }}
-                            className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-full bg-black/85 hover:bg-black text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl transition-all cursor-pointer active:scale-95"
-                            title="Close Video"
-                          >
-                            <X size={16} />
-                          </button>
-                        </div>
+                    {/* Main Video Box: Instant 1-Click Native Player (No Dual Buttons, No Black Delay) */}
+                    <div className="relative rounded-2xl overflow-hidden bg-black aspect-[4/5] mb-3.5 border border-white/10 shadow-inner group/video">
+                      {rev.videoUrl?.includes('iframe.mediadelivery.net') || rev.videoUrl?.includes('b-cdn.net') ? (
+                        <iframe
+                          src={getBunnyEmbedUrl(rev.videoUrl)}
+                          title={rev.headline}
+                          loading="lazy"
+                          className="w-full h-full border-0"
+                          allow="accelerometer; gyroscope; picture-in-picture"
+                          allowFullScreen
+                        />
+                      ) : rev.videoUrl?.endsWith('.mp4') || rev.videoUrl?.endsWith('.webm') ? (
+                        <video
+                          controls
+                          playsInline
+                          poster={thumbSrc}
+                          preload="metadata"
+                          src={rev.videoUrl}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : ytId ? (
+                        <iframe
+                          id={`review-iframe-${idx}`}
+                          src={`https://www.youtube.com/embed/${ytId}?enablejsapi=1&playsinline=1&rel=0&modestbranding=1`}
+                          title={rev.headline}
+                          loading="lazy"
+                          className="w-full h-full border-0"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                          allowFullScreen
+                        />
+                      ) : thumbSrc ? (
+                        <img
+                          src={thumbSrc}
+                          alt={rev.author}
+                          className="w-full h-full object-cover"
+                        />
                       ) : (
-                        <div
-                          role="button"
-                          tabIndex={0}
-                          onClick={() => setPlayingReviewIndex(idx)}
-                          className="relative w-full h-full cursor-pointer overflow-hidden group/thumb select-none"
-                        >
-                          {/* Student Face Thumbnail as ABSOLUTE full background */}
-                          {thumbSrc ? (
-                            <img
-                              src={thumbSrc}
-                              alt={rev.author}
-                              className="absolute inset-0 w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
-                              onError={(e) => {
-                                if (ytId) {
-                                  (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-                                }
-                              }}
-                            />
-                          ) : (
-                            <div className="absolute inset-0 w-full h-full bg-slate-900 flex items-center justify-center text-slate-500">
-                              <Play size={32} className="opacity-40" />
-                            </div>
-                          )}
+                        <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500">
+                          <Play size={32} className="opacity-40" />
+                        </div>
+                      )}
 
-                          {/* Subtle Vignette Gradient Overlay */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
-
-                          {/* EXACT CENTER Play Button */}
-                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
-                            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[#00A0DF] hover:bg-[#008AC2] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/70 group-hover/thumb:scale-110 transition-transform duration-300">
-                              <Play size={28} className="fill-current ml-1" />
-                            </div>
-                          </div>
-
-                          {/* Bottom Result Pill Only (Watch Review pill removed) */}
-                          <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
-                            <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-md">
-                              {rev.result}
-                            </span>
-                          </div>
+                      {/* Bottom Result Pill: Floats over video with non-blocking pointer events */}
+                      {rev.result && (
+                        <div className="absolute bottom-2.5 left-2.5 z-10 pointer-events-none">
+                          <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 bg-emerald-950/90 border border-emerald-500/40 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-md">
+                            {rev.result}
+                          </span>
                         </div>
                       )}
                     </div>
