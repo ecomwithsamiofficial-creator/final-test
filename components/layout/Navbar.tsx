@@ -5,10 +5,12 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname } from 'next/navigation';
 import { Menu, X, ArrowRight, GraduationCap } from 'lucide-react';
+import { getCmsContent } from '@/utils/cmsStore';
 
 export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mentorImg, setMentorImg] = useState<string>('/mentor-profile.webp');
   const pathname = usePathname() || '/';
 
   useEffect(() => {
@@ -16,7 +18,32 @@ export function Navbar() {
       setScrolled(window.scrollY > 15);
     };
     window.addEventListener('scroll', handleScroll, { passive: true });
-    return () => window.removeEventListener('scroll', handleScroll);
+
+    // Load mentor photo from CMS store
+    try {
+      const cms = getCmsContent();
+      if (cms.mentor?.image?.trim()) {
+        setMentorImg(cms.mentor.image.trim());
+      }
+    } catch (e) {}
+
+    const onUpdate = () => {
+      try {
+        const cms = getCmsContent();
+        if (cms.mentor?.image?.trim()) {
+          setMentorImg(cms.mentor.image.trim());
+        }
+      } catch (e) {}
+    };
+
+    window.addEventListener('sami_cms_updated', onUpdate);
+    window.addEventListener('storage', onUpdate);
+
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+      window.removeEventListener('sami_cms_updated', onUpdate);
+      window.removeEventListener('storage', onUpdate);
+    };
   }, []);
 
   const navLinks = [
@@ -41,13 +68,18 @@ export function Navbar() {
           {/* Brand Logo */}
           <Link href="/" className="flex items-center gap-2 sm:gap-2.5 group flex-shrink-0 min-w-0">
             <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-full overflow-hidden shadow-md group-hover:scale-105 transition-all flex-shrink-0 bg-slate-950 border-2 border-[#00A0DF]/70 shadow-[0_0_12px_rgba(0,160,223,0.35)] ring-1 ring-white/10 flex items-center justify-center">
-              <Image
-                src="/mentor-profile.png"
+              <img
+                src={mentorImg}
                 alt="Ecom With Sami"
                 width={40}
                 height={40}
                 className="w-full h-full object-cover"
-                priority
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.includes('mentor-profile.webp') && !target.src.includes('mentor-profile.png')) {
+                    target.src = '/mentor-profile.webp';
+                  }
+                }}
               />
             </div>
             <div className="flex items-center min-w-0">

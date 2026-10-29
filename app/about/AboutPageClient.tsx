@@ -32,6 +32,18 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
   const [aboutData, setAboutData] = useState(initialContent?.about_page || defaultCmsContent.about_page);
 
   useEffect(() => {
+    // Immediate check if client localStorage has fresher CMS data
+    try {
+      const stored = localStorage.getItem('sami_cms_content');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          if (parsed.mentor) setMentor(prev => ({ ...prev, ...parsed.mentor }));
+          if (parsed.about_page) setAboutData(prev => ({ ...prev, ...parsed.about_page }));
+        }
+      }
+    } catch (e) {}
+
     // If initialContent was updated or available, ensure state matches
     if (initialContent?.mentor) {
       setMentor(initialContent.mentor);
@@ -96,23 +108,23 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
             <div className="lg:col-span-5 flex flex-col items-center">
               <div className="w-full max-w-sm bg-slate-950 rounded-3xl p-6 border-2 border-[#00A0DF]/30 shadow-2xl text-center">
                 <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 mb-6 shadow-xl shadow-[#00A0DF]/30 overflow-hidden">
-                  <picture className="w-full h-full rounded-full overflow-hidden block">
-                    <source srcSet="/mentor-profile.webp" type="image/webp" />
-                    <img
-                      src={mentor.image || '/mentor-profile.webp'}
-                      alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
-                      width={192}
-                      height={192}
-                      loading="eager"
-                      decoding="async"
-                      // @ts-ignore
-                      fetchpriority="high"
-                      className="w-full h-full rounded-full object-cover block"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/mentor-profile.png';
-                      }}
-                    />
-                  </picture>
+                  <img
+                    src={mentor.image?.trim() ? mentor.image.trim() : '/mentor-profile.webp'}
+                    alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
+                    width={192}
+                    height={192}
+                    loading="eager"
+                    decoding="async"
+                    // @ts-ignore
+                    fetchpriority="high"
+                    className="w-full h-full rounded-full object-cover block"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('mentor-profile.webp') && !target.src.includes('mentor-profile.png')) {
+                        target.src = '/mentor-profile.webp';
+                      }
+                    }}
+                  />
                 </div>
                 <h2 className="text-2xl font-black text-white mb-1">{mentor.name || 'Sardar Samiullah'}</h2>
                 <p className="text-xs font-bold text-[#00A0DF] uppercase tracking-wider mb-4">

@@ -36,13 +36,13 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-      // 3. Public CMS content read API - cached with stale-while-revalidate for instantaneous responses
+      // 3. Public CMS content read API - strictly no-store so updates reflect immediately
       {
         source: '/api/public/:path*',
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=10, s-maxage=60, stale-while-revalidate=300',
+            value: 'no-store, no-cache, must-revalidate, max-age=0',
           },
         ],
       },

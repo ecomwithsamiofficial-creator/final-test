@@ -4592,10 +4592,15 @@ export default function AdminCmsPage() {
                 <div className="w-full max-w-xs bg-[#0B0F19] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col items-center">
                   <div className="relative w-40 h-40 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 overflow-hidden flex items-center justify-center">
                     <img
-                      src={cmsData.mentor?.image || '/images/sami-logo.jpg'}
+                      src={cmsData.mentor?.image?.trim() ? cmsData.mentor.image.trim() : '/mentor-profile.webp'}
                       alt={cmsData.mentor?.name || 'Mentor Sami'}
                       className="w-full h-full rounded-full object-cover"
-                      onError={(e) => { (e.target as HTMLImageElement).src = '/images/sami-logo.jpg'; }}
+                      onError={(e) => {
+                        const target = e.target as HTMLImageElement;
+                        if (!target.src.includes('mentor-profile.webp') && !target.src.includes('mentor-profile.png')) {
+                          target.src = '/mentor-profile.webp';
+                        }
+                      }}
                     />
                   </div>
                   <span className="inline-flex items-center gap-1.5 bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-[11px] font-black px-3 py-0.5 rounded-full uppercase tracking-wider mb-2">

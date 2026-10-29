@@ -307,6 +307,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
   useEffect(() => {
     setIsClientMounted(true);
+
+    // Immediate sync from localStorage if present so recent CMS saves show with 0ms delay
+    try {
+      const stored = localStorage.getItem('sami_cms_content');
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed && typeof parsed === 'object') {
+          setContent(prev => ({ ...prev, ...parsed }));
+        }
+      }
+    } catch (e) {}
+
     if (initialContent) {
       updateCmsContent(initialContent);
     }
@@ -1453,21 +1465,21 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               {/* Mentor Avatar */}
               <div className="lg:col-span-5 flex flex-col items-center text-center">
                 <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 animate-float overflow-hidden flex items-center justify-center">
-                  <picture className="w-full h-full rounded-full overflow-hidden block">
-                    <source srcSet="/mentor-profile.webp" type="image/webp" />
-                    <img
-                      src={mentor.image || '/mentor-profile.webp'}
-                      alt={mentor.name || 'Mentor Sardar Samiullah'}
-                      loading="eager"
-                      decoding="async"
-                      // @ts-ignore
-                      fetchpriority="high"
-                      className="w-full h-full rounded-full object-cover block"
-                      onError={(e) => {
-                        (e.target as HTMLImageElement).src = '/mentor-profile.png';
-                      }}
-                    />
-                  </picture>
+                  <img
+                    src={mentor.image?.trim() ? mentor.image.trim() : '/mentor-profile.webp'}
+                    alt={mentor.name || 'Mentor Sardar Samiullah'}
+                    loading="eager"
+                    decoding="async"
+                    // @ts-ignore
+                    fetchpriority="high"
+                    className="w-full h-full rounded-full object-cover block"
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      if (!target.src.includes('mentor-profile.webp') && !target.src.includes('mentor-profile.png')) {
+                        target.src = '/mentor-profile.webp';
+                      }
+                    }}
+                  />
                 </div>
                 <span className="inline-flex items-center gap-1.5 bg-[#00A0DF]/20 text-[#00A0DF] border border-[#00A0DF]/30 text-xs font-black px-3.5 py-1 rounded-full uppercase tracking-wider">
                   <Star size={12} className="fill-[#00A0DF]" />
