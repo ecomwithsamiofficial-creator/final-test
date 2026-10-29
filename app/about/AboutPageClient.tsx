@@ -96,15 +96,23 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
             <div className="lg:col-span-5 flex flex-col items-center">
               <div className="w-full max-w-sm bg-slate-950 rounded-3xl p-6 border-2 border-[#00A0DF]/30 shadow-2xl text-center">
                 <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 mb-6 shadow-xl shadow-[#00A0DF]/30 overflow-hidden">
-                  <Image
-                    src={mentor.image ? (mentor.image.startsWith('data:') ? mentor.image : `${mentor.image}${mentor.image.includes('?') ? '&' : '?'}v=20260919_v3`) : '/sami-logo.jpg?v=20260919_v3'}
-                    alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
-                    width={192}
-                    height={192}
-                    className="w-full h-full rounded-full object-cover"
-                    priority
-                    unoptimized={true}
-                  />
+                  <picture className="w-full h-full rounded-full overflow-hidden block">
+                    <source srcSet="/mentor-profile.webp" type="image/webp" />
+                    <img
+                      src={mentor.image || '/mentor-profile.webp'}
+                      alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}
+                      width={192}
+                      height={192}
+                      loading="eager"
+                      decoding="async"
+                      // @ts-ignore
+                      fetchpriority="high"
+                      className="w-full h-full rounded-full object-cover block"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).src = '/mentor-profile.png';
+                      }}
+                    />
+                  </picture>
                 </div>
                 <h2 className="text-2xl font-black text-white mb-1">{mentor.name || 'Sardar Samiullah'}</h2>
                 <p className="text-xs font-bold text-[#00A0DF] uppercase tracking-wider mb-4">

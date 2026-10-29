@@ -1019,7 +1019,7 @@ input[type="submit"] {
   max-width: 270px !important;
   height: 500px !important;
   object-fit: contain !important;
-  background-color: #0B0F19 !important;
+  background-color: transparent !important;
   display: block !important;
   border-radius: 16px !important;
   border: 1px solid #E2EFF7 !important;

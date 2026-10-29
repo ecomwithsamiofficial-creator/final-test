@@ -5,10 +5,8 @@ import { Sparkles, X, ZoomIn } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
 function getReviewUrl(src: string): string {
-  if (!src) return '/images/sami-logo.jpg';
-  if (src.startsWith('http://') || src.startsWith('https://')) return src;
-  const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=sami_review_v2`;
+  if (!src) return '/uploads/reviews/review_verified_student.svg';
+  return src;
 }
 
 interface HomepageProofWallProps {
@@ -23,6 +21,7 @@ interface HomepageProofWallProps {
 
 export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [loadedImages, setLoadedImages] = useState<Record<number, boolean>>({});
 
   // Close modal on Escape key
   useEffect(() => {
@@ -101,25 +100,40 @@ export function HomepageProofWall({ data, backupImages }: HomepageProofWallProps
           {loopImages.map((src, idx) => {
             const finalUrl = getReviewUrl(src);
             const isInitial = idx < 6;
+            const isLoaded = loadedImages[idx];
+
             return (
               <div
                 key={`proof-card-${idx}`}
                 role="button"
                 tabIndex={0}
                 onClick={() => setSelectedImage(finalUrl)}
-                className="relative group flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200/90 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 bg-[#070B14] w-[210px] sm:w-[260px] h-[400px] sm:h-[500px] flex items-center justify-center p-1"
+                className="relative group flex-shrink-0 cursor-pointer overflow-hidden rounded-2xl border border-slate-200/90 hover:border-[#00A0DF]/60 shadow-md hover:shadow-2xl transition-all duration-300 hover:-translate-y-1.5 bg-slate-900/95 w-[210px] sm:w-[260px] h-[400px] sm:h-[500px] flex items-center justify-center p-1"
                 title="Click to view full screenshot proof"
               >
+                {/* Modern subtle shimmer placeholder before image is decoded */}
+                {!isLoaded && (
+                  <div className="absolute inset-2 rounded-xl bg-slate-800/80 animate-pulse flex items-center justify-center">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                      Student Proof #{((idx % rawImages.length) + 1)}
+                    </span>
+                  </div>
+                )}
+
                 <img
                   src={finalUrl}
                   alt={`Student Result ${idx + 1}`}
-                  loading="lazy"
+                  loading={isInitial ? 'eager' : 'lazy'}
                   decoding="async"
+                  // @ts-ignore
+                  fetchpriority={isInitial ? 'high' : 'auto'}
+                  onLoad={() => setLoadedImages((prev) => ({ ...prev, [idx]: true }))}
                   onError={(e) => {
                     const img = e.target as HTMLImageElement;
-                    img.style.opacity = '0.7';
+                    img.src = '/uploads/reviews/review_verified_student.svg';
+                    setLoadedImages((prev) => ({ ...prev, [idx]: true }));
                   }}
-                  className="w-full h-full object-contain rounded-xl block pointer-events-none"
+                  className={`w-full h-full object-contain rounded-xl block pointer-events-none transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                 />
                 <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-xs font-bold pointer-events-none rounded-xl">
                   <ZoomIn size={18} className="text-[#00A0DF]" />

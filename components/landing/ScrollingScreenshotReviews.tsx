@@ -5,10 +5,8 @@ import { X, ZoomIn, Sparkles } from 'lucide-react';
 import { defaultCmsContent } from '@/utils/cmsStore';
 
 function getReviewUrl(src: string): string {
-  if (!src) return '/images/sami-logo.jpg';
-  if (src.startsWith('http://') || src.startsWith('https://')) return src;
-  const separator = src.includes('?') ? '&' : '?';
-  return `${src}${separator}v=sami_review_v2`;
+  if (!src) return '/uploads/reviews/review_verified_student.svg';
+  return src;
 }
 
 interface ScrollingScreenshotReviewsProps {
@@ -23,6 +21,8 @@ interface ScrollingScreenshotReviewsProps {
 
 export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScreenshotReviewsProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [loadedCol1, setLoadedCol1] = useState<Record<number, boolean>>({});
+  const [loadedCol2, setLoadedCol2] = useState<Record<number, boolean>>({});
 
   // Close modal on Escape key
   useEffect(() => {
@@ -131,11 +131,14 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
             {/* Column 1 (Scrolling Upwards Speed A - 75s Slow & Smooth) */}
             <div className="overflow-hidden relative h-full">
               <div 
-                style={{ WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden' }}
+                style={{ WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden', willChange: 'transform' }}
                 className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col1"
               >
                 {loopCol1.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
+                  const isInitial = i < 3;
+                  const isLoaded = loadedCol1[i];
+
                   return (
                     <div
                       key={`col1-${i}`}
@@ -147,19 +150,31 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-slate-900/90 shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
+                      {!isLoaded && (
+                        <div className="absolute inset-2 rounded-xl bg-slate-800/80 animate-pulse flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            Chat Proof
+                          </span>
+                        </div>
+                      )}
+
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="lazy"
+                        loading={isInitial ? 'eager' : 'lazy'}
                         decoding="async"
+                        // @ts-ignore
+                        fetchpriority={isInitial ? 'high' : 'auto'}
+                        onLoad={() => setLoadedCol1((prev) => ({ ...prev, [i]: true }))}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
-                          img.style.opacity = '0.7';
+                          img.src = '/uploads/reviews/review_verified_student.svg';
+                          setLoadedCol1((prev) => ({ ...prev, [i]: true }));
                         }}
-                        className="w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none"
+                        className={`w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
@@ -174,11 +189,14 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
             {/* Column 2 (Scrolling Upwards Speed B - 65s Parallax) */}
             <div className="overflow-hidden relative h-full">
               <div 
-                style={{ WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden' }}
+                style={{ WebkitBackfaceVisibility: 'hidden', backfaceVisibility: 'hidden', willChange: 'transform' }}
                 className="flex flex-col gap-3 sm:gap-4 animate-scroll-vertical-col2"
               >
                 {loopCol2.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
+                  const isInitial = i < 3;
+                  const isLoaded = loadedCol2[i];
+
                   return (
                     <div
                       key={`col2-${i}`}
@@ -190,19 +208,31 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         e.stopPropagation();
                         setSelectedImage(finalUrl);
                       }}
-                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-[#070B14] shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
+                      className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-slate-900/90 shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
+                      {!isLoaded && (
+                        <div className="absolute inset-2 rounded-xl bg-slate-800/80 animate-pulse flex items-center justify-center">
+                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                            Chat Proof
+                          </span>
+                        </div>
+                      )}
+
                       <img
                         src={finalUrl}
                         alt="Student Result Review"
-                        loading="lazy"
+                        loading={isInitial ? 'eager' : 'lazy'}
                         decoding="async"
+                        // @ts-ignore
+                        fetchpriority={isInitial ? 'high' : 'auto'}
+                        onLoad={() => setLoadedCol2((prev) => ({ ...prev, [i]: true }))}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
-                          img.style.opacity = '0.7';
+                          img.src = '/uploads/reviews/review_verified_student.svg';
+                          setLoadedCol2((prev) => ({ ...prev, [i]: true }));
                         }}
-                        className="w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none"
+                        className={`w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />

@@ -119,6 +119,8 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://www.youtube.com" />
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
+        {/* Instant preload for critical brand images */}
+        <link rel="preload" as="image" href="/mentor-profile.webp" type="image/webp" />
         {/* Immediate Browser Tab Favicon Invalidation (Cache Busting) */}
         <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026" />
         <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026" />
