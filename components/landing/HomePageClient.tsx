@@ -681,7 +681,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const getReviewEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
     const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube-nocookie.com/embed/${vId}?autoplay=1&mute=1&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${vId}${originParam}`;
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${vId}${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
@@ -1630,29 +1630,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                             title="Close Video"
                           >
                             <X size={16} />
-                          </button>
-
-                          {/* Quick Unmute Pill */}
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              const iframe = document.getElementById(`review-iframe-${idx}`) as HTMLIFrameElement;
-                              if (iframe && iframe.contentWindow) {
-                                iframe.contentWindow.postMessage(
-                                  JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
-                                  '*'
-                                );
-                                iframe.contentWindow.postMessage(
-                                  JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
-                                  '*'
-                                );
-                              }
-                            }}
-                            className="absolute bottom-3 left-3 z-20 bg-black/85 hover:bg-[#00A0DF] text-white border border-white/20 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-colors cursor-pointer"
-                          >
-                            <Volume2 size={13} className="text-[#00A0DF]" />
-                            <span>Tap for Sound</span>
                           </button>
                         </div>
                       ) : (
