@@ -107,7 +107,7 @@ export function AboutPageClient({ initialContent }: AboutPageClientProps) {
             {/* Left Photo & Stats Card */}
             <div className="lg:col-span-5 flex flex-col items-center">
               <div className="w-full max-w-sm bg-slate-950 rounded-3xl p-6 border-2 border-[#00A0DF]/30 shadow-2xl text-center">
-                <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full bg-gradient-to-tr from-[#00A0DF] to-emerald-400 p-1.5 mb-6 shadow-xl shadow-[#00A0DF]/30 overflow-hidden">
+                <div className="w-40 h-40 sm:w-48 sm:h-48 mx-auto rounded-full mb-6 shadow-2xl overflow-hidden flex items-center justify-center">
                   <img
                     src={mentor.image?.trim() ? mentor.image.trim() : '/mentor-profile.webp'}
                     alt={`${mentor.name || 'Mentor Sami'} - Founder & Lead eCommerce Mentor`}

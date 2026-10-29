@@ -4590,7 +4590,7 @@ export default function AdminCmsPage() {
 
                 {/* Visual Avatar Card Mockup (Exact Homepage Look) */}
                 <div className="w-full max-w-xs bg-[#0B0F19] border border-white/10 rounded-3xl p-6 shadow-2xl flex flex-col items-center">
-                  <div className="relative w-40 h-40 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 overflow-hidden flex items-center justify-center">
+                  <div className="relative w-40 h-40 rounded-full mb-4 overflow-hidden flex items-center justify-center shadow-2xl">
                     <img
                       src={cmsData.mentor?.image?.trim() ? cmsData.mentor.image.trim() : '/mentor-profile.webp'}
                       alt={cmsData.mentor?.name || 'Mentor Sami'}

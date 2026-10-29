@@ -1464,7 +1464,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
               
               {/* Mentor Avatar */}
               <div className="lg:col-span-5 flex flex-col items-center text-center">
-                <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-[#00A0DF] via-emerald-400 to-[#00A0DF] p-1.5 shadow-2xl shadow-[#00A0DF]/25 mb-4 animate-float overflow-hidden flex items-center justify-center">
+                <div className="relative w-44 h-44 sm:w-56 sm:h-56 rounded-full mb-4 animate-float overflow-hidden flex items-center justify-center shadow-2xl">
                   <img
                     src={mentor.image?.trim() ? mentor.image.trim() : '/mentor-profile.webp'}
                     alt={mentor.name || 'Mentor Sardar Samiullah'}
