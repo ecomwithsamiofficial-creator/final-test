@@ -17,9 +17,24 @@ async function run() {
   console.log('Wrote public/sami-logo.jpg');
 
   const imagesDir = path.join(process.cwd(), 'public', 'images');
-  if (!fs.existsSync(imagesDir)) fs.mkdirSync(imagesDir, { recursive: true });
-  fs.writeFileSync(path.join(imagesDir, 'sami-logo.jpg'), sqJpg);
-  console.log('Wrote public/images/sami-logo.jpg');
+  // WebP version of mentor-profile
+  const webpBuffer = await sharp(src).resize(800, 800).webp({ quality: 90 }).toBuffer();
+  fs.writeFileSync(path.join(process.cwd(), 'public', 'mentor-profile.webp'), webpBuffer);
+  console.log('Wrote public/mentor-profile.webp');
+
+  // Also update uploaded mentor files in public/uploads/mentor
+  const uploadsMentorDir = path.join(process.cwd(), 'public', 'uploads', 'mentor');
+  if (fs.existsSync(uploadsMentorDir)) {
+    const files = fs.readdirSync(uploadsMentorDir);
+    for (const f of files) {
+      if (f.endsWith('.png')) {
+        fs.writeFileSync(path.join(uploadsMentorDir, f), fs.readFileSync(src));
+      } else if (f.endsWith('.webp')) {
+        fs.writeFileSync(path.join(uploadsMentorDir, f), webpBuffer);
+      }
+    }
+    console.log('Synced uploads/mentor files');
+  }
 
   // 2. Favicons
   const png16 = await sharp(src).resize(16, 16).png().toBuffer();

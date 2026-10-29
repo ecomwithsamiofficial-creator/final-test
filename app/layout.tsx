@@ -57,7 +57,7 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: 'https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1',
+        url: 'https://ecomwithsami.com/og-image.jpg?v=sami2026_cinematic_v2',
         width: 1200,
         height: 630,
         alt: 'Sardar Samiullah - Ecom With Sami',
@@ -74,19 +74,19 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Ecom With Sami | Sardar Samiullah',
     description: 'Official e-commerce mentorship by Sardar Samiullah (Abbottabad, Pakistan). Complete step-by-step framework from dropshipping to private label brands.',
-    images: ['https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1'],
+    images: ['https://ecomwithsami.com/og-image.jpg?v=sami2026_cinematic_v2'],
     creator: '@ecomwithsami',
   },
   icons: {
     icon: [
-      { url: '/favicon-32x32.png?v=sami2026_mentor_v1', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png?v=sami2026_mentor_v1', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon.ico?v=sami2026_mentor_v1', sizes: 'any' },
-      { url: '/icon.png?v=sami2026_mentor_v1', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png?v=sami2026_cinematic_v2', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=sami2026_cinematic_v2', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico?v=sami2026_cinematic_v2', sizes: 'any' },
+      { url: '/icon.png?v=sami2026_cinematic_v2', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: '/favicon.ico?v=sami2026_mentor_v1',
+    shortcut: '/favicon.ico?v=sami2026_cinematic_v2',
     apple: [
-      { url: '/apple-icon.png?v=sami2026_mentor_v1', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=sami2026_cinematic_v2', sizes: '180x180', type: 'image/png' },
     ],
   },
   category: 'education',
@@ -126,20 +126,20 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
         {/* Explicit Social Sharing & OpenGraph Meta Tags for Instagram, WhatsApp, Facebook, iMessage */}
-        <meta property="og:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
-        <meta property="og:image:secure_url" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
+        <meta property="og:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_cinematic_v2" />
+        <meta property="og:image:secure_url" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_cinematic_v2" />
         <meta property="og:image:type" content="image/jpeg" />
         <meta property="og:image:width" content="1200" />
         <meta property="og:image:height" content="630" />
         <meta property="og:image:alt" content="Sardar Samiullah - Ecom With Sami" />
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
+        <meta name="twitter:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_cinematic_v2" />
 
         {/* Immediate Browser Tab Favicon Invalidation (Cache Busting) */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026_mentor_v1" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026_mentor_v1" />
-        <link rel="shortcut icon" href="/favicon.ico?v=sami2026_mentor_v1" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=sami2026_mentor_v1" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026_cinematic_v2" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026_cinematic_v2" />
+        <link rel="shortcut icon" href="/favicon.ico?v=sami2026_cinematic_v2" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=sami2026_cinematic_v2" />
         <JsonLd />
         {/* Google tag (gtag.js) - Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3" />
