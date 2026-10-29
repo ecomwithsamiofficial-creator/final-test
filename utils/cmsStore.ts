@@ -100,6 +100,9 @@ export interface CmsContentSchema {
       market: string;
       videoUrl: string;
       stars: number;
+      tag?: string;
+      thumbnailUrl?: string;
+      aspectRatio?: 'portrait' | 'landscape' | 'square';
     }[];
   };
   options_comparison: {
@@ -776,6 +779,7 @@ export const defaultCmsContent: CmsContentSchema = {
     items: [
       {
         stars: 5,
+        tag: 'FACE REVIEW',
         headline: '“Total beginners are now getting AED 1,000–1,500 in daily sales.”',
         author: 'Ali Raza — Lahore',
         result: 'AED 1,500 / Day',
@@ -784,6 +788,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'STUDENT REVIEW',
         headline: '“After getting mentorship and watching the course, I made €662 in sales within 6 days.”',
         author: 'Raza Ali — Karachi',
         result: '€662 in 6 Days',
@@ -792,6 +797,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'STUDENT FEEDBACK',
         headline: '“AED 5,000 in sales and 56 orders within 5 days with supplier help.”',
         author: 'Hamza Tariq — Islamabad',
         result: 'AED 5,000 / Week',
@@ -800,6 +806,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'FACE REVIEW',
         headline: '“Students say the course is very easy to understand and follow on mobile.”',
         author: 'Zainab Bibi — Faisalabad',
         result: 'PKR 480,000 / Mo',
@@ -808,6 +815,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'STUDENT REVIEW',
         headline: '“26 orders and AED 2,500 in sales with the direct help of Mentor Sami.”',
         author: 'Usman Ghani — Rawalpindi',
         result: 'AED 2,500 Sales',
@@ -816,6 +824,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'STUDENT FEEDBACK',
         headline: '“AED 1,485 in sales in just 3 days while working from home.”',
         author: 'Bilal Farooq — Multan',
         result: 'SAR 3,485 Profit',
@@ -824,6 +833,7 @@ export const defaultCmsContent: CmsContentSchema = {
       },
       {
         stars: 5,
+        tag: 'FACE REVIEW',
         headline: '“I tried many courses before, but Sami’s practical GCC supplier list made all the difference.”',
         author: 'Farhan Sheikh — Peshawar',
         result: 'SAR 6,100 / 10 Days',

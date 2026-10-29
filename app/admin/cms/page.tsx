@@ -17,6 +17,7 @@ import {
   Award, 
   Trash2, 
   Plus, 
+  Play,
   ArrowLeft,
   ArrowRight,
   Package,
@@ -5672,10 +5673,10 @@ export default function AdminCmsPage() {
               <div>
                 <h3 className="text-sm sm:text-lg font-bold text-white flex items-center gap-2">
                   <FileVideo size={18} className="text-[#00A0DF]" />
-                  <span>Student Video Reviews (Continuous Stream)</span>
+                  <span>Student Video Reviews (Learn With Afaq Style)</span>
                 </h3>
                 <p className="text-xs text-slate-400 mt-1">
-                  Manage the moving video review cards displayed on the landing page stream.
+                  Manage student video reviews with YouTube / Shorts integration, visible student faces, and manual swipeable gallery.
                 </p>
               </div>
               <button
@@ -5690,10 +5691,12 @@ export default function AdminCmsPage() {
                         ...current,
                         {
                           headline: 'New Student Success Story',
-                          author: 'Student Name',
-                          result: 'Rs. 500,000+ Revenue',
-                          market: '🇵🇰 Pakistan Local Dropship',
-                          videoUrl: 'https://www.youtube.com/embed/dQw4w9WgXcQ',
+                          author: 'Student Name — City',
+                          result: 'PKR 150K+ / 10 Days',
+                          market: 'UAE Market',
+                          tag: 'FACE REVIEW',
+                          aspectRatio: 'portrait',
+                          videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                           stars: 5
                         }
                       ]
@@ -5748,113 +5751,286 @@ export default function AdminCmsPage() {
             </div>
 
             <div className="space-y-4 pt-2">
-              <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">Video Review Cards</h4>
-              {(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).map((item, idx) => (
-                <div key={idx} className="bg-[#0B0F19] p-4 rounded-xl border border-white/10 space-y-3 relative">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-bold text-[#00A0DF]">Video #{idx + 1} — {item.author}</span>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        const current = (cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).filter((_, i) => i !== idx);
-                        setCmsData({
-                          ...cmsData,
-                          video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                        });
-                      }}
-                      className="text-slate-500 hover:text-red-400 transition-colors p-1"
-                    >
-                      <Trash2 size={15} />
-                    </button>
-                  </div>
+              <div className="flex items-center justify-between">
+                <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider">
+                  Video Review Cards ({(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).length})
+                </h4>
+                <span className="text-[11px] text-slate-400">
+                  Tip: YouTube standard links, Shorts, and Bunny URLs are supported.
+                </span>
+              </div>
+              {(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).map((item, idx) => {
+                const getCardYtId = (url?: string) => {
+                  if (!url) return '';
+                  const shorts = url.match(/(?:shorts\/)([\w-]{11})/);
+                  if (shorts && shorts[1]) return shorts[1];
+                  const std = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
+                  if (std && std[1]) return std[1];
+                  return '';
+                };
+                const ytId = getCardYtId(item.videoUrl);
+                const thumbSrc = item.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : '');
 
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Headline Result</label>
-                      <input
-                        type="text"
-                        value={item.headline}
-                        onChange={(e) => {
-                          const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
-                          current[idx] = { ...current[idx], headline: e.target.value };
-                          setCmsData({
-                            ...cmsData,
-                            video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                          });
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                      />
+                return (
+                  <div key={idx} className="bg-[#0B0F19] p-4 sm:p-5 rounded-2xl border border-white/10 space-y-4 relative shadow-lg">
+                    <div className="flex items-center justify-between border-b border-white/5 pb-3">
+                      <div className="flex items-center gap-2.5">
+                        <span className="w-6 h-6 rounded-full bg-[#00A0DF]/20 text-[#00A0DF] text-xs font-black flex items-center justify-center">
+                          {idx + 1}
+                        </span>
+                        <span className="text-xs font-bold text-white">{item.author || 'Student'}</span>
+                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-white/10 text-slate-300">
+                          {item.tag || 'FACE REVIEW'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        {/* Move Up */}
+                        {idx > 0 && (
+                          <button
+                            type="button"
+                            title="Move Up"
+                            onClick={() => {
+                              const items = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                              const temp = items[idx - 1];
+                              items[idx - 1] = items[idx];
+                              items[idx] = temp;
+                              setCmsData({
+                                ...cmsData,
+                                video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items }
+                              });
+                            }}
+                            className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5"
+                          >
+                            <ChevronUp size={15} />
+                          </button>
+                        )}
+                        {/* Move Down */}
+                        {idx < (cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).length - 1 && (
+                          <button
+                            type="button"
+                            title="Move Down"
+                            onClick={() => {
+                              const items = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                              const temp = items[idx + 1];
+                              items[idx + 1] = items[idx];
+                              items[idx] = temp;
+                              setCmsData({
+                                ...cmsData,
+                                video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items }
+                              });
+                            }}
+                            className="text-slate-400 hover:text-white p-1 rounded hover:bg-white/5"
+                          >
+                            <ChevronDown size={15} />
+                          </button>
+                        )}
+                        {/* Delete */}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const current = (cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items).filter((_, i) => i !== idx);
+                            setCmsData({
+                              ...cmsData,
+                              video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                            });
+                          }}
+                          className="text-slate-500 hover:text-rose-400 transition-colors p-1 rounded hover:bg-rose-500/10 ml-1"
+                        >
+                          <Trash2 size={15} />
+                        </button>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Author Name</label>
-                      <input
-                        type="text"
-                        value={item.author}
-                        onChange={(e) => {
-                          const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
-                          current[idx] = { ...current[idx], author: e.target.value };
-                          setCmsData({
-                            ...cmsData,
-                            video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                          });
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Sales Stat / Result</label>
-                      <input
-                        type="text"
-                        value={item.result}
-                        onChange={(e) => {
-                          const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
-                          current[idx] = { ...current[idx], result: e.target.value };
-                          setCmsData({
-                            ...cmsData,
-                            video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                          });
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-emerald-400 font-bold focus:outline-none focus:border-[#00A0DF]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Market Tag</label>
-                      <input
-                        type="text"
-                        value={item.market}
-                        onChange={(e) => {
-                          const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
-                          current[idx] = { ...current[idx], market: e.target.value };
-                          setCmsData({
-                            ...cmsData,
-                            video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                          });
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] font-bold text-slate-400 mb-1">Embed Video URL</label>
-                      <input
-                        type="text"
-                        value={item.videoUrl}
-                        onChange={(e) => {
-                          const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
-                          current[idx] = { ...current[idx], videoUrl: e.target.value };
-                          setCmsData({
-                            ...cmsData,
-                            video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
-                          });
-                        }}
-                        className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
-                      />
+                    <div className="flex flex-col md:flex-row gap-4">
+                      {/* Live Thumbnail Preview */}
+                      <div className="w-full md:w-36 flex-shrink-0 flex flex-col items-center justify-center">
+                        <div className="w-full aspect-[4/5] max-w-[140px] md:max-w-none rounded-xl overflow-hidden bg-slate-900 border border-white/10 relative group flex items-center justify-center">
+                          {thumbSrc ? (
+                            <img
+                              src={thumbSrc}
+                              alt={item.author}
+                              className="w-full h-full object-cover"
+                              onError={(e) => {
+                                (e.target as HTMLImageElement).src = 'https://i.ytimg.com/vi/dQw4w9WgXcQ/hqdefault.jpg';
+                              }}
+                            />
+                          ) : (
+                            <div className="text-center p-2 text-[10px] text-slate-500">
+                              <FileVideo size={24} className="mx-auto mb-1 opacity-40" />
+                              No thumbnail
+                            </div>
+                          )}
+                          <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
+                            <div className="w-8 h-8 rounded-full bg-[#00A0DF] text-white flex items-center justify-center shadow-lg">
+                              <Play size={14} className="fill-current ml-0.5" />
+                            </div>
+                          </div>
+                        </div>
+                        <span className="text-[10px] text-slate-400 mt-1.5 font-medium">
+                          {ytId ? 'Auto YouTube Preview' : 'No Video ID'}
+                        </span>
+                      </div>
+
+                      {/* Card Form Fields */}
+                      <div className="flex-1 space-y-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">Author Name & Location</label>
+                            <input
+                              type="text"
+                              value={item.author}
+                              placeholder="e.g. Sani — Abbottabad"
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], author: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">Headline / Review Summary</label>
+                            <input
+                              type="text"
+                              value={item.headline}
+                              placeholder="e.g. 17 Years Old Student Review..."
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], headline: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">Sales Result Badge</label>
+                            <input
+                              type="text"
+                              value={item.result}
+                              placeholder="e.g. PKR 150K+ / 10 DAYS"
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], result: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-emerald-400 font-bold focus:outline-none focus:border-[#00A0DF]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">Market Tag</label>
+                            <input
+                              type="text"
+                              value={item.market}
+                              placeholder="e.g. Pak Market, UAE Market"
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], market: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">Review Tag</label>
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={item.tag || 'FACE REVIEW'}
+                                placeholder="FACE REVIEW"
+                                onChange={(e) => {
+                                  const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                  current[idx] = { ...current[idx], tag: e.target.value };
+                                  setCmsData({
+                                    ...cmsData,
+                                    video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                  });
+                                }}
+                                className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF]"
+                              />
+                            </div>
+                            {/* Quick tag suggestions */}
+                            <div className="flex gap-1 mt-1">
+                              {['FACE REVIEW', 'STUDENT REVIEW', 'STUDENT FEEDBACK'].map((t) => (
+                                <button
+                                  key={t}
+                                  type="button"
+                                  onClick={() => {
+                                    const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                    current[idx] = { ...current[idx], tag: t };
+                                    setCmsData({
+                                      ...cmsData,
+                                      video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                    });
+                                  }}
+                                  className="text-[9px] px-1.5 py-0.5 rounded bg-white/5 hover:bg-[#00A0DF]/20 hover:text-[#00A0DF] text-slate-400 transition-colors"
+                                >
+                                  {t}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">
+                              YouTube Video URL / Shorts URL
+                            </label>
+                            <input
+                              type="text"
+                              value={item.videoUrl}
+                              placeholder="https://www.youtube.com/watch?v=... or https://youtube.com/shorts/..."
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], videoUrl: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="block text-[11px] font-bold text-slate-400 mb-1">
+                              Custom Thumbnail URL (Optional)
+                            </label>
+                            <input
+                              type="text"
+                              value={item.thumbnailUrl || ''}
+                              placeholder="Leave blank to use YouTube thumbnail"
+                              onChange={(e) => {
+                                const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
+                                current[idx] = { ...current[idx], thumbnailUrl: e.target.value };
+                                setCmsData({
+                                  ...cmsData,
+                                  video_reviews: { ...(cmsData.video_reviews || defaultCmsContent.video_reviews), items: current }
+                                });
+                              }}
+                              className="w-full px-3 py-2 rounded-lg bg-[#111827] border border-white/10 text-xs text-white focus:outline-none focus:border-[#00A0DF] font-mono"
+                            />
+                          </div>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
 
             {/* Bottom Save Button */}

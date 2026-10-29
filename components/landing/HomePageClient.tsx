@@ -227,6 +227,27 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const [content, setContent] = useState<CmsContentSchema>(initialContent || defaultCmsContent);
   const [isReviewTouchPaused, setIsReviewTouchPaused] = useState(false);
 
+  // Review Gallery States
+  const [playingReviewIndex, setPlayingReviewIndex] = useState<number | null>(null);
+  const reviewScrollRef = useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(true);
+
+  const scrollReviews = (direction: 'left' | 'right') => {
+    if (reviewScrollRef.current) {
+      const scrollAmount = direction === 'left' ? -340 : 340;
+      reviewScrollRef.current.scrollBy({ left: scrollAmount, behavior: 'smooth' });
+    }
+  };
+
+  const handleReviewScroll = () => {
+    if (reviewScrollRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = reviewScrollRef.current;
+      setCanScrollLeft(scrollLeft > 10);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 10);
+    }
+  };
+
   // Hero Video & Poster States
   const [isHeroMuted, setIsHeroMuted] = useState(false);
   const [isHeroPlaying, setIsHeroPlaying] = useState(false);
@@ -372,6 +393,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const getYouTubeId = (url?: string) => {
     const target = getCleanVideoUrl(url) || url;
     if (!target) return 'dQw4w9WgXcQ';
+    const shortsMatch = target.match(/(?:shorts\/)([\w-]{11})/);
+    if (shortsMatch && shortsMatch[1]) return shortsMatch[1];
     const match = target.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([\w-]{11})/);
     return match && match[1] ? match[1] : 'dQw4w9WgXcQ';
   };
@@ -655,6 +678,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=1&playlist=${vId}&cc_load_policy=0&cc_lang_pref=none${originParam}`;
   };
 
+  const getReviewEmbedUrl = (url: string) => {
+    const vId = getYouTubeId(url);
+    return `https://www.youtube.com/embed/${vId}?autoplay=1&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3`;
+  };
+
   const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
     const clean = getCleanVideoUrl(url) || url;
     const base = clean.split('?')[0];
@@ -662,62 +690,69 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return `${base}?autoplay=${ap}&loop=true&muted=false&preload=true&responsive=true`;
   };
 
-  const videoReviews = [
+  const videoReviews: CmsContentSchema['video_reviews']['items'] = [
     {
       stars: 5,
+      tag: 'FACE REVIEW',
       headline: '“Total beginners are now getting AED 1,000–1,500 in daily sales.”',
       author: 'Ali Raza — Lahore',
       result: 'AED 1,500 / Day',
       market: 'UAE Market',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'STUDENT REVIEW',
       headline: '“After getting mentorship and watching the course, I made €662 in sales within 6 days.”',
       author: 'Raza Ali — Karachi',
       result: '€662 in 6 Days',
       market: 'GCC & Global',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'STUDENT FEEDBACK',
       headline: '“AED 5,000 in sales and 56 orders within 5 days with supplier help.”',
       author: 'Hamza Tariq — Islamabad',
       result: 'AED 5,000 / Week',
       market: 'UAE Dropship',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'FACE REVIEW',
       headline: '“Students say the course is very easy to understand and follow on mobile.”',
       author: 'Zainab Bibi — Faisalabad',
       result: 'PKR 480,000 / Mo',
       market: 'Saudi & UAE',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'STUDENT REVIEW',
       headline: '“26 orders and AED 2,500 in sales with the direct help of Mentor Sami.”',
       author: 'Usman Ghani — Rawalpindi',
       result: 'AED 2,500 Sales',
       market: 'UAE Market',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'STUDENT FEEDBACK',
       headline: '“AED 1,485 in sales in just 3 days while working from home.”',
       author: 'Bilal Farooq — Multan',
       result: 'SAR 3,485 Profit',
       market: 'Saudi Market',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     },
     {
       stars: 5,
+      tag: 'FACE REVIEW',
       headline: '“I tried many courses before, but Sami’s practical GCC supplier list made all the difference.”',
       author: 'Farhan Sheikh — Peshawar',
       result: 'SAR 6,100 / 10 Days',
       market: 'KSA Market',
-      videoUrl: hero.video_url || 'https://www.youtube.com/embed/dQw4w9WgXcQ'
+      videoUrl: hero.video_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ'
     }
   ];
 
@@ -1487,102 +1522,189 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       </section>
 
       {/* ========================================================================= */}
-      {/* 6. REAL STUDENT VIDEO REVIEWS WITH CONTINUOUS MOVING STREAM */}
+      {/* 6. REAL STUDENT VIDEO REVIEWS (LEARN WITH AFAQ STYLE — MANUAL SWIPE & LIVE PLAY) */}
       {/* ========================================================================= */}
       {content.video_reviews?.enabled !== false && (
-      <section className="py-12 sm:py-20 bg-white overflow-hidden">
-        <div className="max-w-6xl mx-auto px-3 sm:px-6 lg:px-8">
+      <section className="py-14 sm:py-24 bg-[#0B0F19] text-white relative overflow-hidden border-y border-white/10">
+        {/* Glow ambient background */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(0,160,223,0.14)_0,transparent_65%)] pointer-events-none" />
+        <div className="absolute -bottom-24 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#00A0DF]/10 rounded-full blur-3xl pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           
+          {/* Section Header */}
           <div className="text-center max-w-3xl mx-auto mb-6 sm:mb-10">
-            <span className="section-tag-pill">{content.video_reviews?.badge || 'REAL STUDENT RESULTS'}</span>
-            <h2 className="text-2xl xs:text-3xl sm:text-4xl font-black text-slate-900 tracking-tight mb-2 sm:mb-3">
+            <span className="inline-block bg-[#00A0DF]/15 text-[#00A0DF] border border-[#00A0DF]/30 text-[11px] sm:text-xs font-black uppercase tracking-wider px-4 py-1.5 rounded-full mb-3 shadow-sm">
+              {content.video_reviews?.badge || 'REAL STUDENT PROOF'}
+            </span>
+            <h2 className="text-2xl xs:text-3xl sm:text-4xl md:text-5xl font-black text-white tracking-tight mb-3">
               {content.video_reviews?.title || 'Hear What Our Students Are Saying'}
             </h2>
-            <p className="text-xs sm:text-sm md:text-base text-slate-600 font-medium px-2">
+            <p className="text-xs sm:text-sm md:text-base text-slate-400 font-medium px-2">
               {content.video_reviews?.subtitle || 'Real student video reviews sharing their experience, support, and results after joining Ecom With Sami.'}
             </p>
           </div>
 
-          {/* Status Indicator */}
-          <div className="flex items-center justify-center gap-2 max-w-5xl mx-auto mb-5 px-2 text-[11px] sm:text-xs font-bold text-slate-500">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#00A0DF] animate-ping flex-shrink-0" />
-            <span>Continuous student review stream &bull; Hover or tap to pause &amp; watch</span>
+          {/* Navigation Controls & Status Bar */}
+          <div className="flex items-center justify-between max-w-7xl mx-auto mb-4 px-2 text-xs">
+            <div className="flex items-center gap-2 text-slate-400 font-semibold text-[11px] sm:text-xs">
+              <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse flex-shrink-0" />
+              <span>Verified Student Proof • Click any video to play directly</span>
+            </div>
+
+            {/* Desktop Navigation Arrows */}
+            <div className="hidden sm:flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollReviews('left')}
+                disabled={!canScrollLeft}
+                aria-label="Previous Reviews"
+                className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-white/10 flex items-center justify-center text-white transition-all active:scale-95 cursor-pointer"
+              >
+                <ChevronLeft size={18} />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollReviews('right')}
+                disabled={!canScrollRight}
+                aria-label="Next Reviews"
+                className="w-9 h-9 rounded-full bg-white/5 hover:bg-white/10 disabled:opacity-25 disabled:cursor-not-allowed border border-white/10 flex items-center justify-center text-white transition-all active:scale-95 cursor-pointer"
+              >
+                <ChevronRight size={18} />
+              </button>
+            </div>
           </div>
 
-          {/* CONTINUOUS MOVING STREAM */}
+          {/* MANUAL SWIPEABLE GALLERY (NO AUTO-SCROLL LOOP) */}
           <div 
-            className="space-y-4 overflow-hidden py-2 marquee-fade-mask relative touch-pan-x"
-            onTouchStart={() => setIsReviewTouchPaused(true)}
-            onTouchEnd={() => {
-              setTimeout(() => setIsReviewTouchPaused(false), 1200);
-            }}
+            ref={reviewScrollRef}
+            onScroll={handleReviewScroll}
+            className="flex items-stretch gap-4 sm:gap-6 overflow-x-auto no-scrollbar scroll-smooth snap-x snap-mandatory py-3 px-1"
+            style={{ WebkitOverflowScrolling: 'touch' }}
           >
-            <div 
-              className="animate-marquee-slow flex items-stretch gap-3.5 sm:gap-5"
-              style={{ animationPlayState: isReviewTouchPaused ? 'paused' : undefined }}
-            >
-              {[
-                ...(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews),
-                ...(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews),
-                ...(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews)
-              ].map((rev, idx) => (
+            {(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews).map((rev, idx) => {
+              const ytId = getYouTubeId(rev.videoUrl || hero.video_url);
+              const isPlaying = playingReviewIndex === idx;
+              const cardTag = rev.tag || (idx % 3 === 0 ? 'FACE REVIEW' : idx % 3 === 1 ? 'STUDENT REVIEW' : 'STUDENT FEEDBACK');
+              const thumbSrc = rev.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : '');
+
+              return (
                 <div
                   key={idx}
-                  role="button"
-                  tabIndex={0}
-                  style={{ touchAction: 'manipulation' }}
-                  onClick={() => openReviewVideo(rev.headline, rev.videoUrl || hero.video_url)}
-                  onTouchEnd={(e) => {
-                    e.stopPropagation();
-                    openReviewVideo(rev.headline, rev.videoUrl || hero.video_url);
-                  }}
-                  className="w-[265px] xs:w-[295px] sm:w-[340px] bg-white border border-gray-200 rounded-2xl p-4 sm:p-5 shadow-sm hover:shadow-2xl hover:border-[#00A0DF] transition-all flex flex-col justify-between flex-shrink-0 cursor-pointer card-hover-lift group select-none active:border-[#00A0DF]"
+                  className="w-[285px] xs:w-[320px] sm:w-[350px] bg-[#111827] border border-white/10 hover:border-[#00A0DF]/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl transition-all duration-300 flex flex-col justify-between flex-shrink-0 snap-start group select-none"
                 >
+                  {/* Top Row: Stars + Tag Pill */}
                   <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex gap-0.5 sm:gap-1 text-amber-400">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex gap-1 text-amber-400">
                         {[...Array(rev.stars || 5)].map((_, i) => (
-                          <Star key={i} size={13} className="fill-amber-400 text-amber-400 animate-star-twinkle" />
+                          <Star key={i} size={14} className="fill-amber-400 text-amber-400 animate-star-twinkle" />
                         ))}
                       </div>
-                      <span className="text-[9px] sm:text-[10px] font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full">
-                        {rev.result}
+                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/5 tracking-wider">
+                        {cardTag}
                       </span>
                     </div>
 
-                    <h3 className="text-xs sm:text-sm md:text-base font-bold text-slate-900 mb-3 min-h-[44px] leading-snug group-hover:text-[#00A0DF] transition-colors">
+                    {/* Main Video Box: Shows Face Thumbnail or Plays In-Place */}
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/5] flex items-center justify-center mb-3.5 border border-white/10 shadow-inner group/video">
+                      {isPlaying ? (
+                        <div className="relative w-full h-full bg-black">
+                          <iframe
+                            src={getReviewEmbedUrl(rev.videoUrl || hero.video_url)}
+                            title={rev.headline}
+                            className="w-full h-full rounded-2xl"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                          />
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setPlayingReviewIndex(null);
+                            }}
+                            className="absolute top-2.5 right-2.5 z-20 w-8 h-8 rounded-full bg-black/85 hover:bg-black text-white flex items-center justify-center backdrop-blur-md border border-white/20 shadow-xl transition-all cursor-pointer active:scale-95"
+                            title="Close Video"
+                          >
+                            <X size={16} />
+                          </button>
+                        </div>
+                      ) : (
+                        <div
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => setPlayingReviewIndex(idx)}
+                          className="relative w-full h-full cursor-pointer flex items-center justify-center"
+                        >
+                          {/* Student Face Thumbnail */}
+                          {thumbSrc ? (
+                            <img
+                              src={thumbSrc}
+                              alt={rev.author}
+                              className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
+                              onError={(e) => {
+                                if (ytId) {
+                                  (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+                                }
+                              }}
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500">
+                              <Play size={32} className="opacity-40" />
+                            </div>
+                          )}
+
+                          {/* Subtle Gradient Overlays */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 pointer-events-none" />
+
+                          {/* Center Play Button */}
+                          <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#00A0DF] hover:bg-[#008AC2] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/60 group-hover/video:scale-115 transition-all">
+                            <Play size={24} className="fill-current ml-1" />
+                          </div>
+
+                          {/* Inside Video Floating Badges */}
+                          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+                            <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-md">
+                              {rev.result}
+                            </span>
+                            <span className="text-[10px] sm:text-[11px] font-bold text-white bg-black/75 border border-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1 shadow-md">
+                              ▶ Watch Review
+                            </span>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Headline Quote */}
+                    <h3 className="text-xs sm:text-sm font-bold text-white mb-2 min-h-[38px] leading-snug group-hover:text-[#00A0DF] transition-colors">
                       {rev.headline}
                     </h3>
                   </div>
 
-                  <div>
-                    <div className="relative cursor-pointer rounded-xl overflow-hidden bg-slate-950 aspect-video flex items-center justify-center group-hover:border-[#00A0DF] mb-2.5 shadow-inner">
-                      <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#00A0DF] text-white flex items-center justify-center group-hover:scale-115 transition-transform shadow-lg shadow-[#00A0DF]/50">
-                        <Play size={18} className="fill-current ml-0.5" />
-                      </div>
-                      <span className="absolute bottom-2 left-2 text-[9px] sm:text-[10px] font-bold text-white bg-black/75 px-2 py-0.5 rounded backdrop-blur-sm">
-                        ▶ Watch Video
-                      </span>
-                    </div>
-
-                    <div className="flex items-center justify-between text-[10px] sm:text-[11px] text-slate-500 font-semibold">
-                      <span>{rev.author}</span>
-                      <span className="text-[#00A0DF] font-bold">{rev.market}</span>
-                    </div>
+                  {/* Card Bottom: Author & Market */}
+                  <div className="pt-2 border-t border-white/10 flex items-center justify-between text-xs">
+                    <span className="text-slate-400 font-semibold">{rev.author}</span>
+                    <span className="text-[#00A0DF] font-bold">{rev.market}</span>
                   </div>
                 </div>
-              ))}
-            </div>
+              );
+            })}
           </div>
 
-          <div className="text-center mt-8">
+          {/* Mobile Swipe Hint */}
+          <div className="flex sm:hidden items-center justify-center gap-2 mt-4 text-[11px] font-semibold text-slate-400">
+            <span>👈 Swipe sideways to explore student reviews 👉</span>
+          </div>
+
+          {/* Section Bottom CTA */}
+          <div className="text-center mt-10">
             <Link
               href="/enrollment"
-              className="lwa-btn px-8 sm:px-10 py-3.5 sm:py-4 text-xs xs:text-sm sm:text-base font-black rounded-xl"
+              className="lwa-btn px-8 sm:px-12 py-4 text-xs xs:text-sm sm:text-base font-black rounded-xl shadow-2xl"
             >
               YES! I WANT TO LEARN THIS
             </Link>
-            <p className="text-[11px] sm:text-xs text-slate-500 font-semibold mt-2.5">
+            <p className="text-[11px] sm:text-xs text-slate-400 font-semibold mt-3">
               Learn step-by-step with lifetime mentorship support.
             </p>
           </div>
