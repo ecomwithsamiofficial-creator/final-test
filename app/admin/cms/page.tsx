@@ -5694,7 +5694,7 @@ export default function AdminCmsPage() {
                           author: 'Student Name — City',
                           result: 'PKR 150K+ / 10 Days',
                           market: 'UAE Market',
-                          tag: 'FACE REVIEW',
+                          tag: 'Honest Review',
                           aspectRatio: 'portrait',
                           videoUrl: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
                           stars: 5
@@ -5779,8 +5779,8 @@ export default function AdminCmsPage() {
                           {idx + 1}
                         </span>
                         <span className="text-xs font-bold text-white">{item.author || 'Student'}</span>
-                        <span className="text-[10px] uppercase font-extrabold px-2 py-0.5 rounded bg-white/10 text-slate-300">
-                          {item.tag || 'FACE REVIEW'}
+                        <span className="text-[10px] uppercase font-extrabold px-2.5 py-0.5 rounded-full bg-[#00A0DF]/15 border border-[#00A0DF]/30 text-[#00A0DF]">
+                          {item.tag && item.tag.toUpperCase() !== 'FACE REVIEW' ? item.tag : 'Honest Review'}
                         </span>
                       </div>
                       <div className="flex items-center gap-1">
@@ -5950,8 +5950,8 @@ export default function AdminCmsPage() {
                             <div className="flex gap-1.5">
                               <input
                                 type="text"
-                                value={item.tag || 'FACE REVIEW'}
-                                placeholder="FACE REVIEW"
+                                value={item.tag && item.tag.toUpperCase() !== 'FACE REVIEW' ? item.tag : 'Honest Review'}
+                                placeholder="e.g. Honest Review"
                                 onChange={(e) => {
                                   const current = [...(cmsData.video_reviews?.items || defaultCmsContent.video_reviews.items)];
                                   current[idx] = { ...current[idx], tag: e.target.value };
@@ -5965,7 +5965,7 @@ export default function AdminCmsPage() {
                             </div>
                             {/* Quick tag suggestions */}
                             <div className="flex gap-1 mt-1">
-                              {['FACE REVIEW', 'STUDENT REVIEW', 'STUDENT FEEDBACK'].map((t) => (
+                              {['Honest Review', 'Verified Story', 'Live Result'].map((t) => (
                                 <button
                                   key={t}
                                   type="button"

@@ -694,7 +694,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
   const videoReviews: CmsContentSchema['video_reviews']['items'] = [
     {
       stars: 5,
-      tag: 'FACE REVIEW',
+      tag: 'Honest Review',
       headline: '“Total beginners are now getting AED 1,000–1,500 in daily sales.”',
       author: 'Ali Raza — Lahore',
       result: 'AED 1,500 / Day',
@@ -703,7 +703,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'STUDENT REVIEW',
+      tag: 'Student Story',
       headline: '“After getting mentorship and watching the course, I made €662 in sales within 6 days.”',
       author: 'Raza Ali — Karachi',
       result: '€662 in 6 Days',
@@ -712,7 +712,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'STUDENT FEEDBACK',
+      tag: 'Verified Proof',
       headline: '“AED 5,000 in sales and 56 orders within 5 days with supplier help.”',
       author: 'Hamza Tariq — Islamabad',
       result: 'AED 5,000 / Week',
@@ -721,7 +721,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'FACE REVIEW',
+      tag: 'Honest Review',
       headline: '“Students say the course is very easy to understand and follow on mobile.”',
       author: 'Zainab Bibi — Faisalabad',
       result: 'PKR 480,000 / Mo',
@@ -730,7 +730,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'STUDENT REVIEW',
+      tag: 'Student Story',
       headline: '“26 orders and AED 2,500 in sales with the direct help of Mentor Sami.”',
       author: 'Usman Ghani — Rawalpindi',
       result: 'AED 2,500 Sales',
@@ -739,7 +739,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'STUDENT FEEDBACK',
+      tag: 'Verified Proof',
       headline: '“AED 1,485 in sales in just 3 days while working from home.”',
       author: 'Bilal Farooq — Multan',
       result: 'SAR 3,485 Profit',
@@ -748,7 +748,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     },
     {
       stars: 5,
-      tag: 'FACE REVIEW',
+      tag: 'Honest Review',
       headline: '“I tried many courses before, but Sami’s practical GCC supplier list made all the difference.”',
       author: 'Farhan Sheikh — Peshawar',
       result: 'SAR 6,100 / 10 Days',
@@ -1586,7 +1586,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
             {(content.video_reviews?.items && content.video_reviews.items.length > 0 ? content.video_reviews.items : videoReviews).map((rev, idx) => {
               const ytId = getYouTubeId(rev.videoUrl || hero.video_url);
               const isPlaying = playingReviewIndex === idx;
-              const cardTag = rev.tag || (idx % 3 === 0 ? 'FACE REVIEW' : idx % 3 === 1 ? 'STUDENT REVIEW' : 'STUDENT FEEDBACK');
+              const rawTag = rev.tag?.trim();
+              const cardTag = (!rawTag || rawTag.toUpperCase() === 'FACE REVIEW') ? 'Honest Review' : rawTag;
               const thumbSrc = rev.thumbnailUrl || (ytId ? `https://img.youtube.com/vi/${ytId}/maxresdefault.jpg` : '');
 
               return (
@@ -1594,17 +1595,28 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                   key={idx}
                   className="w-[285px] xs:w-[320px] sm:w-[350px] bg-[#111827] border border-white/10 hover:border-[#00A0DF]/60 rounded-2xl sm:rounded-3xl p-4 sm:p-5 shadow-2xl transition-all duration-300 flex flex-col justify-between flex-shrink-0 snap-start group select-none"
                 >
-                  {/* Top Row: Stars + Tag Pill */}
+                  {/* Top Row: Unique Ecom With Sami Branded Header */}
                   <div>
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex gap-1 text-amber-400">
-                        {[...Array(rev.stars || 5)].map((_, i) => (
-                          <Star key={i} size={14} className="fill-amber-400 text-amber-400 animate-star-twinkle" />
-                        ))}
+                    <div className="flex items-center justify-between mb-3.5">
+                      {/* Left: Verified Honest Review Badge */}
+                      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#00A0DF]/15 border border-[#00A0DF]/35 text-[#00A0DF] shadow-sm">
+                        <CheckCircle2 size={12} className="text-[#00A0DF] flex-shrink-0" />
+                        <span className="text-[10px] sm:text-[11px] font-black uppercase tracking-wider">
+                          {cardTag}
+                        </span>
                       </div>
-                      <span className="text-[10px] sm:text-[11px] font-extrabold uppercase px-2.5 py-0.5 rounded-full bg-white/10 text-slate-300 border border-white/5 tracking-wider">
-                        {cardTag}
-                      </span>
+
+                      {/* Right: Unique Golden Star Rating Capsule */}
+                      <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-500/10 border border-amber-500/25 shadow-inner">
+                        <div className="flex gap-0.5 text-amber-400">
+                          {[...Array(rev.stars || 5)].map((_, i) => (
+                            <Star key={i} size={11} className="fill-amber-400 text-amber-400 animate-star-twinkle" />
+                          ))}
+                        </div>
+                        <span className="text-[10px] sm:text-[11px] font-black text-amber-300">
+                          5.0
+                        </span>
+                      </div>
                     </div>
 
                     {/* Main Video Box: Shows Face Thumbnail or Plays In-Place */}
