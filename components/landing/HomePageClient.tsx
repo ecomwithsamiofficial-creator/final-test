@@ -680,7 +680,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
   const getReviewEmbedUrl = (url: string) => {
     const vId = getYouTubeId(url);
-    return `https://www.youtube.com/embed/${vId}?autoplay=1&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3`;
+    const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
+    return `https://www.youtube-nocookie.com/embed/${vId}?autoplay=1&mute=1&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${vId}${originParam}`;
   };
 
   const getBunnyEmbedUrl = (url: string, autoPlayOnStart = false) => {
@@ -1607,16 +1608,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     </div>
 
                     {/* Main Video Box: Shows Face Thumbnail or Plays In-Place */}
-                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/5] flex items-center justify-center mb-3.5 border border-white/10 shadow-inner group/video">
+                    <div className="relative rounded-2xl overflow-hidden bg-slate-950 aspect-[4/5] mb-3.5 border border-white/10 shadow-inner group/video">
                       {isPlaying ? (
                         <div className="relative w-full h-full bg-black">
                           <iframe
+                            id={`review-iframe-${idx}`}
                             src={getReviewEmbedUrl(rev.videoUrl || hero.video_url)}
                             title={rev.headline}
-                            className="w-full h-full rounded-2xl"
+                            className="w-full h-full rounded-2xl border-0"
                             allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                             allowFullScreen
                           />
+                          {/* Close Video button */}
                           <button
                             type="button"
                             onClick={(e) => {
@@ -1628,20 +1631,43 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           >
                             <X size={16} />
                           </button>
+
+                          {/* Quick Unmute Pill */}
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              const iframe = document.getElementById(`review-iframe-${idx}`) as HTMLIFrameElement;
+                              if (iframe && iframe.contentWindow) {
+                                iframe.contentWindow.postMessage(
+                                  JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
+                                  '*'
+                                );
+                                iframe.contentWindow.postMessage(
+                                  JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
+                                  '*'
+                                );
+                              }
+                            }}
+                            className="absolute bottom-3 left-3 z-20 bg-black/85 hover:bg-[#00A0DF] text-white border border-white/20 px-2.5 py-1 rounded-lg text-[10px] font-bold flex items-center gap-1.5 shadow-lg backdrop-blur-md transition-colors cursor-pointer"
+                          >
+                            <Volume2 size={13} className="text-[#00A0DF]" />
+                            <span>Tap for Sound</span>
+                          </button>
                         </div>
                       ) : (
                         <div
                           role="button"
                           tabIndex={0}
                           onClick={() => setPlayingReviewIndex(idx)}
-                          className="relative w-full h-full cursor-pointer flex items-center justify-center"
+                          className="relative w-full h-full cursor-pointer overflow-hidden group/thumb select-none"
                         >
-                          {/* Student Face Thumbnail */}
+                          {/* Student Face Thumbnail as ABSOLUTE full background */}
                           {thumbSrc ? (
                             <img
                               src={thumbSrc}
                               alt={rev.author}
-                              className="w-full h-full object-cover group-hover/video:scale-105 transition-transform duration-500"
+                              className="absolute inset-0 w-full h-full object-cover group-hover/thumb:scale-105 transition-transform duration-500"
                               onError={(e) => {
                                 if (ytId) {
                                   (e.target as HTMLImageElement).src = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
@@ -1649,26 +1675,25 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                               }}
                             />
                           ) : (
-                            <div className="w-full h-full bg-slate-900 flex items-center justify-center text-slate-500">
+                            <div className="absolute inset-0 w-full h-full bg-slate-900 flex items-center justify-center text-slate-500">
                               <Play size={32} className="opacity-40" />
                             </div>
                           )}
 
-                          {/* Subtle Gradient Overlays */}
-                          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/25 to-black/30 pointer-events-none" />
+                          {/* Subtle Vignette Gradient Overlay */}
+                          <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-black/30 pointer-events-none" />
 
-                          {/* Center Play Button */}
-                          <div className="relative z-10 w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-[#00A0DF] hover:bg-[#008AC2] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/60 group-hover/video:scale-115 transition-all">
-                            <Play size={24} className="fill-current ml-1" />
+                          {/* EXACT CENTER Play Button */}
+                          <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-10">
+                            <div className="w-16 h-16 sm:w-18 sm:h-18 rounded-full bg-[#00A0DF] hover:bg-[#008AC2] text-white flex items-center justify-center shadow-2xl shadow-[#00A0DF]/70 group-hover/thumb:scale-110 transition-transform duration-300">
+                              <Play size={28} className="fill-current ml-1" />
+                            </div>
                           </div>
 
-                          {/* Inside Video Floating Badges */}
-                          <div className="absolute bottom-3 left-3 right-3 z-10 flex items-center justify-between pointer-events-none">
+                          {/* Bottom Result Pill Only (Watch Review pill removed) */}
+                          <div className="absolute bottom-3 left-3 z-10 pointer-events-none">
                             <span className="text-[10px] sm:text-[11px] font-black text-emerald-300 bg-emerald-950/85 border border-emerald-500/40 px-2.5 py-1 rounded-lg backdrop-blur-md shadow-md">
                               {rev.result}
-                            </span>
-                            <span className="text-[10px] sm:text-[11px] font-bold text-white bg-black/75 border border-white/10 px-2.5 py-1 rounded-lg backdrop-blur-md flex items-center gap-1 shadow-md">
-                              ▶ Watch Review
                             </span>
                           </div>
                         </div>
