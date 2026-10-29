@@ -4709,7 +4709,7 @@ export default function AdminCmsPage() {
                     type="button"
                     onClick={() => setCmsData({
                       ...cmsData,
-                      mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: '/sami-logo.jpg' }
+                      mentor: { ...(cmsData.mentor || defaultCmsContent.mentor), image: '/mentor-profile.webp' }
                     })}
                     className="text-[11px] text-slate-400 hover:text-white flex items-center gap-1 transition-colors pt-1"
                   >

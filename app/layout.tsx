@@ -57,9 +57,15 @@ export const metadata: Metadata = {
     type: 'website',
     images: [
       {
-        url: '/sami-logo.jpg',
-        width: 800,
-        height: 800,
+        url: 'https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1',
+        width: 1200,
+        height: 630,
+        alt: 'Sardar Samiullah - Ecom With Sami',
+      },
+      {
+        url: 'https://ecomwithsami.com/mentor-profile.png?v=sami2026_mentor_v1',
+        width: 600,
+        height: 600,
         alt: 'Sardar Samiullah - Ecom With Sami',
       },
     ],
@@ -68,19 +74,19 @@ export const metadata: Metadata = {
     card: 'summary_large_image',
     title: 'Ecom With Sami | Sardar Samiullah',
     description: 'Official e-commerce mentorship by Sardar Samiullah (Abbottabad, Pakistan). Complete step-by-step framework from dropshipping to private label brands.',
-    images: ['/sami-logo.jpg'],
+    images: ['https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1'],
     creator: '@ecomwithsami',
   },
   icons: {
     icon: [
-      { url: '/favicon-32x32.png?v=mentor_profile_2026', sizes: '32x32', type: 'image/png' },
-      { url: '/favicon-16x16.png?v=mentor_profile_2026', sizes: '16x16', type: 'image/png' },
-      { url: '/favicon.ico?v=mentor_profile_2026', sizes: 'any' },
-      { url: '/icon.png?v=mentor_profile_2026', type: 'image/png', sizes: '512x512' },
+      { url: '/favicon-32x32.png?v=sami2026_mentor_v1', sizes: '32x32', type: 'image/png' },
+      { url: '/favicon-16x16.png?v=sami2026_mentor_v1', sizes: '16x16', type: 'image/png' },
+      { url: '/favicon.ico?v=sami2026_mentor_v1', sizes: 'any' },
+      { url: '/icon.png?v=sami2026_mentor_v1', type: 'image/png', sizes: '512x512' },
     ],
-    shortcut: '/favicon.ico?v=mentor_profile_2026',
+    shortcut: '/favicon.ico?v=sami2026_mentor_v1',
     apple: [
-      { url: '/apple-icon.png?v=mentor_profile_2026', sizes: '180x180', type: 'image/png' },
+      { url: '/apple-icon.png?v=sami2026_mentor_v1', sizes: '180x180', type: 'image/png' },
     ],
   },
   category: 'education',
@@ -119,11 +125,21 @@ export default async function RootLayout({
         <link rel="dns-prefetch" href="https://www.youtube.com" />
         <link rel="dns-prefetch" href="https://i.ytimg.com" />
         <link rel="dns-prefetch" href="https://www.google.com" />
+        {/* Explicit Social Sharing & OpenGraph Meta Tags for Instagram, WhatsApp, Facebook, iMessage */}
+        <meta property="og:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
+        <meta property="og:image:secure_url" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
+        <meta property="og:image:type" content="image/jpeg" />
+        <meta property="og:image:width" content="1200" />
+        <meta property="og:image:height" content="630" />
+        <meta property="og:image:alt" content="Sardar Samiullah - Ecom With Sami" />
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:image" content="https://ecomwithsami.com/og-image.jpg?v=sami2026_mentor_v1" />
+
         {/* Immediate Browser Tab Favicon Invalidation (Cache Busting) */}
-        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026" />
-        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026" />
-        <link rel="shortcut icon" href="/favicon.ico?v=sami2026" />
-        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=sami2026" />
+        <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png?v=sami2026_mentor_v1" />
+        <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png?v=sami2026_mentor_v1" />
+        <link rel="shortcut icon" href="/favicon.ico?v=sami2026_mentor_v1" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-icon.png?v=sami2026_mentor_v1" />
         <JsonLd />
         {/* Google tag (gtag.js) - Google Analytics */}
         <script async src="https://www.googletagmanager.com/gtag/js?id=G-FJBC4S9KM3" />

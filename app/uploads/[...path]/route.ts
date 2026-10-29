@@ -146,8 +146,8 @@ export async function GET(
 
     // 4. Fallback for missing uploads
     if (isMentor) {
-      const fallbackMentorPath = path.join(process.cwd(), 'public', 'images', 'sami-logo.jpg');
-      const altMentorPath = path.join(process.cwd(), 'public', 'sami-logo.jpg');
+      const fallbackMentorPath = path.join(process.cwd(), 'public', 'mentor-profile.webp');
+      const altMentorPath = path.join(process.cwd(), 'public', 'mentor-profile.png');
       const finalMentorPath = fs.existsSync(fallbackMentorPath) ? fallbackMentorPath : (fs.existsSync(altMentorPath) ? altMentorPath : null);
 
       if (finalMentorPath) {

@@ -53,7 +53,7 @@ export function JsonLd() {
     jobTitle: 'Founder & E-Commerce Agency Director',
     description: 'Sardar Samiullah (22 years old, based in Abbottabad, Pakistan) is the founder of Ecom With Sami and director of a professional e-commerce agency. He has mentored 1,200+ students on building scalable e-commerce businesses—from beginner dropshipping to white label, private label, and international expansion.',
     url: `${baseUrl}/about`,
-    image: `${baseUrl}/sami-logo.jpg`,
+    image: `${baseUrl}/mentor-profile.png`,
     homeLocation: {
       '@type': 'Place',
       name: 'Abbottabad, Khyber Pakhtunkhwa, Pakistan'
@@ -96,12 +96,12 @@ export function JsonLd() {
     url: baseUrl,
     logo: {
       '@type': 'ImageObject',
-      url: `${baseUrl}/sami-logo.jpg`,
-      width: 800,
-      height: 800,
+      url: `${baseUrl}/mentor-profile.png`,
+      width: 600,
+      height: 600,
       caption: 'Ecom With Sami Logo'
     },
-    image: `${baseUrl}/sami-logo.jpg`,
+    image: `${baseUrl}/mentor-profile.png`,
     description: 'Premier e-commerce education and agency platform in Pakistan founded by Sardar Samiullah (Abbottabad). Mentored 1,200+ students. Specializing in teaching students to start with low-risk dropshipping, transition into white label, scale into private label brands, and expand internationally using the 3-Shift Scaling Formula™ and Order Booster System.',
     founder: {
       '@id': `${baseUrl}/#person`
