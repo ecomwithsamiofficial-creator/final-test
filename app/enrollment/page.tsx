@@ -1,12 +1,22 @@
 import { dbGetCmsSettings } from '@/lib/database';
+import { defaultCmsContent } from '@/utils/cmsStore';
 import { EnrollmentPageClient } from './EnrollmentPageClient';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 
 export default async function EnrollmentPage() {
-  const content = await dbGetCmsSettings();
-  const cp = content.checkout_page;
+  let content = defaultCmsContent;
+  try {
+    const fetched = await dbGetCmsSettings();
+    if (fetched && typeof fetched === 'object') {
+      content = fetched;
+    }
+  } catch (err) {
+    console.error('[EnrollmentPage] Failed to fetch CMS settings:', err);
+  }
+
+  const cp = content?.checkout_page || defaultCmsContent.checkout_page;
 
   const duration = Math.max(
     1,

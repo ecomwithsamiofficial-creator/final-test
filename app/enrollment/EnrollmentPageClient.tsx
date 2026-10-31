@@ -84,8 +84,10 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
   });
 
   const [paymentMethods, setPaymentMethods] = useState(() => {
-    const rawMethods = initialContent?.payment_methods || defaultCmsContent.payment_methods;
-    return rawMethods.map(sanitizeMethod);
+    const rawMethods = (Array.isArray(initialContent?.payment_methods) && initialContent.payment_methods.length > 0)
+      ? initialContent.payment_methods
+      : defaultCmsContent.payment_methods;
+    return (rawMethods || []).map(sanitizeMethod);
   });
 
   const initiateCheckoutFired = useRef(false);
@@ -165,7 +167,18 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
     };
   }, []);
 
-  const currentPayment = paymentMethods.find(p => p.id === selectedMethod) || paymentMethods[0];
+  const fallbackPayment = {
+    id: 'easypaisa',
+    name: 'EasyPaisa',
+    accountTitle: 'Sardar Samiullah',
+    accountNumber: '03438579384',
+    badge: 'Instant Transfer',
+    themeColor: 'border-emerald-500 bg-emerald-500/10 text-emerald-400'
+  };
+
+  const currentPayment = (Array.isArray(paymentMethods) && paymentMethods.length > 0)
+    ? (paymentMethods.find(p => p && p.id === selectedMethod) || paymentMethods[0] || fallbackPayment)
+    : fallbackPayment;
 
   const [showSuccessModal, setShowSuccessModal] = useState(false);
   const [isCompressing, setIsCompressing] = useState(false);
