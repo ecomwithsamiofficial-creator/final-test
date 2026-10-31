@@ -1006,7 +1006,7 @@ export const defaultCmsContent: CmsContentSchema = {
     whatsappGreeting: 'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.'
   },
   pixels: {
-    meta_pixel_id: '',
+    meta_pixel_id: '2449386688923586',
     tiktok_pixel_id: '',
     ga4_measurement_id: '',
     snapchat_pixel_id: '',

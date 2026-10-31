@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
+import { usePathname } from 'next/navigation';
 
 export interface ActivePixel {
   id: number;
@@ -12,6 +13,19 @@ export interface ActivePixel {
 
 export function DynamicPixels() {
   const [, setPixels] = useState<ActivePixel[]>([]);
+  const pathname = usePathname();
+  const isFirstRender = useRef(true);
+
+  // Track PageView on SPA route changes
+  useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    if (typeof window !== 'undefined' && (window as any).fbq) {
+      (window as any).fbq('track', 'PageView');
+    }
+  }, [pathname]);
 
   useEffect(() => {
     // Only execute on browser client

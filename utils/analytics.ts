@@ -65,6 +65,72 @@ export const analytics = {
     } catch (err) {
       console.warn('[Analytics] Failed to track InitiateCheckout:', err);
     }
+  },
+
+  trackPurchase: (data?: AnalyticsEventData) => {
+    try {
+      if (typeof window !== 'undefined') {
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'Purchase', data);
+        }
+        if ((window as any).ttq) {
+          (window as any).ttq.track('CompletePayment', data);
+        }
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'purchase', data);
+        }
+      }
+    } catch (err) {
+      console.warn('[Analytics] Failed to track Purchase:', err);
+    }
+  },
+
+  trackViewContent: (data?: AnalyticsEventData) => {
+    try {
+      if (typeof window !== 'undefined') {
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'ViewContent', data);
+        }
+        if ((window as any).ttq) {
+          (window as any).ttq.track('ViewContent', data);
+        }
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'view_item', data);
+        }
+      }
+    } catch (err) {
+      console.warn('[Analytics] Failed to track ViewContent:', err);
+    }
+  },
+
+  trackLead: (data?: AnalyticsEventData) => {
+    try {
+      if (typeof window !== 'undefined') {
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'Lead', data);
+        }
+        if ((window as any).ttq) {
+          (window as any).ttq.track('SubmitForm', data);
+        }
+        if ((window as any).gtag) {
+          (window as any).gtag('event', 'generate_lead', data);
+        }
+      }
+    } catch (err) {
+      console.warn('[Analytics] Failed to track Lead:', err);
+    }
+  },
+
+  trackPageView: () => {
+    try {
+      if (typeof window !== 'undefined') {
+        if ((window as any).fbq) {
+          (window as any).fbq('track', 'PageView');
+        }
+      }
+    } catch (err) {
+      console.warn('[Analytics] Failed to track PageView:', err);
+    }
   }
 };
 

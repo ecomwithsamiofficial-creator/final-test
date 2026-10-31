@@ -26,6 +26,7 @@ import {
 } from 'lucide-react';
 import { useContactConfig } from '@/utils/contactConfig';
 import { defaultCmsContent, CmsContentSchema } from '@/utils/cmsStore';
+import { analytics } from '@/utils/analytics';
 
 interface EnrollmentPageClientProps {
   initialContent?: CmsContentSchema | null;
@@ -88,6 +89,15 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
   });
 
   useEffect(() => {
+    // Fire Meta / TikTok / GA4 InitiateCheckout event
+    analytics.trackInitiateCheckout({
+      content_name: 'Ecom With Sami Mentorship Program',
+      content_category: 'Course Enrollment',
+      content_type: 'product',
+      value: 3799,
+      currency: 'PKR'
+    });
+
     const syncData = async () => {
       // 1. Instant hydration from localStorage for 0ms transitions
       try {
@@ -284,6 +294,23 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
       const data = await res.json();
 
       if (data.success && (data.enrollment || data.trackingCode)) {
+        // Fire Meta Pixel Purchase event with value & currency
+        analytics.trackPurchase({
+          content_name: 'Ecom With Sami Mentorship Program',
+          content_type: 'product',
+          value: 3799,
+          currency: 'PKR',
+          transaction_id: data.trackingCode || `SAMI-ENR-${Date.now()}`
+        });
+
+        // Fire Meta Pixel Lead event
+        analytics.trackLead({
+          name: formData.fullName,
+          phone: formData.phone,
+          city: formData.city,
+          payment_method: currentPayment.name
+        });
+
         const studentInfo = data.enrollment || {
           ...payload,
           name: formData.fullName,
