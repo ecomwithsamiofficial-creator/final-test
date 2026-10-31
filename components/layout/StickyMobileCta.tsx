@@ -4,7 +4,6 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Zap, CheckCircle2 } from 'lucide-react';
 import { usePathname } from 'next/navigation';
-import { analytics } from '@/utils/analytics';
 
 export function StickyMobileCta() {
   const pathname = usePathname() || '/';
@@ -56,7 +55,6 @@ export function StickyMobileCta() {
         {/* CTA Button */}
         <Link
           href="/enrollment"
-          onClick={() => analytics.trackInitiateCheckout({ value: 3799, currency: 'PKR', content_name: 'Sticky Mobile CTA' })}
           className="bg-[#00A0DF] hover:bg-[#008ac2] text-white px-5 sm:px-8 py-2 sm:py-2.5 rounded-lg text-xs sm:text-sm font-black uppercase tracking-wider shadow-md hover:shadow-lg transition-all inline-flex items-center gap-1.5 whitespace-nowrap"
         >
           <span>GET ACCESS NOW</span>

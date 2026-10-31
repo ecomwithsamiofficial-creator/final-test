@@ -13,17 +13,20 @@ export interface ActivePixel {
 
 export function DynamicPixels() {
   const [, setPixels] = useState<ActivePixel[]>([]);
-  const pathname = usePathname();
-  const isFirstRender = useRef(true);
+  const lastTrackedPath = useRef<string | null>(null);
 
-  // Track PageView on SPA route changes
+  // Track PageView strictly on actual SPA route transitions (never on initial load or re-render)
   useEffect(() => {
-    if (isFirstRender.current) {
-      isFirstRender.current = false;
+    if (!pathname) return;
+    if (lastTrackedPath.current === null) {
+      lastTrackedPath.current = pathname;
       return;
     }
-    if (typeof window !== 'undefined' && (window as any).fbq) {
-      (window as any).fbq('track', 'PageView');
+    if (lastTrackedPath.current !== pathname) {
+      lastTrackedPath.current = pathname;
+      if (typeof window !== 'undefined' && (window as any).fbq) {
+        (window as any).fbq('track', 'PageView');
+      }
     }
   }, [pathname]);
 
