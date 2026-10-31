@@ -65,6 +65,7 @@ export function DynamicPixels() {
 
       // 1. Standard Platform Initializations
       if (pixel.platform_name === 'Meta Pixel' && pixel.pixel_id) {
+        if (typeof window !== 'undefined' && (window as any).fbq) return;
         injectMetaPixel(pixel.pixel_id, scriptTagId, targetElement);
       } else if (pixel.platform_name === 'TikTok Pixel' && pixel.pixel_id) {
         injectTikTokPixel(pixel.pixel_id, scriptTagId, targetElement);

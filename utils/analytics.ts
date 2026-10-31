@@ -70,14 +70,35 @@ export const analytics = {
   trackPurchase: (data?: AnalyticsEventData) => {
     try {
       if (typeof window !== 'undefined') {
+        const orderId = data?.transaction_id || data?.order_id || `SAMI-${Date.now()}`;
+        const val = Number(data?.value) || 3799;
+        const cur = data?.currency || 'PKR';
+        const contentName = data?.content_name || 'Ecom With Sami Mentorship Program';
+
+        const purchasePayload = {
+          value: val,
+          currency: cur,
+          content_name: contentName,
+          content_type: 'product',
+          contents: [{ id: 'sami-mentorship-masterclass', quantity: 1, item_price: val }],
+          num_items: 1,
+          order_id: orderId,
+          ...data
+        };
+
         if ((window as any).fbq) {
-          (window as any).fbq('track', 'Purchase', data);
+          (window as any).fbq('track', 'Purchase', purchasePayload, { eventID: orderId });
         }
         if ((window as any).ttq) {
-          (window as any).ttq.track('CompletePayment', data);
+          (window as any).ttq.track('CompletePayment', purchasePayload, { event_id: orderId });
         }
         if ((window as any).gtag) {
-          (window as any).gtag('event', 'purchase', data);
+          (window as any).gtag('event', 'purchase', {
+            transaction_id: orderId,
+            value: val,
+            currency: cur,
+            items: [{ item_name: contentName, price: val, quantity: 1 }]
+          });
         }
       }
     } catch (err) {

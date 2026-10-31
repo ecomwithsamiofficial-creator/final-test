@@ -171,6 +171,7 @@ export default async function RootLayout({
               t.src=v;s=b.getElementsByTagName(e)[0];
               s.parentNode.insertBefore(t,s)}(window, document,'script',
               'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('set', 'autoConfig', false, '${metaPixelId}');
               fbq('init', '${metaPixelId}');
               fbq('track', 'PageView');
             `,
