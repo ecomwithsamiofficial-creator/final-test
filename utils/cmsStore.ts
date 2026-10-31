@@ -1003,7 +1003,7 @@ export const defaultCmsContent: CmsContentSchema = {
     location: 'Abbottabad, Khyber Pakhtunkhwa, Pakistan',
     headOffice: 'Abbottabad, Khyber Pakhtunkhwa, Pakistan',
     regionalOffice: '',
-    whatsappGreeting: 'Salam Mentor Sami! I want to get complete details about your E-Commerce & Dropshipping Masterclass.'
+    whatsappGreeting: 'Hi Ecom With Sami! I want to enroll in your mentorship. Please guide me through the enrollment process.'
   },
   pixels: {
     meta_pixel_id: '2449386688923586',

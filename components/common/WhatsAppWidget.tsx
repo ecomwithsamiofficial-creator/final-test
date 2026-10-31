@@ -15,7 +15,8 @@ export function WhatsAppWidget() {
     return null;
   }
 
-  const whatsappUrl = getWhatsAppUrl();
+  const WHATSAPP_ENROLL_MESSAGE = 'Hi Ecom With Sami! I want to enroll in your mentorship. Please guide me through the enrollment process.';
+  const whatsappUrl = getWhatsAppUrl(WHATSAPP_ENROLL_MESSAGE);
 
   return (
     <div

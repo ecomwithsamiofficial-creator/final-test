@@ -21,9 +21,9 @@ export const contactConfig: ContactConfig = {
   headOffice: 'Abbottabad, Khyber Pakhtunkhwa, Pakistan',
   regionalOffice: '',
   supportHours: '9:00 AM – 5:00 PM PKT (Mon – Sat)',
-  whatsappGreeting: 'Salam Sami! I am interested in joining the 2026 Dropshipping Masterclass. Please share details.',
+  whatsappGreeting: 'Hi Ecom With Sami! I want to enroll in your mentorship. Please guide me through the enrollment process.',
   getWhatsAppUrl: (message?: string) => {
-    const defaultMsg = 'Salam Sami! I am interested in joining the 2026 Dropshipping Masterclass. Please share details.';
+    const defaultMsg = 'Hi Ecom With Sami! I want to enroll in your mentorship. Please guide me through the enrollment process.';
     const encoded = encodeURIComponent(message || defaultMsg);
     return `https://wa.me/923330093269?text=${encoded}`;
   }
@@ -60,7 +60,7 @@ export function getDynamicContactConfig(): ContactConfig {
     supportHours: contactConfig.supportHours,
     whatsappGreeting,
     getWhatsAppUrl: (message?: string) => {
-      const msg = message || whatsappGreeting || 'Salam Sami! I am interested in joining the 2026 Dropshipping Masterclass.';
+      const msg = message || whatsappGreeting || 'Hi Ecom With Sami! I want to enroll in your mentorship. Please guide me through the enrollment process.';
       return `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     }
   };
