@@ -99,13 +99,9 @@ export default async function RootLayout({
 }) {
   let activeTheme = 'default';
   let customColors = { ...DEFAULT_THEME_COLORS };
-  let metaPixelId = '2449386688923586';
 
   try {
     const cms = await dbGetCmsSettings();
-    if (cms?.pixels?.meta_pixel_id && cms.pixels.meta_pixel_id.trim()) {
-      metaPixelId = cms.pixels.meta_pixel_id.trim();
-    }
     if (cms?.theme) {
       if (cms.theme.active_preset) activeTheme = cms.theme.active_preset;
       else if (cms.theme.active_theme) activeTheme = cms.theme.active_theme;
@@ -158,25 +154,6 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Meta Pixel Code (Official) */}
-        <script
-          id="meta-pixel-init"
-          dangerouslySetInnerHTML={{
-            __html: `
-              !function(f,b,e,v,n,t,s)
-              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
-              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
-              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
-              n.queue=[];t=b.createElement(e);t.async=!0;
-              t.src=v;s=b.getElementsByTagName(e)[0];
-              s.parentNode.insertBefore(t,s)}(window, document,'script',
-              'https://connect.facebook.net/en_US/fbevents.js');
-              fbq('set', 'autoConfig', false, '${metaPixelId}');
-              fbq('init', '${metaPixelId}');
-              fbq('track', 'PageView');
-            `,
-          }}
-        />
         <style id="sami-dynamic-theme" dangerouslySetInnerHTML={{ __html: dynamicCss }} />
         <script
           dangerouslySetInnerHTML={{
@@ -193,15 +170,6 @@ export default async function RootLayout({
         />
       </head>
       <body className="min-h-screen flex flex-col bg-white text-slate-900 antialiased selection:bg-[#00A0DF] selection:text-white">
-        <noscript>
-          <img
-            height="1"
-            width="1"
-            style={{ display: 'none' }}
-            src={`https://www.facebook.com/tr?id=${metaPixelId}&ev=PageView&noscript=1`}
-            alt=""
-          />
-        </noscript>
         <AntiInspectShield />
         <DynamicPixels />
         <LiveVisitorTracker />

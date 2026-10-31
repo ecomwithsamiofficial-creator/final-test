@@ -35,6 +35,11 @@ export function DynamicPixels() {
     if (typeof window === 'undefined') return;
 
     const loadPixels = () => {
+      // 1. Safely initialize Meta Pixel asynchronously without blocking SSR hydration
+      if (typeof window !== 'undefined' && !(window as any).fbq && document.head) {
+        injectMetaPixel('2449386688923586', 'meta-pixel-official', document.head);
+      }
+
       fetch('/api/pixels/active')
         .then(res => res.json())
         .then(data => {
@@ -49,10 +54,10 @@ export function DynamicPixels() {
     };
 
     if ('requestIdleCallback' in window) {
-      const handle = (window as any).requestIdleCallback(loadPixels, { timeout: 2000 });
+      const handle = (window as any).requestIdleCallback(loadPixels, { timeout: 1500 });
       return () => (window as any).cancelIdleCallback?.(handle);
     } else {
-      const timer = setTimeout(loadPixels, 1000);
+      const timer = setTimeout(loadPixels, 800);
       return () => clearTimeout(timer);
     }
   }, []);
