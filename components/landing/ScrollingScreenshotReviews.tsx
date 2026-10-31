@@ -21,8 +21,6 @@ interface ScrollingScreenshotReviewsProps {
 
 export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScreenshotReviewsProps) {
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [loadedCol1, setLoadedCol1] = useState<Record<number, boolean>>({});
-  const [loadedCol2, setLoadedCol2] = useState<Record<number, boolean>>({});
 
   // Close modal on Escape key
   useEffect(() => {
@@ -137,7 +135,6 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                 {loopCol1.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
                   const isInitial = i < 3;
-                  const isLoaded = loadedCol1[i];
 
                   return (
                     <div
@@ -153,13 +150,12 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                       className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-slate-900/90 shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
-                      {!isLoaded && (
-                        <div className="absolute inset-2 rounded-xl bg-slate-800/80 animate-pulse flex items-center justify-center">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            Chat Proof
-                          </span>
-                        </div>
-                      )}
+                      {/* Subtle base placeholder behind image */}
+                      <div className="absolute inset-2 rounded-xl bg-slate-800/60 flex items-center justify-center pointer-events-none z-0">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          Chat Proof
+                        </span>
+                      </div>
 
                       <img
                         src={finalUrl}
@@ -168,15 +164,13 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         decoding="async"
                         // @ts-ignore
                         fetchpriority={isInitial ? 'high' : 'auto'}
-                        onLoad={() => setLoadedCol1((prev) => ({ ...prev, [i]: true }))}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.src = '/uploads/reviews/review_verified_student.svg';
-                          setLoadedCol1((prev) => ({ ...prev, [i]: true }));
                         }}
-                        className={`w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className="relative z-10 w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-200"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
+                      <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
                         <span>Click to Zoom</span>
                       </div>
@@ -195,7 +189,6 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                 {loopCol2.map((src, i) => {
                   const finalUrl = getReviewUrl(src);
                   const isInitial = i < 3;
-                  const isLoaded = loadedCol2[i];
 
                   return (
                     <div
@@ -211,13 +204,12 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                       className="relative group rounded-2xl overflow-hidden border border-white/15 hover:border-[#00A0DF]/60 bg-slate-900/90 shadow-lg cursor-pointer transition-transform duration-200 active:opacity-90 flex-shrink-0 select-none flex items-center justify-center p-1 min-h-[260px] xs:min-h-[290px] sm:min-h-[360px] max-h-[380px] sm:max-h-[460px]"
                       title="Click to zoom screenshot"
                     >
-                      {!isLoaded && (
-                        <div className="absolute inset-2 rounded-xl bg-slate-800/80 animate-pulse flex items-center justify-center">
-                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
-                            Chat Proof
-                          </span>
-                        </div>
-                      )}
+                      {/* Subtle base placeholder behind image */}
+                      <div className="absolute inset-2 rounded-xl bg-slate-800/60 flex items-center justify-center pointer-events-none z-0">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">
+                          Chat Proof
+                        </span>
+                      </div>
 
                       <img
                         src={finalUrl}
@@ -226,15 +218,13 @@ export function ScrollingScreenshotReviews({ data, backupImages }: ScrollingScre
                         decoding="async"
                         // @ts-ignore
                         fetchpriority={isInitial ? 'high' : 'auto'}
-                        onLoad={() => setLoadedCol2((prev) => ({ ...prev, [i]: true }))}
                         onError={(e) => {
                           const img = e.target as HTMLImageElement;
                           img.src = '/uploads/reviews/review_verified_student.svg';
-                          setLoadedCol2((prev) => ({ ...prev, [i]: true }));
                         }}
-                        className={`w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-300 ${isLoaded ? 'opacity-100' : 'opacity-0'}`}
+                        className="relative z-10 w-full h-auto max-h-[370px] sm:max-h-[450px] object-contain rounded-xl block pointer-events-none transition-opacity duration-200"
                       />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
+                      <div className="absolute inset-0 z-20 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white text-[11px] font-bold pointer-events-none rounded-xl">
                         <ZoomIn size={16} className="text-[#00A0DF]" />
                         <span>Click to Zoom</span>
                       </div>
