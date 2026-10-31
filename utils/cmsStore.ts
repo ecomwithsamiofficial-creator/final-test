@@ -1087,7 +1087,9 @@ export const defaultCmsContent: CmsContentSchema = {
           'Creative Testing - The Step 99% of Sellers Skip',
           'My Exact Creative Formula, Word-for-Word',
           'The 3-Step Test Before You Risk a Single Rupee',
-          'Insider Supplier Sourcing - Who I Actually Trust'
+          'Insider Supplier Sourcing - Who I Actually Trust',
+          'Creation Of  High Performing Ai Creatives Proper A-Z',
+          'How To Create Ai Creatives Proper Live Methods'
         ]
       },
       {
@@ -1110,7 +1112,10 @@ export const defaultCmsContent: CmsContentSchema = {
           'Hidden Parameter Errors - Every Wrong Signal You\'re Sending to TikTok & Meta',
           'Why This Creates \'Blind Targeting?',
           'My Consistent-Sales Signal Formula',
-          'Most Sellers Think Their Pixel is Working - It Isn\'t'
+          'Most Sellers Think Their Pixel is Working - It Isn\'t',
+          'MY PRIVATE 3S SCALING FORMULA FOR QUICK SALES',
+          'ORDER BOOSTER LEADING FORMULA FOR BEGINNERS',
+          'HOW TO GET QUICK SALES FROM TIKTOK & META MY SECRET TECHNIQUES'
         ]
       },
       {
