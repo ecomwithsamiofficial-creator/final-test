@@ -17,17 +17,29 @@ export interface CurriculumModuleItem {
 
 export type ModuleItem = CurriculumModuleItem;
 
+function sortCurriculumModules<T extends { title?: string }>(items: T[]): T[] {
+  if (!Array.isArray(items)) return [];
+  return [...items].sort((a, b) => {
+    const numA = parseInt((a?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+    const numB = parseInt((b?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+    if (numA !== numB) return numA - numB;
+    return 0;
+  });
+}
+
 export function CurriculumAccordion({ modules: customModules }: { modules?: CurriculumModuleItem[] }) {
   const [openIndex, setOpenIndex] = useState<number | null>(0);
   const [moduleList, setModuleList] = useState<CurriculumModuleItem[]>(
-    Array.isArray(customModules)
-      ? customModules
-      : defaultCmsContent.homepage_curriculum?.modules || []
+    sortCurriculumModules(
+      Array.isArray(customModules)
+        ? customModules
+        : (defaultCmsContent.homepage_curriculum?.modules || [])
+    )
   );
 
   useEffect(() => {
     if (Array.isArray(customModules)) {
-      setModuleList(customModules);
+      setModuleList(sortCurriculumModules(customModules));
     }
   }, [customModules]);
 
@@ -39,7 +51,7 @@ export function CurriculumAccordion({ modules: customModules }: { modules?: Curr
         if (stored) {
           const parsed = JSON.parse(stored);
           if (Array.isArray(parsed?.homepage_curriculum?.modules)) {
-            setModuleList(parsed.homepage_curriculum.modules);
+            setModuleList(sortCurriculumModules(parsed.homepage_curriculum.modules));
           }
         }
       } catch {}

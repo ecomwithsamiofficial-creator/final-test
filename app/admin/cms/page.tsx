@@ -2022,19 +2022,30 @@ export default function AdminCmsPage() {
           };
 
           const updateModules = (newMods: typeof homeModules) => {
+            const sorted = [...newMods].sort((a, b) => {
+              const numA = parseInt((a?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+              const numB = parseInt((b?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+              if (numA !== numB) return numA - numB;
+              return 0;
+            });
             setCmsData({
               ...cmsData,
               homepage_curriculum: {
                 tag: cmsData.homepage_curriculum?.tag ?? defaultCmsContent.homepage_curriculum?.tag ?? '',
                 title: cmsData.homepage_curriculum?.title ?? defaultCmsContent.homepage_curriculum?.title ?? '',
                 subtitle: cmsData.homepage_curriculum?.subtitle ?? defaultCmsContent.homepage_curriculum?.subtitle ?? '',
-                modules: newMods
+                modules: sorted
               }
             });
           };
 
           const handleAddModule = () => {
-            const nextNum = homeModules.length + 1;
+            let maxNum = 0;
+            for (const m of homeModules) {
+              const n = parseInt((m?.title || '').match(/Module\s*(\d+)/i)?.[1] || '0', 10);
+              if (n > maxNum) maxNum = n;
+            }
+            const nextNum = maxNum > 0 ? maxNum + 1 : homeModules.length + 1;
             const newMod = {
               id: `mod_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
               title: `Module ${nextNum}: New Course Topic`,

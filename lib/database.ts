@@ -48,6 +48,16 @@ import {
   Lesson 
 } from '@/utils/db';
 
+export function sortCurriculumModules(modules: any[]): any[] {
+  if (!Array.isArray(modules)) return [];
+  return [...modules].sort((a, b) => {
+    const numA = parseInt((a?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+    const numB = parseInt((b?.title || '').match(/Module\s*(\d+)/i)?.[1] || '999', 10);
+    if (numA !== numB) return numA - numB;
+    return 0;
+  });
+}
+
 function parseCmsSchema(parsed: any): CmsContentSchema {
   return {
     ...defaultCmsContent,
@@ -145,7 +155,7 @@ function parseCmsSchema(parsed: any): CmsContentSchema {
           title: parsed.homepage_curriculum?.title ?? defaultCmsContent.homepage_curriculum?.title ?? '',
           subtitle: parsed.homepage_curriculum?.subtitle ?? defaultCmsContent.homepage_curriculum?.subtitle ?? '',
           modules: Array.isArray(parsed.homepage_curriculum?.modules)
-            ? parsed.homepage_curriculum.modules
+            ? sortCurriculumModules(parsed.homepage_curriculum.modules)
             : (defaultCmsContent.homepage_curriculum?.modules || [])
         }
       : defaultCmsContent.homepage_curriculum,
@@ -226,7 +236,11 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
     if (activeTab === 'faqs' && patch.faqs !== undefined) {
       updated.faqs = patch.faqs;
     } else if (activeTab === 'homepage_curriculum' && patch.homepage_curriculum !== undefined) {
-      updated.homepage_curriculum = patch.homepage_curriculum;
+      const curr = patch.homepage_curriculum;
+      updated.homepage_curriculum = {
+        ...curr,
+        modules: Array.isArray(curr?.modules) ? sortCurriculumModules(curr.modules) : curr?.modules
+      };
     } else if (activeTab === 'hero' && patch.hero !== undefined) {
       updated.hero = { ...existing.hero, ...patch.hero };
     } else if (activeTab === 'mentor' && patch.mentor !== undefined) {
@@ -326,7 +340,11 @@ export async function dbSaveCmsSettings(patch: any, activeTabHint?: string): Pro
   // Merge Homepage Curriculum: Do not allow stale default curriculum to overwrite rich customized modules
   if (patch.homepage_curriculum !== undefined) {
     if (isCustomCurriculum(patch.homepage_curriculum) || !isCustomCurriculum(existing.homepage_curriculum)) {
-      updated.homepage_curriculum = patch.homepage_curriculum;
+      const curr = patch.homepage_curriculum;
+      updated.homepage_curriculum = {
+        ...curr,
+        modules: Array.isArray(curr?.modules) ? sortCurriculumModules(curr.modules) : curr?.modules
+      };
     }
   }
 
