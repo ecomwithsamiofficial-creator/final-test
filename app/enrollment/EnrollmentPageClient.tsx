@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { Navbar, Footer, TopMarquee } from '@/components/layout';
 import { CountdownTimer, ScrollingScreenshotReviews } from '@/components/landing';

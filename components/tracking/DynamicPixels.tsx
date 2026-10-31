@@ -12,6 +12,7 @@ export interface ActivePixel {
 }
 
 export function DynamicPixels() {
+  const pathname = usePathname();
   const [, setPixels] = useState<ActivePixel[]>([]);
   const lastTrackedPath = useRef<string | null>(null);
 
