@@ -37,6 +37,11 @@ export const metadata: Metadata = {
   alternates: {
     canonical: '/',
   },
+  verification: {
+    other: {
+      'facebook-domain-verification': ['ui150qda1k8uh6brxh91fnid4kod1r'],
+    },
+  },
   robots: {
     index: true,
     follow: true,
@@ -118,6 +123,8 @@ export default async function RootLayout({
     <html lang="en" data-theme={activeTheme} className="scroll-smooth">
       <head>
         <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0" />
+        {/* Meta (Facebook) Domain Verification for ecomwithsami.com */}
+        <meta name="facebook-domain-verification" content="ui150qda1k8uh6brxh91fnid4kod1r" />
         {/* Fast Video & CDN Preconnect (Instant loading like LearnWithAfaq) */}
         <link rel="preconnect" href="https://www.youtube.com" crossOrigin="anonymous" />
         <link rel="preconnect" href="https://i.ytimg.com" crossOrigin="anonymous" />
