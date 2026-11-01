@@ -133,6 +133,27 @@ export async function POST(request: NextRequest) {
       revalidatePath('/admin/enrollments');
     } catch {}
 
+    // Dispatch Meta Conversions API (CAPI) server-side event with matching eventId for perfect deduplication
+    try {
+      const { sendMetaCapiEvent } = await import('@/lib/metaCapi');
+      const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined;
+      const userAgent = request.headers.get('user-agent') || undefined;
+
+      sendMetaCapiEvent({
+        eventName: 'Purchase',
+        eventId: trackingCode,
+        email,
+        phone,
+        value: 3799,
+        currency: 'PKR',
+        clientIp,
+        userAgent,
+        eventSourceUrl: 'https://ecomwithsami.com/enrollment',
+      }).catch(capiErr => console.warn('[CAPI Dispatch]:', capiErr));
+    } catch (capiInitErr) {
+      console.warn('[CAPI Init]:', capiInitErr);
+    }
+
     return NextResponse.json({
       success: true,
       message: 'Enrollment application received! Admin will verify your payment slip and send your LMS password on WhatsApp.',
