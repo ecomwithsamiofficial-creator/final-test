@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Script from 'next/script';
 import './globals.css';
 import { DynamicPixels, LiveVisitorTracker } from '@/components/tracking';
 import { WhatsAppWidget } from '@/components/common';
@@ -158,6 +159,25 @@ export default async function RootLayout({
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
               gtag('config', 'G-FJBC4S9KM3');
+            `,
+          }}
+        />
+        {/* Meta Pixel (Official Next.js Script Integration) */}
+        <Script
+          id="meta-pixel-official"
+          strategy="afterInteractive"
+          dangerouslySetInnerHTML={{
+            __html: `
+              !function(f,b,e,v,n,t,s)
+              {if(f.fbq)return;n=f.fbq=function(){n.callMethod?
+              n.callMethod.apply(n,arguments):n.queue.push(arguments)};
+              if(!f._fbq)f._fbq=n;n.push=n;n.loaded=!0;n.version='2.0';
+              n.queue=[];t=b.createElement(e);t.async=!0;
+              t.src=v;s=b.getElementsByTagName(e)[0];
+              s.parentNode.insertBefore(t,s)}(window, document,'script',
+              'https://connect.facebook.net/en_US/fbevents.js');
+              fbq('init', '2449386688923586');
+              fbq('track', 'PageView');
             `,
           }}
         />

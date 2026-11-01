@@ -36,11 +36,6 @@ export function DynamicPixels() {
     if (typeof window === 'undefined') return;
 
     const loadPixels = () => {
-      // 1. Safely initialize Meta Pixel asynchronously without blocking SSR hydration
-      if (typeof window !== 'undefined' && !(window as any).fbq && document.head) {
-        injectMetaPixel('2449386688923586', 'meta-pixel-official', document.head);
-      }
-
       fetch('/api/pixels/active')
         .then(res => res.json())
         .then(data => {
@@ -107,7 +102,6 @@ export function DynamicPixels() {
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
-      fbq('set', 'autoConfig', false, '${pixelId}');
       fbq('init', '${pixelId}');
       fbq('track', 'PageView');
     `;
