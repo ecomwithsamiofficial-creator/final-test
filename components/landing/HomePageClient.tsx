@@ -13,7 +13,8 @@ import {
   CountdownTimer, 
   CurriculumAccordion, 
   HomepageProofWall, 
-  VideoModal 
+  VideoModal,
+  LiveEnrollmentTicker 
 } from '@/components/landing';
 import { 
   Play, 
@@ -824,10 +825,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
 
               {/* Subtitle */}
               {hero.subtitle && hero.subtitle.trim() !== '' && (
-                <p className="text-sm xs:text-base sm:text-lg md:text-xl text-slate-600 font-semibold max-w-xl mb-5 sm:mb-7 leading-relaxed">
+                <p className="text-sm xs:text-base sm:text-lg md:text-xl text-slate-600 font-semibold max-w-xl mb-3 sm:mb-4 leading-relaxed">
                   {hero.subtitle}
                 </p>
               )}
+
+              {/* Live Enrollment Social Proof Ticker */}
+              <LiveEnrollmentTicker />
 
               {/* Desktop-Only CTA Button & Social Proof */}
               <div className="hidden lg:flex flex-col items-start gap-3.5">

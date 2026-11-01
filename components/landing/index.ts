@@ -6,5 +6,6 @@ export { VideoModal } from './VideoModal';
 export { HomePageClient } from './HomePageClient';
 export { ScrollingScreenshotReviews } from './ScrollingScreenshotReviews';
 export { HomepageProofWall } from './HomepageProofWall';
+export { LiveEnrollmentTicker } from './LiveEnrollmentTicker';
 export type { ModuleItem } from './CurriculumAccordion';
 export type { VideoModalProps } from './VideoModal';
