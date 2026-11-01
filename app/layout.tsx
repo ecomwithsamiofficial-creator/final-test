@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Script from 'next/script';
 import './globals.css';
 import { DynamicPixels, LiveVisitorTracker } from '@/components/tracking';
 import { WhatsAppWidget } from '@/components/common';
@@ -162,10 +161,9 @@ export default async function RootLayout({
             `,
           }}
         />
-        {/* Meta Pixel (Official Next.js Script Integration) */}
-        <Script
-          id="meta-pixel-official"
-          strategy="afterInteractive"
+        {/* Meta Pixel Code (Official) */}
+        <script
+          id="meta-pixel-init"
           dangerouslySetInnerHTML={{
             __html: `
               !function(f,b,e,v,n,t,s)
