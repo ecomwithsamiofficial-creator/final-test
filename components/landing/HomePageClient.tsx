@@ -439,11 +439,12 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     if (e) {
       e.stopPropagation();
       const now = Date.now();
-      if (now - lastTouchTimeRef.current < 400) return;
+      if (now - lastTouchTimeRef.current < 250) return;
       lastTouchTimeRef.current = now;
     }
     setHasUserStartedHero(true);
     setIsHeroPlaying(true);
+    setIsHeroVideoReady(true);
     setIsHeroMuted(false);
     triggerHeroControls(1300);
 
@@ -452,39 +453,6 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
       heroVideoRef.current.volume = 1;
       heroVideoRef.current.play().catch(() => {});
     }
-    if (heroIframeRef.current) {
-      try {
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'playVideo', args: [] }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'unMute', args: [] }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ event: 'command', func: 'setVolume', args: [100] }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ method: 'unmute' }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ method: 'setVolume', value: 100 }),
-          '*'
-        );
-        heroIframeRef.current.contentWindow?.postMessage(
-          JSON.stringify({ method: 'play' }),
-          '*'
-        );
-      } catch (e) {}
-    }
-
-    // Safety fallback: reveal video after 1.2s in case YouTube message is slightly delayed
-    setTimeout(() => {
-      setIsHeroVideoReady(true);
-    }, 1200);
   };
 
   const toggleHeroPlay = (e?: React.SyntheticEvent) => {
@@ -684,10 +652,13 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
     return () => window.removeEventListener('message', handleWindowMessage);
   }, []);
 
-  const getYouTubeEmbedUrl = (url: string) => {
+  const getYouTubeEmbedUrl = (url: string, autoPlayOnStart = false) => {
     const vId = getYouTubeId(url);
-    const originParam = typeof window !== 'undefined' && window.location.origin ? `&origin=${encodeURIComponent(window.location.origin)}` : '';
-    return `https://www.youtube.com/embed/${vId}?enablejsapi=1&playsinline=1&controls=0&modestbranding=1&rel=0&iv_load_policy=3&disablekb=1&fs=0&loop=1&playlist=${vId}&cc_load_policy=0&cc_lang_pref=none${originParam}`;
+    const originParam = typeof window !== 'undefined' && window.location.origin && window.location.origin !== 'null'
+      ? `&origin=${encodeURIComponent(window.location.origin)}`
+      : '';
+    const ap = autoPlayOnStart ? 1 : 0;
+    return `https://www.youtube.com/embed/${vId}?autoplay=${ap}&enablejsapi=1&playsinline=1&controls=1&modestbranding=1&rel=0&iv_load_policy=3&loop=1&playlist=${vId}${originParam}`;
   };
 
   const getReviewEmbedUrl = (url: string) => {
@@ -920,32 +891,18 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                 {/* 16:9 Video Canvas Frame */}
                 <div 
                   onClick={(e) => {
-                    if (e.target === e.currentTarget) {
-                      if (!hasUserStartedHero) {
-                        startHeroPlayback(e);
-                      } else {
-                        if (isHeroPlaying && !showHeroControls) {
-                          triggerHeroControls();
-                        } else {
-                          toggleHeroPlay(e);
-                        }
-                      }
+                    if (!hasUserStartedHero) {
+                      startHeroPlayback(e);
                     }
-                  }}
-                  onMouseMove={() => {
-                    if (isHeroPlaying) triggerHeroControls();
-                  }}
-                  onTouchStart={() => {
-                    if (isHeroPlaying) triggerHeroControls();
                   }}
                   className="relative aspect-video w-full rounded-xl sm:rounded-2xl overflow-hidden bg-slate-900 border-2 border-[#00A0DF]/30 shadow-lg group select-none cursor-pointer"
                   onMouseEnter={() => {
                     setIsHeroControlsHovered(true);
-                    if (isHeroPlaying) triggerHeroControls();
+                    if (isHeroPlaying && isDirectVideo) triggerHeroControls();
                   }}
                   onMouseLeave={() => {
                     setIsHeroControlsHovered(false);
-                    if (isHeroPlaying && !isHoveringControlsRef.current) {
+                    if (isHeroPlaying && isDirectVideo && !isHoveringControlsRef.current) {
                       if (heroControlsTimeoutRef.current) clearTimeout(heroControlsTimeoutRef.current);
                       heroControlsTimeoutRef.current = setTimeout(() => {
                         setShowHeroControls(false);
@@ -953,13 +910,14 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     }
                   }}
                 >
-                  {/* Video Playback (Preloaded behind poster for instant 1-tap playback on iOS & all devices) */}
+                  {/* Video Playback */}
                   {isClientMounted && (
                     isDirectVideo ? (
                       <video
                         ref={heroVideoRef}
                         src={hero.video_url || 'https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4'}
                         autoPlay={hasUserStartedHero}
+                        controls={hasUserStartedHero}
                         muted={isHeroMuted}
                         loop
                         playsInline
@@ -984,58 +942,44 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                             }
                           }
                         }}
-                        className="w-full h-full object-cover"
+                        className="w-full h-full object-cover relative z-10"
                       />
                     ) : isYouTubeVideo ? (
-                      <div className="absolute inset-0 pointer-events-none select-none">
-                        <iframe
-                          ref={heroIframeRef}
-                          src={getYouTubeEmbedUrl(hero.video_url)}
-                          title="Hero Overview Video"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
-                          tabIndex={-1}
-                          className="w-full h-full pointer-events-none select-none border-0"
-                        />
-                      </div>
+                      hasUserStartedHero ? (
+                        <div className="absolute inset-0 z-10">
+                          <iframe
+                            ref={heroIframeRef}
+                            src={getYouTubeEmbedUrl(hero.video_url, true)}
+                            title={hero.video_title || "Hero Overview Video"}
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+                            allowFullScreen
+                            className="w-full h-full border-0"
+                          />
+                        </div>
+                      ) : null
                     ) : (
-                      <div className="absolute inset-0 pointer-events-none select-none">
-                        <iframe
-                          ref={heroIframeRef}
-                          src={getBunnyEmbedUrl(hero.video_url, false)}
-                          title="Hero Overview Video"
-                          allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
-                          allowFullScreen
-                          tabIndex={-1}
-                          onLoad={() => {
-                            if (hasUserStartedHero) setIsHeroVideoReady(true);
-                          }}
-                          className="w-full h-full pointer-events-none select-none border-0"
-                        />
-                      </div>
+                      hasUserStartedHero ? (
+                        <div className="absolute inset-0 z-10">
+                          <iframe
+                            ref={heroIframeRef}
+                            src={getBunnyEmbedUrl(hero.video_url, true)}
+                            title={hero.video_title || "Hero Overview Video"}
+                            allow="accelerometer; gyroscope; autoplay; encrypted-media; picture-in-picture;"
+                            allowFullScreen
+                            onLoad={() => {
+                              setIsHeroVideoReady(true);
+                            }}
+                            className="w-full h-full border-0"
+                          />
+                        </div>
+                      ) : null
                     )
                   )}
 
-                  {/* Transparent Click Shield (Physically intercepts all taps and prevents YouTube redirect) */}
-                  {hasUserStartedHero && isHeroVideoReady && (
-                    <div
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        if (isHeroPlaying && !showHeroControls) {
-                          triggerHeroControls();
-                        } else {
-                          toggleHeroPlay(e);
-                        }
-                      }}
-                      style={{ touchAction: 'manipulation' }}
-                      className="absolute inset-0 z-10 cursor-pointer"
-                      title={isHeroPlaying ? (showHeroControls ? 'Click to Pause' : 'Click to show controls') : 'Click to Play'}
-                    />
-                  )}
-
-                  {/* High-Res Poster Thumbnail (Remains visible during buffering, transitions seamlessly once video plays) */}
+                  {/* High-Res Poster Thumbnail (Visible before playback starts, transitions seamlessly) */}
                   <div
-                    className={`absolute inset-0 z-20 w-full h-full transition-opacity duration-500 overflow-hidden select-none ${
-                      hasUserStartedHero && isHeroVideoReady
+                    className={`absolute inset-0 z-20 w-full h-full transition-opacity duration-300 overflow-hidden select-none ${
+                      hasUserStartedHero
                         ? 'opacity-0 pointer-events-none'
                         : 'opacity-100'
                     }`}
@@ -1059,7 +1003,7 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     {/* Light Ambient Backdrop */}
                     <div className="absolute inset-0 bg-gradient-to-t from-black/35 via-transparent to-black/10 pointer-events-none" />
 
-                    {!hasUserStartedHero ? (
+                    {!hasUserStartedHero && (
                       <button
                         type="button"
                         aria-label="Play overview video"
@@ -1093,16 +1037,11 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                           </div>
                         )}
                       </button>
-                    ) : (
-                      /* Sleek Loading Spinner while video connects (ZERO BLACK SCREEN!) */
-                      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-                        <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full border-2 border-white/20 border-t-[#00A0DF] animate-spin shadow-lg" />
-                      </div>
                     )}
                   </div>
 
-                  {/* Paused Center Indicator Overlay (When user has started but paused) */}
-                  {hasUserStartedHero && isHeroVideoReady && !isHeroPlaying && (
+                  {/* Paused Center Indicator Overlay (Only for Direct Video) */}
+                  {hasUserStartedHero && isDirectVideo && !isHeroPlaying && (
                     <button
                       type="button"
                       aria-label="Resume video"
@@ -1131,8 +1070,8 @@ export function HomePageClient({ initialContent, initialModules, serverRemaining
                     </button>
                   )}
 
-                  {/* Bottom Sleek Control Bar (Active during and after playback) */}
-                  {hasUserStartedHero && isHeroVideoReady && (
+                  {/* Bottom Sleek Control Bar (Active during and after playback for direct video) */}
+                  {hasUserStartedHero && isDirectVideo && (
                     <div 
                       onMouseEnter={() => {
                         isHoveringControlsRef.current = true;
