@@ -135,21 +135,33 @@ export async function POST(request: NextRequest) {
 
     // Dispatch Meta Conversions API (CAPI) server-side event with matching eventId for perfect deduplication
     try {
-      const { sendMetaCapiEvent } = await import('@/lib/metaCapi');
-      const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined;
-      const userAgent = request.headers.get('user-agent') || undefined;
+      const isManualAdmin =
+        paymentMethod === 'Manual Admin Entry' ||
+        transactionId === 'ADMIN-DIRECT-ACCESS' ||
+        request.headers.get('x-admin-source') === 'admin-portal';
+      const host = request.headers.get('host') || '';
+      const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
 
-      sendMetaCapiEvent({
-        eventName: 'Purchase',
-        eventId: trackingCode,
-        email,
-        phone,
-        value: 3799,
-        currency: 'PKR',
-        clientIp,
-        userAgent,
-        eventSourceUrl: 'https://ecomwithsami.com/enrollment',
-      }).catch(capiErr => console.warn('[CAPI Dispatch]:', capiErr));
+      // Only dispatch CAPI for genuine student enrollments on live production
+      if (!isManualAdmin && !isLocalhost) {
+        const { sendMetaCapiEvent } = await import('@/lib/metaCapi');
+        const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined;
+        const userAgent = request.headers.get('user-agent') || undefined;
+
+        sendMetaCapiEvent({
+          eventName: 'Purchase',
+          eventId: trackingCode,
+          email,
+          phone,
+          value: 3799,
+          currency: 'PKR',
+          clientIp,
+          userAgent,
+          eventSourceUrl: 'https://ecomwithsami.com/enrollment',
+        }).catch(capiErr => console.warn('[CAPI Dispatch]:', capiErr));
+      } else {
+        console.log(`[CAPI] Skipped event dispatch (Admin: ${isManualAdmin}, Localhost: ${isLocalhost})`);
+      }
     } catch (capiInitErr) {
       console.warn('[CAPI Init]:', capiInitErr);
     }

@@ -1312,7 +1312,10 @@ export default function AdminDashboardPage() {
     try {
       const res = await fetch('/api/enrollment/submit', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-admin-source': 'admin-portal'
+        },
         body: JSON.stringify({
           fullName: newStudent.name,
           email: newStudent.email,

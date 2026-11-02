@@ -315,17 +315,35 @@ export function EnrollmentPageClient({ initialContent, serverRemainingSeconds, s
       if (data.success && (data.enrollment || data.trackingCode)) {
         const trackingCode = data.trackingCode || `SAMI-ENR-${Date.now()}`;
 
-        // Fire Meta Pixel Purchase event with value & currency (strictly once)
+        // Fire Meta Pixel Purchase event with value & currency (strictly once per tracking session)
         if (!hasPurchasedRef.current) {
           hasPurchasedRef.current = true;
-          analytics.trackPurchase({
-            content_name: 'Ecom With Sami Mentorship Program',
-            content_type: 'product',
-            value: 3799,
-            currency: 'PKR',
-            transaction_id: trackingCode,
-            order_id: trackingCode
-          });
+          try {
+            const sessionKey = `sami_purchased_${trackingCode}`;
+            if (typeof window !== 'undefined' && !sessionStorage.getItem(sessionKey)) {
+              sessionStorage.setItem(sessionKey, 'true');
+              const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+              if (!isLocal) {
+                analytics.trackPurchase({
+                  content_name: 'Ecom With Sami Mentorship Program',
+                  content_type: 'product',
+                  value: 3799,
+                  currency: 'PKR',
+                  transaction_id: trackingCode,
+                  order_id: trackingCode
+                });
+              }
+            }
+          } catch {
+            analytics.trackPurchase({
+              content_name: 'Ecom With Sami Mentorship Program',
+              content_type: 'product',
+              value: 3799,
+              currency: 'PKR',
+              transaction_id: trackingCode,
+              order_id: trackingCode
+            });
+          }
         }
 
         const studentInfo = data.enrollment || {

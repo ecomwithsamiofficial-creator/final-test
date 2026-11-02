@@ -11,6 +11,15 @@ export interface ActivePixel {
   placement: string;
 }
 
+const isInternalRoute = (path?: string | null): boolean => {
+  if (!path) return false;
+  return (
+    path.startsWith('/admin') ||
+    path.startsWith('/lms') ||
+    path.startsWith('/login')
+  );
+};
+
 export function DynamicPixels() {
   const pathname = usePathname();
   const [, setPixels] = useState<ActivePixel[]>([]);
@@ -18,7 +27,7 @@ export function DynamicPixels() {
 
   // Track PageView strictly on actual SPA route transitions (never on initial load or re-render)
   useEffect(() => {
-    if (!pathname) return;
+    if (!pathname || isInternalRoute(pathname)) return;
     if (lastTrackedPath.current === null) {
       lastTrackedPath.current = pathname;
       return;
@@ -35,7 +44,15 @@ export function DynamicPixels() {
     // Only execute on browser client
     if (typeof window === 'undefined') return;
 
+    // Never load marketing pixels on internal/portal routes
+    if (isInternalRoute(pathname)) return;
+
     const loadPixels = () => {
+      // 1. Immediately ensure primary Meta Pixel is initialized with autoConfig disabled
+      if (typeof window !== 'undefined' && !(window as any).fbq && document.head) {
+        injectMetaPixel('2449386688923586', 'meta-pixel-primary', document.head);
+      }
+
       fetch('/api/pixels/active')
         .then(res => res.json())
         .then(data => {
@@ -56,9 +73,11 @@ export function DynamicPixels() {
       const timer = setTimeout(loadPixels, 800);
       return () => clearTimeout(timer);
     }
-  }, []);
+  }, [pathname]);
 
   const injectAllPixels = (activePixels: ActivePixel[]) => {
+    if (isInternalRoute(pathname)) return;
+
     activePixels.forEach(pixel => {
       const scriptTagId = `dynamic-pixel-${pixel.id}`;
       // Skip if already injected
@@ -91,6 +110,8 @@ export function DynamicPixels() {
   };
 
   const injectMetaPixel = (pixelId: string, id: string, target: HTMLElement) => {
+    if (isInternalRoute(window?.location?.pathname)) return;
+
     const script = document.createElement('script');
     script.id = id;
     script.innerHTML = `
@@ -102,6 +123,7 @@ export function DynamicPixels() {
       t.src=v;s=b.getElementsByTagName(e)[0];
       s.parentNode.insertBefore(t,s)}(window, document,'script',
       'https://connect.facebook.net/en_US/fbevents.js');
+      fbq('set', 'autoConfig', false, '${pixelId}');
       fbq('init', '${pixelId}');
       fbq('track', 'PageView');
     `;

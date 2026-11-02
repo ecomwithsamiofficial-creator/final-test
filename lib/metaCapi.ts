@@ -83,6 +83,9 @@ export async function sendMetaCapiEvent(params: MetaCapiParams): Promise<{ succe
         value: Number(value),
         content_name: 'Ecom With Sami Mentorship Program',
         content_type: 'product',
+        order_id: eventId,
+        num_items: 1,
+        contents: [{ id: 'sami-mentorship-masterclass', quantity: 1, item_price: Number(value) }],
       };
     }
 

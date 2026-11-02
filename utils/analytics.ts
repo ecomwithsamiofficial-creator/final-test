@@ -9,10 +9,16 @@ export interface AnalyticsEventData {
   [key: string]: any;
 }
 
+const isInternalRoute = (): boolean => {
+  if (typeof window === 'undefined') return true;
+  const path = window.location.pathname;
+  return path.startsWith('/admin') || path.startsWith('/lms') || path.startsWith('/login');
+};
+
 export const analytics = {
   trackContact: (data: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         // Facebook Pixel contact tracking
         if ((window as any).fbq) {
           (window as any).fbq('track', 'Contact', data);
@@ -33,7 +39,7 @@ export const analytics = {
 
   trackEvent: (eventName: string, data?: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         if ((window as any).fbq) {
           (window as any).fbq('trackCustom', eventName, data);
         }
@@ -51,7 +57,7 @@ export const analytics = {
 
   trackInitiateCheckout: (data?: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         if ((window as any).fbq) {
           (window as any).fbq('track', 'InitiateCheckout', data);
         }
@@ -69,7 +75,7 @@ export const analytics = {
 
   trackPurchase: (data?: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         const orderId = data?.transaction_id || data?.order_id || `SAMI-${Date.now()}`;
         const val = Number(data?.value) || 3799;
         const cur = data?.currency || 'PKR';
@@ -108,7 +114,7 @@ export const analytics = {
 
   trackViewContent: (data?: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         if ((window as any).fbq) {
           (window as any).fbq('track', 'ViewContent', data);
         }
@@ -126,7 +132,7 @@ export const analytics = {
 
   trackLead: (data?: AnalyticsEventData) => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         if ((window as any).fbq) {
           (window as any).fbq('track', 'Lead', data);
         }
@@ -144,7 +150,7 @@ export const analytics = {
 
   trackPageView: () => {
     try {
-      if (typeof window !== 'undefined') {
+      if (typeof window !== 'undefined' && !isInternalRoute()) {
         if ((window as any).fbq) {
           (window as any).fbq('track', 'PageView');
         }
