@@ -142,8 +142,14 @@ export async function POST(request: NextRequest) {
       const host = request.headers.get('host') || '';
       const isLocalhost = host.includes('localhost') || host.includes('127.0.0.1');
 
-      // Only dispatch CAPI for genuine student enrollments on live production
-      if (!isManualAdmin && !isLocalhost) {
+      const testEventCode =
+        request.nextUrl.searchParams.get('test_event_code') ||
+        request.headers.get('x-meta-test-event-code') ||
+        process.env.META_TEST_EVENT_CODE ||
+        undefined;
+
+      // Only dispatch CAPI for genuine student enrollments on live production (or if explicitly testing with Meta testEventCode)
+      if (!isManualAdmin && (!isLocalhost || testEventCode)) {
         const { sendMetaCapiEvent } = await import('@/lib/metaCapi');
         const clientIp = request.headers.get('cf-connecting-ip') || request.headers.get('x-forwarded-for')?.split(',')[0].trim() || undefined;
         const userAgent = request.headers.get('user-agent') || undefined;
@@ -158,6 +164,7 @@ export async function POST(request: NextRequest) {
           clientIp,
           userAgent,
           eventSourceUrl: 'https://ecomwithsami.com/enrollment',
+          testEventCode,
         }).catch(capiErr => console.warn('[CAPI Dispatch]:', capiErr));
       } else {
         console.log(`[CAPI] Skipped event dispatch (Admin: ${isManualAdmin}, Localhost: ${isLocalhost})`);

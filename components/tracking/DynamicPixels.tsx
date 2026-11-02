@@ -47,12 +47,12 @@ export function DynamicPixels() {
     // Never load marketing pixels on internal/portal routes
     if (isInternalRoute(pathname)) return;
 
-    const loadPixels = () => {
-      // 1. Immediately ensure primary Meta Pixel is initialized with autoConfig disabled
-      if (typeof window !== 'undefined' && !(window as any).fbq && document.head) {
-        injectMetaPixel('2449386688923586', 'meta-pixel-primary', document.head);
-      }
+    // 1. Immediately ensure primary Meta Pixel is initialized instantly on public route mount
+    if (typeof window !== 'undefined' && !(window as any).fbq && document.head) {
+      injectMetaPixel('2449386688923586', 'meta-pixel-primary', document.head);
+    }
 
+    const loadPixels = () => {
       fetch('/api/pixels/active')
         .then(res => res.json())
         .then(data => {
